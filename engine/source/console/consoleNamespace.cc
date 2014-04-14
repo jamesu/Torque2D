@@ -323,6 +323,15 @@ void Namespace::getEntryList(Vector<Entry *> *vec)
    dQsort(vec->address(),vec->size(),sizeof(Namespace::Entry *),compareEntries);
 }
 
+void Namespace::getLocalEntryList(Vector<Entry *> *vec)
+{
+    for (Namespace::Entry *ent = mEntryList; ent; ent = ent->mNext)
+    {
+        vec->push_back(ent);
+    }
+    dQsort(vec->address(),vec->size(),sizeof(Namespace::Entry *),compareEntries);
+}
+
 Namespace::Entry *Namespace::createLocalEntry(StringTableEntry name)
 {
    for(Entry *walk = mEntryList; walk; walk = walk->mNext)

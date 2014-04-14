@@ -106,12 +106,16 @@ static F32 frameTotalTime = 0.0f;
 static F32 frameTotalLastTime = 0.0f;
 static U32 frameTotalCount = 0;
 
+extern void SetupLuaInterpreter();
+extern void ShutdownLuaInterpreter();
+
 //-----------------------------------------------------------------------------
 
 bool initializeLibraries()
 {
     PlatformAssert::create();
     Con::init();
+    SetupLuaInterpreter();
     Sim::init();
 
     if(!Net::init())
@@ -181,6 +185,8 @@ void shutdownLibraries()
 
     TelnetDebugger::destroy();
     TelnetConsole::destroy();
+    
+    ShutdownLuaInterpreter();
 
     Sim::shutdown();
     Platform::shutdown();

@@ -124,6 +124,7 @@ public:
     char * lastUsage;
 
     void getEntryList(Vector<Entry *> *);
+    void getLocalEntryList(Vector<Entry *> *vec);
 
     Entry *lookup(StringTableEntry name);
     Entry *lookupRecursive(StringTableEntry name);

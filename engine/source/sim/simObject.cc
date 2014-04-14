@@ -30,6 +30,8 @@
 #include "io/fileObject.h"
 #include "console/ConsoleTypeValidators.h"
 
+#include "script/ScriptEngine.h"
+
 #include "simObject_ScriptBinding.h"
 
 //-----------------------------------------------------------------------------
@@ -106,6 +108,12 @@ bool SimObject::registerObject()
    Sim::gIdDictionary->insert(this);	
 
    Sim::gNameDictionary->insert(this);
+    
+    // Register SimObject with scripting engine
+    if (ScriptEngine::getInstance())
+    {
+        ScriptEngine::getInstance()->registerObject(this);
+    }
 
     // Notify object
    bool ret = onAdd();
@@ -152,6 +160,12 @@ void SimObject::unregisterObject()
    Sim::gNameDictionary->remove(this);
    Sim::gIdDictionary->remove(this);
    Sim::cancelPendingEvents(this);
+    
+   // Unregister SimObject with scripting engine
+   if (ScriptEngine::getInstance())
+   {
+       ScriptEngine::getInstance()->removeObject(this);
+   }
 }
 
 //---------------------------------------------------------------------------
@@ -530,13 +544,22 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
             const char* szBuffer = cbt->prepData( value, buffer, 2048 );
             dMemset( bufferSecure, 0, 2048 );
             dMemcpy( bufferSecure, szBuffer, dStrlen( szBuffer ) );
-
             if( (*fld->setDataFn)( this, bufferSecure ) )
                Con::setData(fld->type, (void *) (((const char *)this) + fld->offset), array1, 1, &value, fld->table);
 
             onStaticModified( slotName, value );
 
             return;
+         }
+         else if (array1 == -1)
+         {
+             // codeword for "assign the whole array based on value being char**"
+             const char **argv = (const char**)value;
+             int count;
+             for (count=0; argv[count]; count)
+                 count++;
+             
+             Con::setData(fld->type, (void *) (((const char *)this) + fld->offset), -1, count, argv, fld->table);
          }
 
          if(fld->validator)
