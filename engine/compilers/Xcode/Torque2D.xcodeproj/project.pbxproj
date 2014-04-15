@@ -1840,18 +1840,6 @@
 			name = composites;
 			sourceTree = "<group>";
 		};
-		8645C96D18872339004ED987 /* leapMotion */ = {
-			isa = PBXGroup;
-			children = (
-				8645C96E18872339004ED987 /* leapMotionConstants.h */,
-				8645C96F18872339004ED987 /* leapMotionManager.cc */,
-				8645C97018872339004ED987 /* leapMotionManager.h */,
-				8645C97118872339004ED987 /* LeapMotionManager_ScriptBinding.h */,
-				8645C97218872339004ED987 /* leapMotionUtil.cpp */,
-				8645C97318872339004ED987 /* leapMotionUtil.h */,
-			);
-			path = leapMotion;
-		};
 		326CF0E2189466910006D3DF /* script */ = {
 			isa = PBXGroup;
 			children = (
@@ -1928,6 +1916,20 @@
 			name = lua;
 			path = ../../lib/lua;
 			sourceTree = "<group>";
+		};
+		8645C96D18872339004ED987 /* leapMotion */ = {
+			isa = PBXGroup;
+			children = (
+				8645C96E18872339004ED987 /* leapMotionConstants.h */,
+				8645C96F18872339004ED987 /* leapMotionManager.cc */,
+				8645C97018872339004ED987 /* leapMotionManager.h */,
+				8645C97118872339004ED987 /* LeapMotionManager_ScriptBinding.h */,
+				8645C97218872339004ED987 /* leapMotionUtil.cpp */,
+				8645C97318872339004ED987 /* leapMotionUtil.h */,
+			);
+			name = leapMotion;
+			path = ../../source/input/leapMotion;
+			sourceTree = SOURCE_ROOT;
 		};
 		865A20BD1651589F00527C44 /* Resources */ = {
 			isa = PBXGroup;
