@@ -705,7 +705,7 @@ public:
    {
       mThis = NULL;
       mArgc = mInitialArgc = 1;
-      mCallbackName = callbackName;
+      mCallbackName = StringTable->insert(callbackName);
    }
    
    template< typename R>

@@ -460,6 +460,7 @@ bool CodeBlock::compile(const char *codeFileName, StringTableEntry fileName, con
    
    U32 lastIp = compileBlock(gStatementList, codeStream, 0);
    codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
+   CodeBlock::smCurrentCodeBlock = NULL;
    
    functions[0]->name = StringTable->insert("");
    functions[0]->numArgs = 0;
@@ -677,6 +678,7 @@ ConsoleValuePtr CodeBlock::compileExec(StringTableEntry fileName, const char *sc
     gNewEvalState.function = functions[0];
    */
    
+    CodeBlock::smCurrentCodeBlock = NULL;
    
     CodeBlock::execBlock(&gNewEvalState);
    

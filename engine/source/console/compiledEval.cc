@@ -1667,9 +1667,9 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
       return "";
    }
    
-   state->currentFrame.noCalls = noCalls;
    state->currentFrame.returnReg = state->getFrameEnd();
    state->pushFunction(newFunc, nsEntry->mCode, nsEntry, argc);
+   state->currentFrame.noCalls = noCalls;
    
    // Copy argv to stack
    for (U32 i=0; i<argc; i++)
