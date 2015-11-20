@@ -209,7 +209,7 @@ ConsoleMethod( GuiTextListCtrl, getRowId, S32, 3, 3, "( row ) Use the getRowId m
    return object->mList[index].id;
 }
 
-ConsoleMethod( GuiTextListCtrl, getRowTextById, const char*, 3, 3, "( ID ) Use the getRowTextById method to get the text of the first row with an ID matching the passed ID.\n"
+ConsoleMethod( GuiTextListCtrl, getRowTextById, ConsoleString, 3, 3, "( ID ) Use the getRowTextById method to get the text of the first row with an ID matching the passed ID.\n"
                                                                 "@param ID An integer value equal to the entry ID to search for.\n"
                                                                 "@return Returns a string containing the text of the first row with a matching ID, or the NULL string if no row matches the specified ID.\n"
                                                                 "@sa addRow, findTextIndex, getRowID, getRowNumByID, getRowTextByID")
@@ -232,7 +232,7 @@ ConsoleMethod( GuiTextListCtrl, getRowNumById, S32, 3, 3, "( ID ) Use the getRow
    return index;
 }
 
-ConsoleMethod( GuiTextListCtrl, getRowText, const char*, 3, 3, "( row ) Use the getRowText method to retrieve the text value of an entry in the list at the specified row.\n"
+ConsoleMethod( GuiTextListCtrl, getRowText, ConsoleString, 3, 3, "( row ) Use the getRowText method to retrieve the text value of an entry in the list at the specified row.\n"
                                                                 "Row numbers start at 0.\n"
                                                                 "@param row The number of the list row from which to retrieve the text.\n"
                                                                 "@return Returns the text found at the specified row, or the NULL string if the row number is out of bounds.\n"
@@ -321,7 +321,7 @@ U32 GuiTextListCtrl::getSelectedRow()
 }
 void GuiTextListCtrl::onCellSelected(Point2I cell)
 {
-   Con::executef(this, 3, "onSelect", Con::getIntArg(mList[cell.y].id), mList[cell.y].text);
+   Con::executef(this, "onSelect", Con::getIntArg(mList[cell.y].id), mList[cell.y].text);
 
    if (mConsoleCommand[0])
       Con::evaluate(mConsoleCommand, false);
@@ -650,7 +650,7 @@ bool GuiTextListCtrl::onKeyDown( const GuiEvent &event )
       break;
    case KEY_DELETE:
       if ( mSelectedCell.y >= 0 && mSelectedCell.y < mList.size() )
-      Con::executef( this, 2, "onDeleteKey", Con::getIntArg( mList[mSelectedCell.y].id ) );
+      Con::executef( this, "onDeleteKey", Con::getIntArg( mList[mSelectedCell.y].id ) );
       break;
    default:
    return( Parent::onKeyDown( event ) );

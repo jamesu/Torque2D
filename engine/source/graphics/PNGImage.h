@@ -22,6 +22,8 @@
 #ifndef _PNGIMAGE_H_
 #define _PNGIMAGE_H_
 
+#include "console/console.h"
+
 #ifndef _CONSOLEINTERNAL_H_
 #include "console/consoleInternal.h"
 #endif
@@ -30,6 +32,8 @@
 #include "platform/types.h"
 #include "console/console.h"
 #include "console/consoleTypes.h"
+
+#include "sim/simBase.h"
 
 enum PNGImageType { PNGTYPE_UNKNOWN = 0, PNGTYPE_RGB, PNGTYPE_RGBA };
 

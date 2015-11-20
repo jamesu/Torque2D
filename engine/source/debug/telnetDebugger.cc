@@ -124,7 +124,7 @@ TelnetDebugger::TelnetDebugger()
    // Add the version number in a global so that
    // scripts can detect the presence of the
    // "enhanced" debugger features.
-   Con::evaluatef( "$dbgVersion = %d;", Version );
+   //Con::evaluatef( "$dbgVersion = %d;", Version );
 }
 
 TelnetDebugger::Breakpoint **TelnetDebugger::findBreakpoint(StringTableEntry fileName, S32 lineNumber)
@@ -372,7 +372,7 @@ void TelnetDebugger::pushStackFrame()
       return;
 
    if(mBreakOnNextStatement && mStackPopBreakIndex > -1 && 
-      gEvalState.stack.size() > mStackPopBreakIndex)
+      gNewEvalState.frames.size() > mStackPopBreakIndex)
       setBreakOnNextStatement( false );
 }
 
@@ -381,7 +381,7 @@ void TelnetDebugger::popStackFrame()
    if(mState == NotConnected)
       return;
 
-   if(mStackPopBreakIndex > -1 && gEvalState.stack.size()-1 <= mStackPopBreakIndex)
+   if(mStackPopBreakIndex > -1 && gNewEvalState.frames.size()-1 <= mStackPopBreakIndex)
       setBreakOnNextStatement( true );
 }
 
@@ -414,14 +414,14 @@ void TelnetDebugger::sendBreak()
 
    S32 last = 0;
 
-   for(S32 i = (S32) gEvalState.stack.size() - 1; i >= last; i--)
+   for(S32 i = (S32) gNewEvalState.frames.size() - 1; i >= last; i--)
    {
-      CodeBlock *code = gEvalState.stack[i]->code;
+      CodeBlock *code = gNewEvalState.frames[i].code;
       const char *file = "<none>";
       if (code && code->name && code->name[0])
          file = code->name;
 
-      Namespace *ns = gEvalState.stack[i]->scopeNamespace;
+		Namespace *ns = Namespace::find(gNewEvalState.frames[i].ns);
       scope[0] = 0;
       if ( ns ) {
          
@@ -435,13 +435,13 @@ void TelnetDebugger::sendBreak()
          }
       }
 
-      const char *function = gEvalState.stack[i]->scopeName;
+      const char *function = gNewEvalState.frames[i].function->name;
       if ((!function) || (!function[0]))
          function = "<none>";
       dStrcat( scope, function );
 
       U32 line=0, inst;
-      U32 ip = gEvalState.stack[i]->ip;
+      U32 ip = gNewEvalState.frames[i].savedIP;
       if (code)
          code->findBreakLine(ip, line, inst);
       dSprintf(buffer, MaxCommandSize, " %s %d %s", file, line, scope);
@@ -792,7 +792,7 @@ void TelnetDebugger::debugStepOver()
       return;
 
    setBreakOnNextStatement( true );
-   mStackPopBreakIndex = gEvalState.stack.size();
+   mStackPopBreakIndex = gNewEvalState.frames.size();
    mProgramPaused = false;
    send("RUNNING\r\n");
 }
@@ -803,7 +803,7 @@ void TelnetDebugger::debugStepOut()
       return;
 
    setBreakOnNextStatement( false );
-   mStackPopBreakIndex = gEvalState.stack.size() - 1;
+   mStackPopBreakIndex = gNewEvalState.frames.size() - 1;
    if ( mStackPopBreakIndex == 0 )
        mStackPopBreakIndex = -1;
    mProgramPaused = false;
@@ -813,8 +813,8 @@ void TelnetDebugger::debugStepOut()
 void TelnetDebugger::evaluateExpression(const char *tag, S32 frame, const char *evalBuffer)
 {
    // Make sure we're passing a valid frame to the eval.
-   if ( frame > gEvalState.stack.size() )
-      frame = gEvalState.stack.size() - 1;
+   if ( frame > gNewEvalState.frames.size() )
+      frame = gNewEvalState.frames.size() - 1;
    if ( frame < 0 )
       frame = 0;
 
@@ -826,14 +826,14 @@ void TelnetDebugger::evaluateExpression(const char *tag, S32 frame, const char *
 
    // Execute the eval.
    CodeBlock *newCodeBlock = new CodeBlock();
-   const char* result = newCodeBlock->compileExec( NULL, buffer, false, frame );
+   ConsoleValuePtr result = newCodeBlock->compileExec( NULL, buffer, false, frame );
    delete [] buffer;
    
    // Create a new buffer that fits the result.
    format = "EVALOUT %s %s\r\n";
-   len = dStrlen( format ) + dStrlen( tag ) + dStrlen( result );
+   len = dStrlen( format ) + dStrlen( tag ) + dStrlen( result.getTempStringValue() );
    buffer = new char[ len ];
-   dSprintf( buffer, len, format, tag, result[0] ? result : "\"\"" );
+   dSprintf( buffer, len, format, tag, result[0] ? result.getTempStringValue() : "\"\"" );
 
    send( buffer );
    delete [] buffer;

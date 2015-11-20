@@ -111,7 +111,7 @@ ConsoleMethodWithDocs(NameTags, getTagName, ConsoleString, 3, 3, (tagId))
     if ( tagId == 0 )
     {
         Con::warnf("Invalid tag Id.\n");
-        return NULL;
+        return "";
     }
 
     return object->getTagName( tagId );
@@ -275,7 +275,7 @@ ConsoleMethodWithDocs(NameTags, queryTags, ConsoleString, 3, 4, (tagIds, [exclud
     if ( tagId == 0 )
     {
         Con::warnf("Invalid tag Id.\n");
-        return NULL;
+        return "";
     }
 
     // Query tags.

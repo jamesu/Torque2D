@@ -126,9 +126,9 @@ U32 postEvent(SimObject *destObject, SimEvent* event,U32 time)
 // event cancellation
 
 /*! cancel a previously scheduled event.
-	@param eventSequence The numeric ID of a previously scheduled event.
-	@return No return value.
-	@sa getEventTimeLeft, getScheduleDuration, getTimeSinceStart, isEventPending, schedule, obj.schedule
+   @param eventSequence The numeric ID of a previously scheduled event.
+   @return No return value.
+   @sa getEventTimeLeft, getScheduleDuration, getTimeSinceStart, isEventPending, schedule, obj.schedule
 */
 void cancelEvent(U32 eventSequence)
 {
@@ -176,13 +176,13 @@ void cancelPendingEvents(SimObject *obj)
 //---------------------------------------------------------------------------
 // event pending test
 
-/*!	see if the event associated with eventID is still pending.
+/*!   see if the event associated with eventID is still pending.
 
-	When an event passes, the eventID is removed from the event queue, becoming invalid, so there is no discernable difference between a completed event and a bad event ID.
-	@param eventID The numeric ID of a previously scheduled event.
-	@return true if this event is still outstanding and false if it has passed or eventID is invalid.
+   When an event passes, the eventID is removed from the event queue, becoming invalid, so there is no discernable difference between a completed event and a bad event ID.
+   @param eventID The numeric ID of a previously scheduled event.
+   @return true if this event is still outstanding and false if it has passed or eventID is invalid.
 
-	@sa cancel, getEventTimeLeft, getScheduleDuration, getTimeSinceStart, schedule, obj.schedule
+   @sa cancel, getEventTimeLeft, getScheduleDuration, getTimeSinceStart, schedule, obj.schedule
 */
 bool isEventPending(U32 eventSequence)
 {
@@ -199,7 +199,7 @@ bool isEventPending(U32 eventSequence)
 }
 
 /*!
-	determines how much time remains until the event specified by eventID occurs.
+   determines how much time remains until the event specified by eventID occurs.
 
     @param eventID The numeric ID of a previously scheduled event.
     @return a non-zero integer value equal to the milliseconds until the event specified by eventID will occur. However, if eventID is invalid, or the event has passed, this function will return zero.
@@ -223,11 +223,11 @@ U32 getEventTimeLeft(U32 eventSequence)
 }
 
 /*!
-	Determines how long the event associated with eventID was scheduled for.
+   Determines how long the event associated with eventID was scheduled for.
 
-	@param eventID The numeric ID of a previously scheduled event.
-	@return a non-zero integer value equal to the milliseconds used in the schedule call that created this event. However, if eventID is invalid, this function will return zero.
-	@sa cancel, getEventTimeLeft, getTimeSinceStart, isEventPending, schedule, SimObject::schedule
+   @param eventID The numeric ID of a previously scheduled event.
+   @return a non-zero integer value equal to the milliseconds used in the schedule call that created this event. However, if eventID is invalid, this function will return zero.
+   @sa cancel, getEventTimeLeft, getTimeSinceStart, isEventPending, schedule, SimObject::schedule
 */
 U32 getScheduleDuration(U32 eventSequence)
 {
@@ -238,7 +238,7 @@ U32 getScheduleDuration(U32 eventSequence)
 }
 
 /*!
-	Determines how much time has passed since the event specified by eventID was scheduled.
+   Determines how much time has passed since the event specified by eventID was scheduled.
 
     @param eventID The numeric ID of a previously scheduled event.
     @return a non-zero integer value equal to the milliseconds that have passed since this event was scheduled. However, if eventID is invalid, or the event has passed, this function will return zero.
@@ -379,6 +379,22 @@ SimObject* findObject(const char* name)
    if(!obj)
       return NULL;
    return obj->findObject(name + len + 1);
+}
+
+SimObject* findObject(const ConsoleValue &value)
+{
+   if (value.type >= ConsoleValue::TypeCustomFieldStart)
+   {
+      static S32 typeObjectPtr = ConsoleBaseType::getTypeByName("TypeSimObjectSafePtr")->getTypeID();
+      const S32 realType = value.type - ConsoleValue::TypeCustomFieldStart;
+      if (realType == typeObjectPtr)
+      {
+         return static_cast<ConsoleSimObjectPtr*>(value.value.refValue)->value;
+      }
+   }
+   
+   // Fallback: normal findObject
+   return findObject(value.getTempStringValue());
 }
 
 SimObject* findObject(SimObjectId id)

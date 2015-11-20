@@ -429,12 +429,14 @@ StringTableEntry Platform::getPrefsPath(const char *file /* = NULL */)
 
 #endif
 
-   const char *company = Con::getVariable("$Game::CompanyName");
-   if(company == NULL || *company == 0)
+   ConsoleStringValuePtr companyS = Con::getVariable("$Game::CompanyName");
+   const char* company = companyS.c_str();
+   if(company == NULL || !*company)
       company = "GarageGames";
 
-   const char *appName = Con::getVariable("$Game::ProductName");
-   if(appName == NULL || *appName == 0)
+   ConsoleStringValuePtr appNameS = Con::getVariable("$Game::ProductName");
+   const char* appName = appNameS.c_str();
+   if(appName == NULL || !*appName)
       appName = TORQUE_GAME_NAME;
 
    if(file)

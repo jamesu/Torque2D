@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "gui/containers/guiRolloutCtrl.h"
 #include "gui/containers/guiScrollCtrl.h"
 
@@ -306,9 +307,9 @@ void GuiRolloutCtrl::processTick()
    if( !mIsAnimating )
    {
       if( mCollapsing && isMethod("onCollapsed") )
-         Con::executef( this, 2, "onCollapsed" );
+         Con::executef( this, "onCollapsed" );
       else if( !mCollapsing && isMethod("onExpanded") )
-         Con::executef( this, 2, "onExpanded" );
+         Con::executef( this, "onExpanded" );
 
       calculateHeights();
    }

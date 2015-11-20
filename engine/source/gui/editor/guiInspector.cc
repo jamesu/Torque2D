@@ -194,7 +194,7 @@ ConsoleMethod( GuiInspector, inspect, void, 3, 3, "(obj) Goes through the object
    if(!target)
    {
       if(dAtoi(argv[2]) > 0)
-         Con::warnf("%s::inspect(): invalid object: %s", argv[0], argv[2]);
+         Con::warnf("%s::inspect(): invalid object: %s", argv[0].getTempStringValue(), argv[2].getTempStringValue());
       
       object->clearGroups();
       return;
@@ -204,7 +204,7 @@ ConsoleMethod( GuiInspector, inspect, void, 3, 3, "(obj) Goes through the object
 }
 
 
-ConsoleMethod( GuiInspector, getInspectObject, const char*, 2, 2, "() - Returns currently inspected object\n"
+ConsoleMethod( GuiInspector, getInspectObject, ConsoleString, 2, 2, "() - Returns currently inspected object\n"
               "@return The Object's ID as a string.")
 {
    SimObject *pSimObject = object->getInspectObject();

@@ -54,7 +54,7 @@ ConsoleMethodWithDocs(SceneObjectSet, add, ConsoleVoid, 3, 0, (obj1,...))
       if(obj)
          object->addObject(obj);
       else
-         Con::printf("Set::add: Object \"%s\" doesn't exist", argv[i]);
+         Con::printf("Set::add: Object \"%s\" doesn't exist", argv[i].getTempStringValue());
    }
 }
 
@@ -70,7 +70,7 @@ ConsoleMethodWithDocs(SceneObjectSet, remove, ConsoleVoid, 3, 0, (obj1,...))
       if(obj && object->find(object->begin(),object->end(),obj) != object->end())
          object->removeObject(obj);
       else
-         Con::printf("Set::remove: Object \"%s\" does not exist in set", argv[i]);
+         Con::printf("Set::remove: Object \"%s\" does not exist in set", argv[i].getTempStringValue());
    }
 }
 
@@ -158,7 +158,7 @@ ConsoleMethodWithDocs(SceneObjectSet, isMember, ConsoleBool, 3, 3, (object))
    SceneObject *testObject = Sim::findObject<SceneObject>(argv[2]);
    if(!testObject)
    {
-      Con::printf("SceneObjectSet::isMember: %s is not an object.", argv[2]);
+      Con::printf("SceneObjectSet::isMember: %s is not an object.", argv[2].getTempStringValue());
       return false;
    }
 

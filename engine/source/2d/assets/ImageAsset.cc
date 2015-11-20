@@ -65,44 +65,48 @@ ImageAsset::FrameArea BadFrameArea(0, 0, 0, 0, 0.0f, 0.0f);
 //------------------------------------------------------------------------------
 
 ConsoleType( imageAssetPtr, TypeImageAssetPtr, sizeof(AssetPtr<ImageAsset>), ASSET_ID_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeImageAssetPtr, AssetPtr<ImageAsset> )
 
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeImageAssetPtr )
+ConsoleTypeToString( TypeImageAssetPtr )
 {
     // Fetch asset Id.
-    return (*((AssetPtr<ImageAsset>*)dptr)).getAssetId();
+    return (*((AssetPtr<ImageAsset>*)dataPtr)).getAssetId();
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeImageAssetPtr )
+
+ConsoleTypeFromConsoleValue( TypeImageAssetPtr )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
-
-        // Fetch asset pointer.
-        AssetPtr<ImageAsset>* pAssetPtr = dynamic_cast<AssetPtr<ImageAsset>*>((AssetPtrBase*)(dptr));
-
-        // Is the asset pointer the correct type?
-        if ( pAssetPtr == NULL )
-        {
-            // No, so fail.
-            Con::warnf( "(TypeImageAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
-            return;
-        }
-
-        // Set asset.
-        pAssetPtr->setAssetId( pFieldValue );
-
-        return;
-   }
-
-    // Warn.
-    Con::warnf( "(TypeImageAssetPtr) - Cannot set multiple args to a single asset." );
+	// Check we have the right sort of value here
+	if (ConsoleValue::isRefType(value.type))
+	{
+		if (value.value.refValue->isEnumerable())
+		{
+			Con::warnf( "(TypeImageAssetPtr) - Cannot set multiple args to a single asset." );
+			return;
+		}
+	}
+	
+	// Was a single argument specified?
+	// Yes, so fetch field value.
+	const char* pFieldValue = value.getTempStringValue();
+	
+	// Fetch asset pointer.
+	AssetPtr<ImageAsset>* pAssetPtr = dynamic_cast<AssetPtr<ImageAsset>*>((AssetPtrBase*)(dataPtr));
+	
+	// Is the asset pointer the correct type?
+	if ( pAssetPtr == NULL )
+	{
+		// No, so fail.
+		Con::warnf( "(TypeImageAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
+		return;
+	}
+	
+	// Set asset.
+	pAssetPtr->setAssetId( pFieldValue );
 }
 
 //------------------------------------------------------------------------------
@@ -1148,7 +1152,8 @@ void ImageAsset::calculateImage( void )
         TextureFilterMode filterMode = FILTER_NEAREST;
 
         // No, so fetch the global filter.
-        const char* pGlobalFilter = Con::getVariable( "$pref::T2D::imageAssetGlobalFilterMode" );
+		  ConsoleStringValuePtr pGlobalFilterS = Con::getVariable( "$pref::T2D::imageAssetGlobalFilterMode" );
+        const char* pGlobalFilter = pGlobalFilterS.c_str();
 
         // Fetch the global filter mode.
         if ( pGlobalFilter != NULL && dStrlen(pGlobalFilter) > 0 )
@@ -1380,9 +1385,9 @@ void ImageAsset::calculateExplicitMode( void )
 
 //------------------------------------------------------------------------------
 
-bool ImageAsset::setFilterMode( void* obj, const char* data )
+bool ImageAsset::setFilterMode( void *obj, const ConsoleValuePtr data )
 {
-    static_cast<ImageAsset*>(obj)->setFilterMode(getFilterModeEnum(data));
+    static_cast<ImageAsset*>(obj)->setFilterMode(getFilterModeEnum(data.getTempStringValue()));
     return false;
 }
 

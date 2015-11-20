@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "torqueConfig.h"
+#include "console/console.h"
 #include "console/consoleInternal.h"
 #include "debug/profiler.h"
 #include "graphics/dgl.h"

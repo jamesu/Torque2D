@@ -34,7 +34,7 @@ ConsoleMethodWithDocs( SimComponent, addComponents, ConsoleBool, 3, 64, ( compOb
       if(obj)
          object->addComponent(obj);
       else
-         Con::printf("SimComponent::addComponents - Invalid Component Object \"%s\"", argv[i]);
+         Con::printf("SimComponent::addComponents - Invalid Component Object \"%s\"", argv[i].getTempStringValue());
    }
    return true;
 }
@@ -51,7 +51,7 @@ ConsoleMethodWithDocs( SimComponent, removeComponents, ConsoleBool, 3, 64, ( com
       if(obj)
          object->removeComponent(obj);
       else
-         Con::printf("SimComponent::removeComponents - Invalid Component Object \"%s\"", argv[i]);
+         Con::printf("SimComponent::removeComponents - Invalid Component Object \"%s\"", argv[i].getTempStringValue());
    }
    return true;
 }

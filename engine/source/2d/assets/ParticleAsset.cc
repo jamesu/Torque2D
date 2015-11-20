@@ -80,43 +80,47 @@ const char* ParticleAsset::getParticleAssetLifeModeDescription( const ParticleAs
 
 ConsoleType( particleAssetPtr, TypeParticleAssetPtr, sizeof(AssetPtr<ParticleAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeParticleAssetPtr, AssetPtr<ParticleAsset> )
+
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeParticleAssetPtr )
+ConsoleTypeToString( TypeParticleAssetPtr )
 {
     // Fetch asset Id.
-    return (*((AssetPtr<ParticleAsset>*)dptr)).getAssetId();
+    return (*((AssetPtr<ParticleAsset>*)dataPtr)).getAssetId();
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeParticleAssetPtr )
+ConsoleTypeFromConsoleValue( TypeParticleAssetPtr )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
+	// Check we have the right sort of value here
+	if (ConsoleValue::isRefType(value.type))
+	{
+		if (value.value.refValue->isEnumerable())
+		{
+			Con::warnf( "(TypeParticleAssetPtr) - Cannot set multiple args to a single asset." );
+			return;
+		}
+	}
+	
+	// Fetch field value.
+	const char* pFieldValue = value.getTempStringValue();
+	
+	// Fetch asset pointer.
+	AssetPtr<ParticleAsset>* pAssetPtr = dynamic_cast<AssetPtr<ParticleAsset>*>((AssetPtrBase*)(dataPtr));
+	
+	// Is the asset pointer the correct type?
+	if ( pAssetPtr == NULL )
+	{
+		// No, so fail.
+		Con::warnf( "(TypeParticleAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
+		return;
+	}
+	
+	// Set asset.
+	pAssetPtr->setAssetId( pFieldValue );
 
-        // Fetch asset pointer.
-        AssetPtr<ParticleAsset>* pAssetPtr = dynamic_cast<AssetPtr<ParticleAsset>*>((AssetPtrBase*)(dptr));
-
-        // Is the asset pointer the correct type?
-        if ( pAssetPtr == NULL )
-        {
-            // No, so fail.
-            Con::warnf( "(TypeParticleAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
-            return;
-        }
-
-        // Set asset.
-        pAssetPtr->setAssetId( pFieldValue );
-
-        return;
-   }
-
-    // Warn.
-    Con::warnf( "(TypeParticleAssetPtr) - Cannot set multiple args to a single asset." );
 }
 
 //------------------------------------------------------------------------------

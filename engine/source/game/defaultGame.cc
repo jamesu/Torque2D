@@ -128,14 +128,14 @@ bool initializeLibraries()
     
 #if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_ANDROID) || defined(TORQUE_OS_EMSCRIPTEN)
    //3MB default is way too big for iPhone!!!
-#ifdef	TORQUE_SHIPPING
-    FrameAllocator::init(256 * 1024);	//256KB for now... but let's test and see!
+#ifdef   TORQUE_SHIPPING
+    FrameAllocator::init(256 * 1024);   //256KB for now... but let's test and see!
 #else
-    FrameAllocator::init(512 * 1024);	//512KB for now... but let's test and see!
-#endif	//TORQUE_SHIPPING
+    FrameAllocator::init(512 * 1024);   //512KB for now... but let's test and see!
+#endif   //TORQUE_SHIPPING
 #else
     FrameAllocator::init(3 << 20);      // 3 meg frame allocator buffer
-#endif	//TORQUE_OS_IOS
+#endif   //TORQUE_OS_IOS
 
     TextureManager::create();
     ResManager::create();
@@ -149,7 +149,7 @@ bool initializeLibraries()
 
 #ifdef TORQUE_OS_IOS
     ResourceManager->registerExtension(".pvr", constructBitmapPVR);
-#endif	
+#endif   
    
     Platform::initConsole();
     NetStringTable::create();
@@ -325,11 +325,11 @@ void shutdownGame()
 {
     // Perform pre-exit callback.
     if( Con::isFunction("onPreExit") )
-        Con::executef(1, "onPreExit");
+        Con::executef("onPreExit");
 
     // Perform the exit callback.
     if( Con::isFunction("onExit") )
-        Con::executef(1, "onExit");
+        Con::executef("onExit");
 
     // Unregister the module database.
     ModuleDatabase.unregisterObject();
@@ -359,8 +359,8 @@ bool DefaultGame::mainInitialize(int argc, const char **argv)
     { 
         //Using printf cos Con:: is not around here.
         printf("\nApplication failed to start! Make sure your resources are in the correct place.");
-        shutdownGame();
-        shutdownLibraries();
+        //shutdownGame();
+        //shutdownLibraries();
         return false;
     }
 
@@ -368,7 +368,7 @@ bool DefaultGame::mainInitialize(int argc, const char **argv)
     setProcessTicks( true );
 
     
-#ifdef TORQUE_OS_IOS	
+#ifdef TORQUE_OS_IOS   
     
     // Torque 2D does not have true, GameKit networking support. 
     // The old socket network code is untested, undocumented and likely broken. 
@@ -451,10 +451,10 @@ void DefaultGame::advanceTime( F32 timeDelta )
 //--------------------------------------------------------------------------
 
 void DefaultGame::mainLoop( void )
-{	
+{   
 #ifdef TORQUE_OS_IOS_PROFILE
     iPhoneProfilerStart("MAIN_LOOP");
-#endif	
+#endif   
 #ifdef TORQUE_OS_ANDROID_PROFILE
     AndroidProfilerStart("MAIN_LOOP");
 #endif
@@ -613,7 +613,7 @@ AndroidProfilerStart("SERVER_PROC");
 #ifdef TORQUE_OS_ANDROID_PROFILE
     AndroidProfilerEnd("SERVER_PROC");
 #endif
-    PROFILE_END();	
+    PROFILE_END();   
 
    PROFILE_START(ServerNetProcess);
    // only send packets if a tick happened
@@ -646,7 +646,7 @@ AndroidProfilerStart("SERVER_PROC");
 #endif
 
    PROFILE_START(TickableAdvanceTime);
-   Tickable::advanceTime(elapsedTime);	
+   Tickable::advanceTime(elapsedTime);   
    PROFILE_END();
 
    // Milliseconds between audio updates.
@@ -675,7 +675,7 @@ AndroidProfilerStart("SERVER_PROC");
     
    if(Canvas && TextureManager::mDGLRender)
    {
-#ifdef TORQUE_OS_IOS_PROFILE	   
+#ifdef TORQUE_OS_IOS_PROFILE      
 iPhoneProfilerStart("GL_RENDER");
 #endif
 #ifdef TORQUE_OS_ANDROID_PROFILE
@@ -747,10 +747,10 @@ void DefaultGame::processScreenTouchEvent(ScreenTouchEvent * mEvent)
 
 void DefaultGame::processConsoleEvent(ConsoleEvent *event)
 {
-    char *argv[2];
-    argv[0] = (char*)"eval";
-    argv[1] = event->data;
-    Sim::postCurrentEvent(Sim::getRootGroup(), new SimConsoleEvent(2, const_cast<const char**>(argv), false));
+    ConsoleValuePtr argv[2];
+    argv[0].setSTE(StringTable->insert("eval"));
+    argv[1].setString(event->data);
+    Sim::postCurrentEvent(Sim::getRootGroup(), new SimConsoleEvent(2, argv, false));
 }
 
 //--------------------------------------------------------------------------

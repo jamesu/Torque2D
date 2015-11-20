@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2013 GarageGames, LLC
+// Copyright (c) 2012 GarageGames, LLC
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -24,9 +24,14 @@
 #define _CODEBLOCK_H_
 
 #include "console/compiler.h"
-#include "console/consoleParser.h"
+#include "collection/vector.h"
+#include "console/consoleDictionary.h"
 
 class Stream;
+class ConsoleValue;
+class ConsoleValuePtr;
+class CodeBlockEvalState;
+class CodeBlockFunction;
 
 
 /// Core TorqueScript code management class.
@@ -35,15 +40,19 @@ class Stream;
 class CodeBlock
 {
 private:
-   static CodeBlock* smCodeBlockList;
-   static CodeBlock* smCurrentCodeBlock;
-   
+    static CodeBlock *smCodeBlockList;
 public:
-   static U32                       smBreakLineCount;
-   static bool                      smInFunction;
-   static Compiler::ConsoleParser * smCurrentParser;
+    static CodeBlock *smCurrentCodeBlock;
+    
+public:
+   static bool                  smInFunction;
+   static FunctionDeclStmtNode *smCurrentFunctionList;
+   static FunctionDeclStmtNode *smFunctionListHead;
+   
+   static CodeBlockFunction *smCurrentFunction;
+   static CodeBlockFunction *smCurrentCodeblockFunction;
 
-   static CodeBlock* getCurrentBlock()
+   static CodeBlock *getCurrentBlock()
    {
       return smCurrentCodeBlock;
    }
@@ -58,36 +67,37 @@ public:
    static StringTableEntry getCurrentCodeBlockModName();
    static CodeBlock *find(StringTableEntry);
 
+   // Info regarding functions
+   Vector<ConsoleValuePtr> constants;
+   Vector<CodeBlockFunction*> functions;
+
    CodeBlock();
    ~CodeBlock();
+
+   U32 *code;
+   U32 codeSize;
 
    StringTableEntry name;
    StringTableEntry fullPath;
    StringTableEntry modPath;
-
-   char *globalStrings;
-   char *functionStrings;
-
-   F64 *globalFloats;
-   F64 *functionFloats;
-
-   U32 codeSize;
-   U32 *code;
 
    U32 refCount;
    U32 lineBreakPairCount;
    U32 *lineBreakPairs;
    U32 breakListSize;
    U32 *breakList;
+
    CodeBlock *nextFile;
    StringTableEntry mRoot;
-
 
    void addToCodeList();
    void removeFromCodeList();
    void calcBreakList();
    void clearAllBreaks();
    void setAllBreaks();
+   void dumpOpcodes( CodeBlockEvalState *state );
+
+   void mergeLocalVars( CodeBlockFunction *src, CodeBlockFunction *dest, Dictionary *env, bool pruneEnv );
 
    /// Returns the first breakable line or 0 if none was found.
    /// @param lineNumber The one based line number.
@@ -95,7 +105,7 @@ public:
 
    void clearBreakpoint(U32 lineNumber);
 
-   /// Set a OP_BREAK instruction on a line. If a break 
+   /// Set a OP_BREAK instruction on a line. If a break
    /// is not possible on that line it returns false.
    /// @param lineNumber The one based line number.
    bool setBreakpoint(U32 lineNumber);
@@ -111,24 +121,24 @@ public:
    void decRefCount();
 
    /// Compiles and executes a block of script storing the compiled code in this
-   /// CodeBlock. If there is no filename breakpoints will not be generated and 
-   /// the CodeBlock will not be added to the linked list of loaded CodeBlocks. 
+   /// CodeBlock. If there is no filename breakpoints will not be generated and
+   /// the CodeBlock will not be added to the linked list of loaded CodeBlocks.
    /// Note that if the script contains no executable statements the CodeBlock
-   /// will delete itself on return an empty string. The return string is any 
+   /// will delete itself on return an empty string. The return string is any
    /// result of the code executed, if any, or an empty string.
    ///
-   /// @param fileName The file name, including path and extension, for the 
+   /// @param fileName The file name, including path and extension, for the
    /// block of code or an empty string.
    /// @param script The script code to compile and execute.
    /// @param noCalls Skips calling functions from the script.
-   /// @param setFrame A zero based index of the stack frame to execute the code 
+   /// @param setFrame A zero based index of the stack frame to execute the code
    /// with, zero being the top of the stack. If the the index is
    /// -1 a new frame is created. If the index is out of range the
    /// top stack frame is used.
-   const char *compileExec(StringTableEntry fileName, const char *script, 
-      bool noCalls, int setFrame = -1 );
+   ConsoleValuePtr compileExec(StringTableEntry fileName, const char *script,
+                               bool noCalls, S32 setFrame = -1 );
 
-   /// Executes the existing code in the CodeBlock. The return string is any 
+   /// Executes the existing code in the CodeBlock. The return string is any
    /// result of the code executed, if any, or an empty string.
    ///
    /// @param offset The instruction offset to start executing from.
@@ -138,14 +148,18 @@ public:
    /// zero to execute code outside of a function.
    /// @param argv The function parameter list.
    /// @param noCalls Skips calling functions from the script.
-   /// @param setFrame A zero based index of the stack frame to execute the code 
-   /// with, zero being the top of the stack. If the the index is
-   /// -1 a new frame is created. If the index is out of range the
-   /// top stack frame is used.
    /// @param packageName The code package name or null.
-   const char *exec(U32 offset, const char *fnName, Namespace *ns, U32 argc, 
-      const char **argv, bool noCalls, StringTableEntry packageName, 
-      S32 setFrame = -1);
+   ConsoleValuePtr exec(U32 offset, const char *fnName, Namespace *ns, U32 argc,
+                        ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName);
+
+
+   static void execBlock(CodeBlockEvalState *state);
+   void execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv);
+
+   void execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName);
+
+   static StringTableEntry getDSOPath(const char *scriptPath);
+   static bool compile(const char *filename);
 };
 
 #endif

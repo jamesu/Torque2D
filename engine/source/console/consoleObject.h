@@ -188,8 +188,8 @@ class AbstractClassRep
 
 public:
     /// This is a function pointer typedef to support get/set callbacks for fields
-    typedef bool (*SetDataNotify)( void *obj, const char *data );
-    typedef const char *(*GetDataNotify)( void *obj, const char *data );
+    typedef bool (*SetDataNotify)( void *obj, const ConsoleValuePtr data );
+    typedef ConsoleValuePtr (*GetDataNotify)( void *obj, const ConsoleValuePtr data );
 
     /// This is a function pointer typedef to support optional writing for fields.
     typedef bool (*WriteDataNotify)( void* obj, const char* pFieldName );
@@ -231,7 +231,6 @@ public:
         dsize_t        offset;        ///< Memory offset from beginning of class for this field.
         S32            elementCount;  ///< Number of elements, if this is an array.
         EnumTable *    table;         ///< If this is an enum, this points to the table defining it.
-        BitSet32       flag;          ///< Stores various flags
         ConsoleTypeValidator *validator;     ///< Validator, if any.
         SetDataNotify  setDataFn;     ///< Set data notify Fn
         GetDataNotify  getDataFn;     ///< Get data notify Fn
@@ -421,7 +420,7 @@ public:
 //-----------------------------------------------------------------------------
 
 // Forward declarations so they can be used in the class
-const char *defaultProtectedGetFn( void *obj, const char *data );
+ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr data );
 bool defaultProtectedWriteFn( void* obj, StringTableEntry pFieldName );
 
 //-----------------------------------------------------------------------------
@@ -789,10 +788,8 @@ inline bool ConsoleObject::setField(const char *fieldName, const char *value)
         myField->type,
         (void *) (((const char *)(this)) + myField->offset),
         0,
-        1,
-        &value,
-        myField->table,
-        myField->flag);
+        value,
+        myField->table);
 
     return true;
 }
@@ -892,14 +889,14 @@ inline bool& ConsoleObject::getDynamicGroupExpand()
 
 //-----------------------------------------------------------------------------
 
-inline bool defaultProtectedSetFn( void *obj, const char *data )
+inline bool defaultProtectedSetFn( void *obj, const ConsoleValuePtr data )
 {
     return true;
 }
 
 //-----------------------------------------------------------------------------
 
-inline const char *defaultProtectedGetFn( void *obj, const char *data )
+inline ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr data )
 {
     return data;
 }
@@ -913,7 +910,7 @@ inline bool defaultProtectedWriteFn( void* obj, StringTableEntry pFieldName )
 
 //-----------------------------------------------------------------------------
 
-inline bool defaultProtectedNotSetFn(void* obj, const char* data)
+inline bool defaultProtectedNotSetFn(void *obj, ConsoleValuePtr data)
 {
     return false;
 }

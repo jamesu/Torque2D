@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "graphics/splineUtil.h"
 #include "platform/platformGL.h"
 

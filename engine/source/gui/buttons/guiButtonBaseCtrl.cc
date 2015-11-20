@@ -69,9 +69,9 @@ ConsoleMethod( GuiButtonBaseCtrl, setText, void, 3, 3, "(string text) - Sets the
 
 ConsoleMethod( GuiButtonBaseCtrl, setTextID, void, 3, 3, "(string id) - Sets the text of the button to the localized string." )
 {
-    object->setTextID(argv[2]);
+    object->setTextID(argv[2].getTempStringValue());
 }
-ConsoleMethod( GuiButtonBaseCtrl, getText, const char *, 2, 2, "() - returns the text of the button.\n" 
+ConsoleMethod( GuiButtonBaseCtrl, getText, ConsoleString, 2, 2, "() - returns the text of the button.\n"
               "@return The text member of the button as a char string")
 {
    return object->getText( );
@@ -211,7 +211,7 @@ void GuiButtonBaseCtrl::onMouseEnter(const GuiEvent &event)
    setUpdate();
 
    if(mUseMouseEvents)
-      Con::executef( this, 1, "onMouseEnter" );
+      Con::executef( this, "onMouseEnter" );
 
    if(isMouseLocked())
    {
@@ -240,7 +240,7 @@ void GuiButtonBaseCtrl::onMouseLeave(const GuiEvent &)
     setUpdate();  
   
    if(mUseMouseEvents)  
-      Con::executef( this, 1, "onMouseLeave" );  
+      Con::executef( this, "onMouseLeave" );  
   
    mMouseOver = false;  
 }  
@@ -265,7 +265,7 @@ void GuiButtonBaseCtrl::onMouseUp(const GuiEvent &event)
        dSprintf(buf[0], 32, "%d", event.modifier);
        dSprintf(buf[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
        dSprintf(buf[2], 32, "%d", event.mouseClickCount);
-       Con::executef(this, 4, "onMouseUp", buf[0], buf[1], buf[2]);
+       Con::executef(this, "onMouseUp", buf[0], buf[1], buf[2]);
    }
 
    mDepressed = false;
@@ -273,7 +273,7 @@ void GuiButtonBaseCtrl::onMouseUp(const GuiEvent &event)
 
 void GuiButtonBaseCtrl::onRightMouseUp(const GuiEvent &event)
 {
-   Con::executef( this, 2, "onRightClick" );
+   Con::executef( this, "onRightClick" );
 
    Parent::onRightMouseUp( event );
 }
@@ -366,7 +366,7 @@ void GuiButtonBaseCtrl::onAction()
 
     // Provide and onClick script callback.
     if( isMethod("onClick") )
-       Con::executef( this, 2, "onClick" );
+       Con::executef( this, "onClick" );
 
     Parent::onAction();
 }

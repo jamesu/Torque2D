@@ -34,43 +34,51 @@
 
 ConsoleType( animationAssetPtr, TypeAnimationAssetPtr, sizeof(AssetPtr<AnimationAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeAnimationAssetPtr, AssetPtr<AnimationAsset> )
+
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeAnimationAssetPtr )
+ConsoleTypeToString( TypeAnimationAssetPtr )
 {
     // Fetch asset Id.
-    return (*((AssetPtr<AnimationAsset>*)dptr)).getAssetId();
+    return (*((AssetPtr<AnimationAsset>*)dataPtr)).getAssetId();
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeAnimationAssetPtr )
+ConsoleTypeFromConsoleValue( TypeAnimationAssetPtr )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
-
-        // Fetch asset pointer.
-        AssetPtr<AnimationAsset>* pAssetPtr = dynamic_cast<AssetPtr<AnimationAsset>*>((AssetPtrBase*)(dptr));
-
-        // Is the asset pointer the correct type?
-        if ( pAssetPtr == NULL )
-        {
-            // No, so fail.
-            Con::warnf( "(TypeAnimationAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
-            return;
-        }
-
-        // Set asset.
-        pAssetPtr->setAssetId( pFieldValue );
-
-        return;
+   // Check we have the right sort of value here
+   if (ConsoleValue::isRefType(value.type))
+   {
+      if (value.value.refValue->isEnumerable())
+      {
+         Con::warnf( "(TypeAnimationAssetPtr) - Cannot set multiple args to a single asset." );
+         return;
+      }
    }
-
-    // Warn.
-    Con::warnf( "(TypeAnimationAssetPtr) - Cannot set multiple args to a single asset." );
+   
+   // Yes, so fetch field value.
+   const char* pFieldValue = value.getTempStringValue();
+   
+   // Fetch asset pointer.
+   AssetPtr<AnimationAsset>* pAssetPtr = dynamic_cast<AssetPtr<AnimationAsset>*>((AssetPtrBase*)(dataPtr));
+   
+   // Is the asset pointer the correct type?
+   if ( pAssetPtr == NULL )
+   {
+      // No, so fail.
+      Con::warnf( "(TypeAnimationAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
+      return;
+   }
+   
+   // Set asset.
+   pAssetPtr->setAssetId( pFieldValue );
+   
+   return;
+   
+   // Warn.
+   Con::warnf( "(TypeAnimationAssetPtr) - Cannot set multiple args to a single asset." );
 }
 
 //------------------------------------------------------------------------------
@@ -163,9 +171,15 @@ void AnimationAsset::copyTo(SimObject* object)
 
     // Are we in named cells mode?
     if ( !pAsset->getNamedCellsMode() )
-        pAsset->setAnimationFrames( Con::getData( TypeS32Vector, (void*)&getSpecifiedAnimationFrames(), 0 ) );
+    {
+       ConsoleStringValuePtr value = Con::getData( TypeS32Vector, (void*)&getSpecifiedAnimationFrames(), 0 );
+       pAsset->setAnimationFrames( value.c_str() );
+    }
     else
-        pAsset->setNamedAnimationFrames( Con::getData( TypeStringTableEntryVector, (void*)&getSpecifiedNamedAnimationFrames(), 0 ) );
+    {
+       ConsoleStringValuePtr value = Con::getData( TypeStringTableEntryVector, (void*)&getSpecifiedNamedAnimationFrames(), 0 );
+       pAsset->setNamedAnimationFrames( value.c_str() );
+    }
 
     pAsset->setAnimationTime( getAnimationTime() );
     pAsset->setAnimationCycle( getAnimationCycle() );

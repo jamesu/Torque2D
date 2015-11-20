@@ -51,11 +51,11 @@ public:
    }
    void onMouseDown(const GuiEvent &)
    {
-      Con::executef(this, 1, "click");
+      Con::executef(this, "click");
    }
    bool onKeyDown(const GuiEvent &)
    {
-      Con::executef(this, 1, "click");
+      Con::executef(this, "click");
       return true;
    }
    DECLARE_CONOBJECT(GuiFadeinBitmapCtrl);

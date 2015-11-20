@@ -36,7 +36,7 @@ ConsoleFunctionGroupBegin( TaggedStrings, "Functions dealing with tagging/detagg
 */
 ConsoleFunctionWithDocs(detag, ConsoleString, 2, 2, ( tagID ))
 {
-   TORQUE_UNUSED( argc );
+   TORQUE_UNUSED( argc );/* TOFIX
    if(argv[1][0] == StringTagPrefixByte)
    {
       const char *word = dStrchr(argv[1], ' ');
@@ -47,7 +47,8 @@ ConsoleFunctionWithDocs(detag, ConsoleString, 2, 2, ( tagID ))
       return ret;
    }
    else
-      return argv[1];
+      return argv[1].getTempStringValue();*/
+	return "";
 }
 
 /*! Use the getTag function to retrieve the tag ID associated with a previously tagged string.
@@ -56,7 +57,7 @@ ConsoleFunctionWithDocs(detag, ConsoleString, 2, 2, ( tagID ))
 */
 ConsoleFunctionWithDocs(getTag, ConsoleString, 2, 2, ( taggedString ))
 {
-   TORQUE_UNUSED( argc );
+   TORQUE_UNUSED( argc );/* TOFIX
    if(argv[1][0] == StringTagPrefixByte)
    {
       const char * space = dStrchr(argv[1], ' ');
@@ -74,7 +75,9 @@ ConsoleFunctionWithDocs(getTag, ConsoleString, 2, 2, ( taggedString ))
       return(ret);
    }
    else
-      return(argv[1]);
+      return(argv[1]);*/
+	
+	return "";
 }
 
 ConsoleFunctionGroupEnd( TaggedStrings );

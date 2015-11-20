@@ -35,7 +35,7 @@ ConsoleMethodWithDocs(Taml, setFormat, ConsoleVoid, 3, 3, (format))
     if ( formatMode == Taml::InvalidFormat )
     {
         // No, so warn.
-        Con::warnf( "Taml::setFormat() - Invalid format mode used: '%s'.", argv[2] );
+        Con::warnf( "Taml::setFormat() - Invalid format mode used: '%s'.", argv[2].getTempStringValue() );
         return;
     }
 
@@ -224,7 +224,7 @@ ConsoleMethodWithDocs(Taml, write, ConsoleBool, 4, 4, (object, filename))
     if ( pSimObject == NULL )
     {
         // No, so warn.
-        Con::warnf( "Taml::write() - Could not find object '%s' to write to file '%s'.", argv[2], pFilename );
+        Con::warnf( "Taml::write() - Could not find object '%s' to write to file '%s'.", argv[2].getTempStringValue(), pFilename );
         return false;
     }
 
@@ -280,7 +280,7 @@ ConsoleFunctionWithDocs(TamlWrite, ConsoleBool, 3, 5, (object, filename, [format
     if ( pSimObject == NULL )
     {
         // No, so warn.
-        Con::warnf( "TamlWrite() - Could not find object '%s' to write to file '%s'.", argv[2], pFilename );
+        Con::warnf( "TamlWrite() - Could not find object '%s' to write to file '%s'.", argv[2].getTempStringValue(), pFilename );
         return false;
     }
 

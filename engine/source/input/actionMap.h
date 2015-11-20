@@ -62,7 +62,7 @@ class ActionMap : public SimObject
          HasScale    = BIT(1),   ///< Scaled input.
          HasDeadZone = BIT(2),   ///< Dead zone is present.
          Inverted    = BIT(3),   ///< Input is inverted.
-		 NonLinear   = BIT(4),
+         NonLinear   = BIT(4),
          BindCmd     = BIT(5)    ///< Bind a console command to this.
       };
 
@@ -147,7 +147,7 @@ class ActionMap : public SimObject
 
    static bool createEventDescriptor(const char* pEventString, EventDescriptor* pDescriptor);
 
-   bool processBind(const U32 argc, const char** argv, SimObject* object = NULL);
+   bool processBind(const U32 argc, ConsoleValuePtr argv[], SimObject* object = NULL);
    bool processBindCmd(const char *device, const char *action, const char *makeCmd, const char *breakCmd);
    bool processUnbind(const char *device, const char *action, SimObject* object = NULL);
 

@@ -100,5 +100,5 @@ void SpriteBase::copyTo(SimObject* object)
 void SpriteBase::onAnimationEnd( void )
 {
     // Do script callback.
-    Con::executef( this, 1, "onAnimationEnd" );
+    Con::executef( this, "onAnimationEnd" );
 }

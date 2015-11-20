@@ -71,7 +71,7 @@ ConsoleMethod(DbgFileView, setCurrentLine, void, 4, 4, "(int line, bool selected
    object->setCurrentLine(dAtoi(argv[2]), dAtob(argv[3]));
 }
 
-ConsoleMethod(DbgFileView, getCurrentLine, const char *, 2, 2, "()"
+ConsoleMethod(DbgFileView, getCurrentLine, ConsoleString, 2, 2, "()"
               "Get the currently executing file and line, if any.\n\n"
               "@returns A string containing the file, a tab, and then the line number."
               " Use getField() with this.")
@@ -552,10 +552,10 @@ void DbgFileView::onPreRender()
    {
       //send the query only when the var changes
       if (dStricmp(oldVar, mMouseOverVariable))
-			Con::executef(2, "DbgSetCursorWatch", mMouseOverVariable);
+			Con::executef("DbgSetCursorWatch", mMouseOverVariable);
    }
 	else
-		Con::executef(2, "DbgSetCursorWatch", "");
+		Con::executef("DbgSetCursorWatch", "");
 }
 
 void DbgFileView::onMouseDown(const GuiEvent &event)
@@ -580,9 +580,9 @@ void DbgFileView::onMouseDown(const GuiEvent &event)
          if (mFileView[cell.y].breakPosition)
          {
             if (mFileView[cell.y].breakOnLine)
-               Con::executef(this, 2, "onRemoveBreakPoint", itoa(cell.y + 1));
+               Con::executef(this, "onRemoveBreakPoint", itoa(cell.y + 1));
             else
-               Con::executef(this, 2, "onSetBreakPoint", itoa(cell.y + 1));
+               Con::executef(this, "onSetBreakPoint", itoa(cell.y + 1));
          }
       }
       else
@@ -595,7 +595,7 @@ void DbgFileView::onMouseDown(const GuiEvent &event)
          //open the file view
          if (mSelectedCell.y == prevSelected.y && doubleClick && mMouseOverVariable[0])
          {
-            Con::executef(this, 2, "onSetWatch", mMouseOverVariable);
+            Con::executef(this, "onSetWatch", mMouseOverVariable);
             mBlockStart = mMouseVarStart;
             mBlockEnd = mMouseVarEnd;
          }

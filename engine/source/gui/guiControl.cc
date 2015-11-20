@@ -805,7 +805,7 @@ bool GuiControl::onWake()
    // Only invoke script callbacks if we have a namespace in which to do so
    // This will suppress warnings
    if( isMethod("onWake") )
-      Con::executef(this, 1, "onWake");
+      Con::executef(this, "onWake");
 
    return true;
 }
@@ -825,7 +825,7 @@ void GuiControl::onSleep()
    // Only invoke script callbacks if we have a namespace in which to do so
    // This will suppress warnings
    if( isMethod("onSleep") )
-      Con::executef(this, 1, "onSleep");
+      Con::executef(this, "onSleep");
 
    // Set Flag
    mAwake = false;
@@ -985,25 +985,28 @@ void GuiControl::setFloatVariable(F32 value)
       Con::setFloatVariable(mConsoleVariable, value);
 }
 
-const char * GuiControl::getVariable()
+ConsoleStringValuePtr GuiControl::getVariable()
 {
    if (mConsoleVariable[0])
       return Con::getVariable(mConsoleVariable);
-   else return NULL;
+   else
+      return ConsoleStringValuePtr();
 }
 
 S32 GuiControl::getIntVariable()
 {
    if (mConsoleVariable[0])
       return Con::getIntVariable(mConsoleVariable);
-   else return 0;
+   else
+      return 0;
 }
 
 F32 GuiControl::getFloatVariable()
 {
    if (mConsoleVariable[0])
       return Con::getFloatVariable(mConsoleVariable);
-   else return 0.0f;
+   else
+      return 0.0f;
 }
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- //
@@ -1418,7 +1421,7 @@ void GuiControl::onAction()
       execConsoleCallback();
    }
    else
-      Con::executef(this, 1, "onAction");
+      Con::executef(this, "onAction");
 }
 
 void GuiControl::onMessage(GuiControl *sender, S32 msg)
@@ -1444,7 +1447,7 @@ void GuiControl::onDialogPush()
 {
    // Notify Script.
    if( isMethod("onDialogPush") )
-      Con::executef(this, 1, "onDialogPush");
+      Con::executef(this, "onDialogPush");
 
 }
 
@@ -1452,7 +1455,7 @@ void GuiControl::onDialogPop()
 {
    // Notify Script.
    if( isMethod("onDialogPop") )
-      Con::executef(this, 1, "onDialogPop");
+      Con::executef(this, "onDialogPop");
 }
 
 //------------------------------------------------------------------------------

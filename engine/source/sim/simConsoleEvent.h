@@ -38,7 +38,7 @@ class SimConsoleEvent : public SimEvent
 {
 protected:
    S32 mArgc;
-   char **mArgv;
+   ConsoleValuePtr *mArgv;
    bool mOnObject;
   public:
 
@@ -55,7 +55,7 @@ protected:
    ///
    /// @see Con::execute(S32 argc, const char *argv[])
    /// @see Con::execute(SimObject *object, S32 argc, const char *argv[])
-   SimConsoleEvent(S32 argc, const char **argv, bool onObject);
+   SimConsoleEvent(S32 argc, ConsoleValuePtr argv[], bool onObject);
 
    ~SimConsoleEvent();
    virtual void process(SimObject *object);

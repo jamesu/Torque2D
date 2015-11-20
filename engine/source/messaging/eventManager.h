@@ -113,9 +113,9 @@ public:
    /// @{
 
    /// Sets the message queue.
-   static bool setMessageQueue( void* obj, const char* data )
+   static bool setMessageQueue( void* obj, ConsoleValuePtr data )
    {
-      static_cast<EventManager*>( obj )->setMessageQueue( data );
+      static_cast<EventManager*>( obj )->setMessageQueue( data.getTempStringValue() );
       return false;
    };
 
@@ -176,7 +176,7 @@ public:
    };
 
    /// Retrieves an EventManager.
-   static EventManager* getEventManager( const char* name )
+   static EventManager* getEventManager( const char *name )
    {
       StringTableEntry queue = StringTable->insert( name );
       for( Vector<EventManager*>::iterator iter = smEventManagers.begin(); iter != smEventManagers.end(); iter++ )

@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 #include "PNGImage.h"
+#include "console/console.h"
 #include "math/mPoint.h"
 #include "graphics/gBitmap.h"
 #include "platform/platformGL.h"

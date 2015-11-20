@@ -369,7 +369,7 @@ ConsoleMethodWithDocs(ParticleAsset, addEmitter, ConsoleBool, 3, 3, (emitterId))
     if ( pEmitter == NULL )
     {
         // No, so warn.
-        Con::warnf( "ParticleAsset::addEmitter() - Could not find the emitter '%s'.", argv[2] );
+        Con::warnf( "ParticleAsset::addEmitter() - Could not find the emitter '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -391,7 +391,7 @@ ConsoleMethodWithDocs(ParticleAsset, removeEmitter, ConsoleBool, 3, 4, (emitterI
     if ( pEmitter == NULL )
     {
         // No, so warn.
-        Con::warnf( "ParticleAsset::removeEmitter() - Could not find the emitter '%s'.", argv[2] );
+        Con::warnf( "ParticleAsset::removeEmitter() - Could not find the emitter '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 

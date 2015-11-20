@@ -134,7 +134,7 @@ void SimComponent::onRemove()
 
 //////////////////////////////////////////////////////////////////////////
 
-bool SimComponent::processArguments(S32 argc, const char **argv)
+bool SimComponent::processArguments(S32 argc, ConsoleValuePtr argv[])
 {
    for(S32 i = 0; i < argc; i++)
    {
@@ -142,7 +142,7 @@ bool SimComponent::processArguments(S32 argc, const char **argv)
       if(obj)
          addComponent(obj);
       else
-         Con::printf("SimComponent::processArguments - Invalid Component Object \"%s\"", argv[i]);
+         Con::printf("SimComponent::processArguments - Invalid Component Object \"%s\"", argv[i].getTempStringValue());
    }
    return true;
 }
@@ -210,13 +210,13 @@ bool SimComponent::removeComponent( SimComponent *component )
 
 bool SimComponent::onComponentAdd(SimComponent *target)
 {
-   Con::executef(this, 2, "onComponentAdd", Con::getIntArg(target->getId()));
+   Con::executef(this, "onComponentAdd", Con::getIntArg(target->getId()));
    return true;
 }
 
 void SimComponent::onComponentRemove(SimComponent *target)
 {
-   Con::executef(this, 2, "onComponentRemove", Con::getIntArg(target->getId()));
+   Con::executef(this, "onComponentRemove", Con::getIntArg(target->getId()));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -273,16 +273,17 @@ void SimComponent::write(Stream &stream, U32 tabStop, U32 flags /* = 0 */)
 
 //////////////////////////////////////////////////////////////////////////
 
-bool SimComponent::callMethodOnComponents( U32 argc, const char* argv[], const char** result )
+bool SimComponent::callMethodOnComponents( S32 argc, ConsoleValuePtr argv[], ConsoleValuePtr *result )
 {
-   const char *cbName = StringTable->insert(argv[0]);
+   ConsoleValuePtr cbName;
+   cbName.setSTE(StringTable->insert(argv[0]));
 
    if (isEnabled())
    {
-      if(isMethod(cbName))
+      if(isMethod(cbName.getSTEStringValue()))
       {
          // This component can handle the given method
-         *result = Con::execute( this, argc, argv, true );
+         result->setValue(Con::execute( this, argc, argv,  true ));
          return true;
       }
       else if( getComponentCount() > 0 )
@@ -292,7 +293,7 @@ bool SimComponent::callMethodOnComponents( U32 argc, const char* argv[], const c
          VectorPtr<SimComponent *>&componentList = lockComponentList();
          for( SimComponentIterator nItr = (componentList.end()-1);  nItr >= componentList.begin(); nItr-- )
          {
-            argv[0] = cbName;
+            argv[0].setValue(cbName);
 
             SimComponent *pComponent = (*nItr);
             AssertFatal( pComponent, "SimComponent::callMethodOnComponents - NULL component in list!" );

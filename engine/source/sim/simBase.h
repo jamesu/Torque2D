@@ -124,6 +124,7 @@ class SimManager;
 class Namespace;
 class BitStream;
 class Stream;
+class ConsoleValue;
 
 typedef U32 SimTime;
 
@@ -162,6 +163,7 @@ namespace Sim
 
    SimObject* findObject(SimObjectId);
    SimObject* findObject(const char* name);
+   SimObject* findObject(const ConsoleValue &value);
    template<class T> inline bool findObject(SimObjectId id,T*&t)
    {
       t = dynamic_cast<T*>(findObject(id));
@@ -172,6 +174,11 @@ namespace Sim
       t = dynamic_cast<T*>(findObject(pObjectName));
       return t != NULL;
    }
+   template<class T> inline bool findObject(const ConsoleValue &value,T*&t)
+   {
+      t = dynamic_cast<T*>(findObject(value));
+      return t != NULL;
+   }
    template<class T> inline T* findObject(SimObjectId id)
    {
        return dynamic_cast<T*>(findObject(id));
@@ -179,6 +186,10 @@ namespace Sim
    template<class T> inline T* findObject(const char* pObjectName)
    {
        return dynamic_cast<T*>(findObject(pObjectName));
+   }
+   template<class T> inline T* findObject(const ConsoleValue &value)
+   {
+      return dynamic_cast<T*>(findObject(value));
    }
 
    void advanceToTime(SimTime time);
@@ -231,26 +242,45 @@ namespace Sim
    DatablockConsoleType( T##Ptr, Type##T##Ptr, sizeof(T*), T )
 
 #define IMPLEMENT_SETDATATYPE(T) \
-   ConsoleSetType( Type##T##Ptr ) \
+   ConsoleTypeFromConsoleValue( Type##T##Ptr ) \
    {                                                                                                 \
-      if (argc == 1) {                                                                               \
-         *reinterpret_cast<T**>(dptr) = NULL;                                                        \
-         if (argv[0] && argv[0][0] && !Sim::findObject(argv[0],*reinterpret_cast<T**>(dptr)))        \
-            Con::printf("Object '%s' is not a member of the '%s' data block class", argv[0], #T);    \
+      if (ConsoleValue::isRefType(value.type)) { \
+         if (value.value.refValue->isEnumerable()) \
+         { \
+            Con::warnf("(%s) does not accept multiple parameters", #T); \
+            return; \
+         } \
+      } \
+      *reinterpret_cast<T**>(dataPtr) = NULL;                                                        \
+      if (!Sim::findObject(value, *reinterpret_cast<T**>(dataPtr))) {      \
+          Con::printf("Object '%s' is not a member of the '%s' data block class", value.getTempStringValue(), #T);    \
       }                                                                                              \
-      else                                                                                           \
-         Con::printf("Cannot set multiple args to a single pointer.");                               \
    }
 
 #define IMPLEMENT_GETDATATYPE(T) \
-   ConsoleGetType( Type##T##Ptr ) \
+   ConsoleTypeToString( Type##T##Ptr ) \
    {                                                                                   \
-      T** obj = reinterpret_cast<T**>(dptr);                                           \
+      T** obj = reinterpret_cast<T**>(dataPtr);                                           \
       char* returnBuffer = Con::getReturnBuffer(16);                                   \
       dSprintf(returnBuffer, 16, "%s", *obj ? (*obj)->getIdString() : "");             \
       return returnBuffer;                                                             \
    }
 
 //---------------------------------------------------------------------------
+
+
+template< typename T >
+struct ConsoleUnmarshallData< T* >
+{
+   T* operator()( ConsoleValuePtr &ref ) const
+   {
+      return dynamic_cast< T* >( Sim::findObject( ref ) );
+   }
+   
+   T* operator()( const char* str ) const
+   {
+      return dynamic_cast< T* >( Sim::findObject( str ) );
+   }
+};
 
 #endif

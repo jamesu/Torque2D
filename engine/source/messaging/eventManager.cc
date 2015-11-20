@@ -53,8 +53,8 @@ bool EventManagerListener::onMessageReceived( StringTableEntry queue, const char
    for( Vector<Subscriber>::const_iterator iter = subscribers->begin(); iter != subscribers->end(); iter++ )
    {
       // If we returned a string that is not "", try to convert it to true/false
-      const char* conResult = Con::executef( iter->listener, 2, iter->callback, data );
-      if( dStrcmp( conResult, "" ) != 0 && dAtob( conResult ) == false )
+      ConsoleValuePtr conResult = Con::executef( iter->listener, iter->callback, data );
+      if( dStrcmp( conResult.getTempStringValue(), "" ) != 0 && conResult.getBoolValue() == false )
          return false;
    }
    return true;
@@ -327,8 +327,8 @@ void EventManager::dumpSubscribers( const char* event )
    for( Vector<EventManagerListener::Subscriber>::const_iterator iter = subscribers->begin(); iter != subscribers->end(); iter++ )
    {
       // Grab the best fit name. This should be the first found of name, class, superclass, or class type.
-      Namespace* ns = iter->listener->getNamespace();
-      const char* name = ns ? ns->mName : getClassName() ;
+      Namespace *ns = iter->listener->getNamespace();
+      const char *name = ns ? ns->mName : getClassName() ;
       Con::printf( "   %s -> %s", name, iter->callback );
    }
 }

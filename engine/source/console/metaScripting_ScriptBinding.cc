@@ -23,6 +23,7 @@
 #include "platform/platform.h"
 #include "console/console.h"
 #include "console/consoleInternal.h"
+#include "console/consoleObject.h"
 #include "console/ast.h"
 #include "io/resource/resourceManager.h"
 #include "io/fileStream.h"
@@ -43,8 +44,8 @@ extern S32 QSORT_CALLBACK ACRCompare(const void *aptr, const void *bptr);
 ConsoleFunctionGroupBegin(MetaScripting, "Functions that let you manipulate the scripting engine programmatically.");
 
 /*! @defgroup MetaScriptingFunctions Meta-Scripting
-		@ingroup TorqueScriptFunctions
-		@{
+      @ingroup TorqueScriptFunctions
+      @{
 */
 
 /*! Use the call function to dynamically build and call a function.
@@ -53,15 +54,9 @@ ConsoleFunctionGroupBegin(MetaScripting, "Functions that let you manipulate the 
     @return Returns a string containing the results from the function that is built and called.
     @sa eval
 */
-ConsoleFunctionWithDocs(call, ConsoleString, 2, 0, ( funcName, [args ... ]?))
+ConsoleFunctionWithDocs(call, ConsoleValuePtr, 2, 0, ( funcName, [args ... ]?))
 {
    return Con::execute(argc - 1, argv + 1);
-}
-
-static StringTableEntry getDSOPath(const char *scriptPath)
-{
-   const char *slash = dStrrchr(scriptPath, '/');
-   return StringTable->insertn(scriptPath, (U32)(slash - scriptPath), true);
 }
 
 /*! Returns the DSO path of the given filename
@@ -72,7 +67,7 @@ ConsoleFunctionWithDocs(getDSOPath, ConsoleString, 2, 2, (scriptFileName))
 {
    Con::expandPath(pathBuffer, sizeof(pathBuffer), argv[1]);  
 
-   const char *filename = getDSOPath(pathBuffer);
+   const char *filename = CodeBlock::getDSOPath(pathBuffer);
    if(filename == NULL || *filename == 0)
       return "";
 
@@ -87,80 +82,7 @@ ConsoleFunctionWithDocs(getDSOPath, ConsoleString, 2, 2, (scriptFileName))
 ConsoleFunctionWithDocs(compile, ConsoleBool, 2, 2, ( fileName ))
 {
    TORQUE_UNUSED( argc );
-   char nameBuffer[512];
-   char* script = NULL;
-   U32 scriptSize = 0;
-
-   FileTime comModifyTime, scrModifyTime;
-
-   Con::expandPath(pathBuffer, sizeof(pathBuffer), argv[1]);
-
-   // Figure out where to put DSOs
-   StringTableEntry dsoPath = getDSOPath(pathBuffer);
-
-   // If the script file extention is '.ed.cs' then compile it to a different compiled extention
-   bool isEditorScript = false;
-   const char *ext = dStrrchr( pathBuffer, '.' );
-   if( ext && ( dStricmp( ext, ".cs" ) == 0 ) )
-   {
-      const char* ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.cs" ) == 0 )
-         isEditorScript = true;
-   }
-   else if( ext && ( dStricmp( ext, ".gui" ) == 0 ) )
-   {
-      const char* ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.gui" ) == 0 )
-         isEditorScript = true;
-   }
-
-   const char *filenameOnly = dStrrchr(pathBuffer, '/');
-   if(filenameOnly)
-      ++filenameOnly;
-   else
-      filenameOnly = pathBuffer;
-
-   if( isEditorScript )
-      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".edso", NULL);
-   else
-      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".dso", NULL);
-   
-   ResourceObject *rScr = ResourceManager->find(pathBuffer);
-   ResourceObject *rCom = ResourceManager->find(nameBuffer);
-
-   if(rCom)
-      rCom->getFileTimes(NULL, &comModifyTime);
-   if(rScr)
-      rScr->getFileTimes(NULL, &scrModifyTime);
-
-   Stream *s = ResourceManager->openStream(pathBuffer);
-   if(s)
-   {
-      scriptSize = ResourceManager->getSize(pathBuffer);
-      script = new char [scriptSize+1];
-      s->read(scriptSize, script);
-      ResourceManager->closeStream(s);
-      script[scriptSize] = 0;
-   }
-
-   if (!scriptSize || !script)
-   {
-      delete [] script;
-      Con::errorf(ConsoleLogEntry::Script, "compile: invalid script file %s.", pathBuffer);
-      return false;
-   }
-   // compile this baddie.
-// -Mat reducing console noise
-#if defined(TORQUE_DEBUG)
-   Con::printf("Compiling %s...", pathBuffer);
-#endif
-   CodeBlock *code = new CodeBlock();
-   code->compile(nameBuffer, pathBuffer, script);
-   delete code;
-   code = NULL;
-
-   delete[] script;
-   return true;
+   return CodeBlock::compile(argv[1]);
 }
 
 /*! 
@@ -169,32 +91,31 @@ ConsoleFunctionWithDocs(compilePath, ConsoleString, 2, 2, ( path ))
 {
     if ( !Con::expandPath(pathBuffer, sizeof(pathBuffer), argv[1]) )
         return "-1 0";
-    
-    const char *compileArgs[2] = { "compile", NULL };
-    
+   
     S32 failedScripts = 0;
     S32 totalScripts = 0;
     ResourceObject *match = NULL;
-    
-    while ( (match = ResourceManager->findMatch( pathBuffer, &compileArgs[1], match )) )
+    const char* actualPath = NULL;
+   
+    while ( (match = ResourceManager->findMatch( pathBuffer, &actualPath, match )) )
     {
-        if ( !ccompile( NULL, 1, compileArgs ) )
+       if ( !CodeBlock::compile( actualPath ) )
             failedScripts++;
         
         totalScripts++;
     }
-    
-    char* result = Con::getReturnBuffer(32);
+   
+    char result[32];
     dSprintf( result, 32, "%d %d", failedScripts, totalScripts );
-   return result;
+    return result;
 }
 
-static bool scriptExecutionEcho = false;
+static bool scriptExecutionEcho = true;
 /*! Whether to echo script file execution or not.
 */
 ConsoleFunctionWithDocs(setScriptExecEcho, ConsoleVoid, 2, 2, (echo?))
 {
-    scriptExecutionEcho = dAtob(argv[1]);
+    //scriptExecutionEcho = dAtob(argv[1]);
 }
 
 /*! Use the exec function to compile and execute a normal script, or a special journal script.
@@ -236,7 +157,7 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
    Con::expandPath(pathBuffer, sizeof(pathBuffer), argv[1]);
 
    // Figure out where to put DSOs
-   StringTableEntry dsoPath = getDSOPath(pathBuffer);
+   StringTableEntry dsoPath = CodeBlock::getDSOPath(pathBuffer);
 
    const char *ext = dStrrchr(pathBuffer, '.');
 
@@ -435,8 +356,8 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
 
    // Let's do a sanity check to complain about DSOs in the future.
    //
-   // MM:	This doesn't seem to be working correctly for now so let's just not issue
-   //		the warning until someone knows how to resolve it.
+   // MM:   This doesn't seem to be working correctly for now so let's just not issue
+   //      the warning until someone knows how to resolve it.
    //
    //if(compiled && rCom && rScr && Platform::compareFileTimes(comModifyTime, scrModifyTime) < 0)
    //{
@@ -475,10 +396,10 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
        
       Stream *s = ResourceManager->openStream(scriptFileName);
        
-#ifdef	TORQUE_ALLOW_JOURNALING
+#ifdef   TORQUE_ALLOW_JOURNALING
       if(journal && Game->isJournalWriting())
          Game->getJournalStream()->write(bool(s != NULL));
-#endif	//TORQUE_ALLOW_JOURNALING
+#endif   //TORQUE_ALLOW_JOURNALING
 
       if(s)
       {
@@ -486,13 +407,13 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
          script = new char [scriptSize+1];
          s->read(scriptSize, script);
 
-#ifdef	TORQUE_ALLOW_JOURNALING
+#ifdef   TORQUE_ALLOW_JOURNALING
          if(journal && Game->isJournalWriting())
          {
             Game->journalWrite(scriptSize);
             Game->journalWrite(scriptSize, script);
          }
-#endif	//TORQUE_ALLOW_JOURNALING
+#endif   //TORQUE_ALLOW_JOURNALING
          ResourceManager->closeStream(s);
          script[scriptSize] = 0;
       }
@@ -541,10 +462,10 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
    }
    else
    {
-#ifdef	TORQUE_ALLOW_JOURNALING
+#ifdef   TORQUE_ALLOW_JOURNALING
       if(journal && Game->isJournalWriting())
          Game->getJournalStream()->write(bool(false));
-#endif	//TORQUE_ALLOW_JOURNALING
+#endif   //TORQUE_ALLOW_JOURNALING
    }
     
     //Luma : Load compiled script here
@@ -563,7 +484,7 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
       CodeBlock *code = new CodeBlock;
       code->read(scriptFileName, *compiledStream);
       ResourceManager->closeStream(compiledStream);
-      code->exec(0, scriptFileName, NULL, 0, NULL, noCalls, NULL, 0);
+      code->exec(0, scriptFileName, NULL, 0, NULL, noCalls, NULL);
 
         F32 et1 = (F32)Platform::getRealMilliseconds();
         
@@ -616,7 +537,7 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
     @return Returns the result of executing the script statement.
     @sa call
 */
-ConsoleFunctionWithDocs(eval, ConsoleString, 2, 2, ( script ))
+ConsoleFunctionWithDocs(eval, ConsoleValuePtr, 2, 2, ( script ))
 {
    TORQUE_UNUSED( argc );
    return Con::evaluate(argv[1], false, NULL);
@@ -669,7 +590,7 @@ ConsoleFunctionWithDocs(getModNameFromPath, ConsoleString, 2, 2, (string path))
 */
 ConsoleFunctionWithDocs(getPrefsPath, ConsoleString, 1, 2, ([fileName]?))
 {
-   const char *filename = Platform::getPrefsPath(argc > 1 ? argv[1] : NULL);
+   const char *filename = Platform::getPrefsPath(argc > 1 ? argv[1].getTempStringValue() : NULL);
    if(filename == NULL || *filename == 0)
       return "";
      
@@ -715,7 +636,7 @@ ConsoleFunctionWithDocs(export, ConsoleVoid, 2, 4, ( wildCard, [fileName]?, [app
     const bool append = argc >= 4 ? dAtob(argv[3] ) : false;
 
     // Export the variables.
-    gEvalState.globalVars.exportVariables( pWildcard, pFilename, append );
+    gNewEvalState.globalVars->exportVariables( pWildcard, pFilename, append );
 }
 
 /*! Use the deleteVariables function to delete any global variable matching the wildCard statement.
@@ -725,7 +646,7 @@ ConsoleFunctionWithDocs(export, ConsoleVoid, 2, 4, ( wildCard, [fileName]?, [app
 ConsoleFunctionWithDocs(deleteVariables, ConsoleVoid, 2, 2, ( wildCard ))
 {
    TORQUE_UNUSED( argc );
-   gEvalState.globalVars.deleteVariables(argv[1]);
+   gNewEvalState.globalVars->deleteVariables(argv[1]);
 }
 
 //----------------------------------------------------------------
@@ -737,8 +658,8 @@ ConsoleFunctionWithDocs(deleteVariables, ConsoleVoid, 2, 2, ( wildCard ))
 ConsoleFunctionWithDocs(trace, ConsoleVoid, 2, 2, ( enable ))
 {
    TORQUE_UNUSED( argc );
-   gEvalState.traceOn = dAtob(argv[1]);
-   Con::printf("Console trace is %s", gEvalState.traceOn ? "on." : "off.");
+   gNewEvalState.traceOn = dAtob(argv[1]);
+   Con::printf("Console trace is %s", gNewEvalState.traceOn ? "on." : "off.");
 }
 
 //----------------------------------------------------------------

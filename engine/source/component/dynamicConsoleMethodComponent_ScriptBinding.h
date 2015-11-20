@@ -29,13 +29,19 @@ ConsoleMethodGroupBeginWithDocs(DynamicConsoleMethodComponent, SimComponent)
    no behavior can handle the method.
 
 */
-ConsoleMethodWithDocs( DynamicConsoleMethodComponent, callOnBehaviors, ConsoleString, 3, 64 , (methodName, argi))
+ConsoleMethodWithDocs( DynamicConsoleMethodComponent, callOnBehaviors, ConsoleValuePtr, 3, 64 , (methodName, argi))
 {
    // Put this in the correct form of: [method, caller, args...]
    // We do this by just copying the third argument (the method we want to call)
    // over the second (originally the caller ID).
-   argv[1] = argv[2];
-   return object->callOnBehaviors( argc - 1, argv + 1 );
+   ConsoleValuePtr values[128];
+   for (U32 i=0; i<argc; i++)
+   {
+      values[i].setValue(argv[i]);
+   }
+   values[1].setValue(argv[2]);
+   
+   return object->callOnBehaviors( argc - 1, values + 1 );
 }
 
 ConsoleMethodGroupEndWithDocs(DynamicConsoleMethodComponent)

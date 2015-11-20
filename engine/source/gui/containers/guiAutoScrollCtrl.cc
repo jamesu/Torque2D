@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "gui/containers/guiAutoScrollCtrl.h"
 #include "console/consoleTypes.h"
 
@@ -110,7 +111,7 @@ void GuiAutoScrollCtrl::childResized(GuiControl *child)
 void GuiAutoScrollCtrl::processTick()
 {
    if (mTickCallback && isMethod("onTick") )
-      Con::executef(this, 1, "onTick");
+      Con::executef(this, "onTick");
 }
 
 void GuiAutoScrollCtrl::advanceTime(F32 timeDelta)

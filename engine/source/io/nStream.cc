@@ -23,6 +23,7 @@
 #include "platform/platform.h"
 #include "stream.h"
 #include "string/stringTable.h"
+#include "console/console.h"
 #include "graphics/color.h"
 
 #ifndef _INC_STDARG

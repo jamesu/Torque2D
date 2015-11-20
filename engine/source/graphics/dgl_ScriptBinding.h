@@ -37,7 +37,7 @@ ConsoleFunctionWithDocs(CaptureScreenArea, bool, 7, 7, (posX, posY, width, heigh
     FileStream fStream;
     if(!fStream.open(argv[5], FileStream::Write))
     { 
-        Con::printf("Failed to open file '%s'.", argv[5]);
+        Con::printf("Failed to open file '%s'.", argv[5].getTempStringValue());
         return false;
     }
 
@@ -89,7 +89,7 @@ ConsoleFunctionWithDocs(png2jpg, ConsoleInt, 2, 3, ( pngFilename, [quality ]? ))
    else
       gJpegQuality = 90;
 
-   Con::printf("Converting file: %s", argv[1]);
+   Con::printf("Converting file: %s", argv[1].getTempStringValue());
 
    if (!rgbname)
    {

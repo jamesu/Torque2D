@@ -525,19 +525,19 @@ ConsoleMethodWithDocs(ParticleAssetEmitter, setImage, ConsoleBool, 3, 4, (imageA
         {
             // Fetch the numerical frame and set the image
             const U32 frame = argc >= 4 ? dAtoi(argv[3]) : 0;
-            return object->setImage(argv[2], frame);
+            return object->setImage(argv[2].getTempStringValue(), frame);
         }
         else
         {
             // Set the image and pass the named frame string
-            return object->setImage(argv[2], argv[3]);
+            return object->setImage(argv[2].getTempStringValue(), argv[3].getTempStringValue());
         }
     }
     else
     {
         // Frame was not specified, use default 0 and set the image
         const U32 frame = 0;
-        return object->setImage( argv[2], frame);
+        return object->setImage( argv[2].getTempStringValue(), frame);
     }
 }
 
@@ -664,7 +664,7 @@ ConsoleMethodWithDocs(ParticleAssetEmitter, getNamedImageFrame, ConsoleString, 2
     {
         // No, so warn.
         Con::warnf( "ParticleAssetEmitter::getNamedImageFrame() - Method invalid, not in static mode." );
-        return NULL;
+        return "";
     }
 
     // Are we using named frames?
@@ -672,7 +672,7 @@ ConsoleMethodWithDocs(ParticleAssetEmitter, getNamedImageFrame, ConsoleString, 2
     {
         // No, so warn.
         Con::warnf( "ParticleAssetEmitter::getNamedImageFrame() - Method invalid, not using named frames." );
-        return NULL;
+        return "";
     }
 
     return object->getNamedImageFrame();

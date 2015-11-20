@@ -126,7 +126,7 @@ public:
 
     virtual void addTamlChild( SimObject* pSimObject );
 
-    void callOnChildren( const char * method, S32 argc, const char *argv[], bool executeOnChildGroups = true );
+    void callOnChildren( const char *method, S32 argc, ConsoleValuePtr argv[], bool executeOnChildGroups = true );
 
     virtual SimObject *findObject(const char *name);
     SceneObject*	findObjectByInternalName(const char* internalName, bool searchChildren = false);

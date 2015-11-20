@@ -229,7 +229,7 @@ private:
     S32                         mJointMasterId;
 
     /// Scene controllers.
-    SimObjectPtr<SimSet>	    mControllers;
+    SimObjectPtr<SimSet>        mControllers;
 
     /// Asset pre-loads.
     typeAssetPtrVector          mAssetPreloads;
@@ -353,7 +353,7 @@ public:
 
     void                    mergeScene( const Scene* pScene );
 
-    inline SimSet*			getControllers( void )						{ return mControllers; }
+    inline SimSet*          getControllers( void )                      { return mControllers; }
 
     inline S32              getAssetPreloadCount( void ) const          { return mAssetPreloads.size(); }
     const AssetPtr<AssetBase>* getAssetPreload( const S32 index ) const;
@@ -443,8 +443,8 @@ public:
                                 F32& motorSpeed,
                                 F32& maxMotorTorque );
 
-	F32                     getRevoluteJointAngle( const U32 jointId );
-	F32						getRevoluteJointSpeed( const U32 jointId );
+    F32                     getRevoluteJointAngle( const U32 jointId );
+    F32                     getRevoluteJointSpeed( const U32 jointId );
 
     /// Weld joint.
     S32                     createWeldJoint(
@@ -683,8 +683,8 @@ public:
 
 protected:
     /// Physics.
-    static bool setGravity( void* obj, const char* data )                           { static_cast<Scene*>(obj)->setGravity( Vector2( data ) ); return false; }
-    static const char* getGravity(void* obj, const char* data)                      { return Vector2(static_cast<Scene*>(obj)->getGravity()).scriptThis(); }
+    static bool setGravity( void *obj, const ConsoleValuePtr data )                 { static_cast<Scene*>(obj)->setGravity( Vector2( data.getTempStringValue() ) ); return false; }
+    static ConsoleValuePtr getGravity(void *obj, const ConsoleValuePtr data)        { return Vector2(static_cast<Scene*>(obj)->getGravity()).scriptThis(); }
     static bool writeGravity( void* obj, StringTableEntry pFieldName )              { return Vector2(static_cast<Scene*>(obj)->getGravity()).notEqual( Vector2::getZero() ); }
     static bool writeVelocityIterations( void* obj, StringTableEntry pFieldName )   { return static_cast<Scene*>(obj)->getVelocityIterations() != 8; }
     static bool writePositionIterations( void* obj, StringTableEntry pFieldName )   { return static_cast<Scene*>(obj)->getPositionIterations() != 3; }

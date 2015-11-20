@@ -56,67 +56,79 @@ StringTableEntry assetLooseFileSignature = StringTable->insert( ASSET_LOOSEFILE_
 //-----------------------------------------------------------------------------
 
 ConsoleType( assetLooseFilePath, TypeAssetLooseFilePath, sizeof(StringTableEntry), ASSET_LOOSE_FILE_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAssetLooseFilePath, StringTableEntry )
+
 ConsoleType( assetIdString, TypeAssetId, sizeof(StringTableEntry), ASSET_ID_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAssetId, StringTableEntry )
+
 
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeAssetLooseFilePath )
+ConsoleTypeToString( TypeAssetLooseFilePath )
 {
     // Fetch asset loose file-path.
-    return *((StringTableEntry*)dptr);
+    return *((StringTableEntry*)dataPtr);
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeAssetLooseFilePath )
+ConsoleTypeFromConsoleValue( TypeAssetLooseFilePath )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
+	// Check we have the right sort of value here
+	if (ConsoleValue::isRefType(value.type))
+	{
+		if (value.value.refValue->isEnumerable())
+		{
+			Con::warnf( "(TypeAssetLooseFilePath) - Cannot set multiple args to a single asset loose-file." );
+			return;
+		}
+	}
+	
+	// Was a single argument specified?
+	// Yes, so fetch field value.
+	const char* pFieldValue = value.getTempStringValue();
 
-        // Fetch asset loose file-path.
-        StringTableEntry* assetLooseFilePath = (StringTableEntry*)(dptr);
+	// Fetch asset loose file-path.
+	StringTableEntry* assetLooseFilePath = (StringTableEntry*)(dataPtr);
 
-        // Update asset loose file-path value.
-        *assetLooseFilePath = StringTable->insert(pFieldValue);
-
-        return;
-    }
-
-    // Warn.
-    Con::warnf( "(TypeAssetLooseFilePath) - Cannot set multiple args to a single asset loose-file." );
+	// Update asset loose file-path value.
+	*assetLooseFilePath = StringTable->insert(pFieldValue);
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeAssetId )
+ConsoleTypeToString( TypeAssetId )
 {
     // Fetch asset Id.
-    return *((StringTableEntry*)dptr);
+    return *((StringTableEntry*)dataPtr);
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeAssetId )
+ConsoleTypeFromConsoleValue( TypeAssetId )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
-
-        // Fetch asset Id.
-        StringTableEntry* assetId = (StringTableEntry*)(dptr);
-
-        // Update asset value.
-        *assetId = StringTable->insert(pFieldValue);
-
-        return;
-    }
-
-    // Warn.
-    Con::warnf( "(TypeAssetId) - Cannot set multiple args to a single asset." );
+	// Check we have the right sort of value here
+	if (ConsoleValue::isRefType(value.type))
+	{
+		if (value.value.refValue->isEnumerable())
+		{
+			Con::warnf( "(TypeAssetId) - Cannot set multiple args to a single asset." );
+			return;
+		}
+	}
+	
+	// Was a single argument specified?
+	// Yes, so fetch field value.
+	const char* pFieldValue = value.getTempStringValue();
+	
+	// Fetch asset Id.
+	StringTableEntry* assetId = (StringTableEntry*)(dataPtr);
+	
+	// Update asset value.
+	*assetId = StringTable->insert(pFieldValue);
+	
+	
+	// Warn.
+	Con::warnf( "(TypeAssetId) - Cannot set multiple args to a single asset." );
 }
 

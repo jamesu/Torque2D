@@ -46,24 +46,20 @@
 #include "collection/hashTable.h"
 #endif
 
+
+#include "console/consoleSerialization.h"
+
 static Mutex* sLogMutex;
 
 extern StringStack STR;
 
-ExprEvalState gEvalState;
-StmtNode *statementList;
+StmtNode *gStatementList;
+StmtNode *gCodeblockFunctionList;
+U32 gAnonFunctionID = 0;
 ConsoleConstructor *ConsoleConstructor::first = NULL;
 bool gWarnUndefinedScriptVariables;
 
 static char scratchBuffer[4096];
-
-CON_DECLARE_PARSER(CMD);
-
-// TO-DO: Console debugger stuff to be cleaned up later
-static S32 dbgGetCurrentFrame(void)
-{
-   return gEvalState.stack.size() - 1;
-}
 
 static const char * prependDollar ( const char * name )
 {
@@ -120,6 +116,8 @@ void ConsoleConstructor::setup()
          Con::addCommand(walk->className, walk->funcName, walk->vc, walk->usage, walk->mina, walk->maxa);
       else if(walk->bc)
          Con::addCommand(walk->className, walk->funcName, walk->bc, walk->usage, walk->mina, walk->maxa);
+      else if(walk->cc)
+         Con::addCommand(walk->className, walk->funcName, walk->cc, walk->usage, walk->mina, walk->maxa);
       else if(walk->group)
          Con::markCommandGroup(walk->className, walk->funcName, walk->usage);
       else if(walk->overload)
@@ -133,6 +131,12 @@ void ConsoleConstructor::setup()
       else
          AssertFatal(false, "Found a ConsoleConstructor with an indeterminate type!");
    }
+}
+
+ConsoleConstructor::ConsoleConstructor(const char *className, const char *funcName, ValueCallback vfunc, const char *usage, S32 minArgs, S32 maxArgs)
+{
+   init(className, funcName, usage, minArgs, maxArgs);
+   cc = vfunc;
 }
 
 ConsoleConstructor::ConsoleConstructor(const char *className, const char *funcName, StringCallback sfunc, const char *usage, S32 minArgs, S32 maxArgs)
@@ -244,9 +248,6 @@ void init()
    // Initialize subsystems.
    Namespace::init();
    ConsoleConstructor::setup();
-
-   // Set up the parser(s)
-   CON_ADD_PARSER(CMD,   "cs",   true);   // TorqueScript
 
    // Variables
    setVariable("Con::prompt", "% ");
@@ -390,7 +391,7 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
       // In the global namespace, we can complete on global vars as well as functions.
       if (inputBuffer[completionBaseStart] == '$')
       {
-         newText = gEvalState.globalVars.tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
+         newText = gNewEvalState.globalVars->tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
       }
       else 
       {
@@ -530,9 +531,9 @@ static void _printf(ConsoleLogEntry::Level level, ConsoleLogEntry::Type type, co
 
    char buffer[4096];
    U32 offset = 0;
-   if(gEvalState.traceOn && gEvalState.stack.size())
+   if(gNewEvalState.traceOn && gNewEvalState.frames.size() > 0)
    {
-      offset = gEvalState.stack.size() * 3;
+      offset = gNewEvalState.frames.size() * 3;
       for(U32 i = 0; i < offset; i++)
          buffer[i] = ' ';
    }
@@ -702,14 +703,32 @@ void errorf(const char* fmt,...)
 
 void setVariable(const char *name, const char *value)
 {
-   name = prependDollar(name);
-   gEvalState.globalVars.setVariable(StringTable->insert(name), value);
+   if (name && name[0] == '$')
+      name++;
+   name = StringTable->insert(name);
+   
+   gNewEvalState.globalVars->setVariable(StringTable->insert(name), value);
 }
 
 void setLocalVariable(const char *name, const char *value)
 {
-   name = prependPercent(name);
-   gEvalState.stack.last()->setVariable(StringTable->insert(name), value);
+   if (name && name[0] == '%')
+      name++;
+   name = StringTable->insert(name);
+   
+   //
+   CodeBlockFunction* func = gNewEvalState.currentFrame.function;
+   if (func)
+   {
+      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr; itr++)
+      {
+         if (itr->varName == name)
+         {
+            gNewEvalState.globalVars->setVariable(name, value);
+            return;
+         }
+      }
+   }
 }
 
 void setBoolVariable(const char *varName, bool value)
@@ -776,83 +795,107 @@ void stripColorChars(char* line)
    }
 }
 
-const char *getVariable(const char *name)
+ConsoleStringValuePtr getVariable(const char *name)
 {
-   // get the field info from the object..
-   if(name[0] != '$' && dStrchr(name, '.') && !isFunction(name))
-   {
-      S32 len = dStrlen(name);
-      AssertFatal(len < sizeof(scratchBuffer)-1, "Sim::getVariable - name too long");
-      dMemcpy(scratchBuffer, name, len+1);
-
-      char * token = dStrtok(scratchBuffer, ".");
-      SimObject * obj = Sim::findObject(token);
-      if(!obj)
-         return("");
-
-      token = dStrtok(0, ".\0");
-      if(!token)
-         return("");
-
-      while(token != NULL)
-      {
-         const char * val = obj->getDataField(StringTable->insert(token), 0);
-         if(!val)
-            return("");
-
-         token = dStrtok(0, ".\0");
-         if(token)
-         {
-            obj = Sim::findObject(token);
-            if(!obj)
-               return("");
-         }
-         else
-            return(val);
-      }
-   }
-
-   name = prependDollar(name);
-   return gEvalState.globalVars.getVariable(StringTable->insert(name));
+   if (name && name[0] == '$')
+      name++;
+   
+   name = StringTable->insert(name);
+   return gNewEvalState.globalVars->getVariable(StringTable->insert(name));
 }
 
-const char *getLocalVariable(const char *name)
+ConsoleStringValuePtr getLocalVariable(const char *name)
 {
-   name = prependPercent(name);
-
-   return gEvalState.stack.last()->getVariable(StringTable->insert(name));
+   if (name && name[0] == '%')
+      name++;
+   
+   name = StringTable->insert(name);
+   
+   //
+   CodeBlockFunction* func = gNewEvalState.currentFrame.function;
+   if (func)
+   {
+      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr; itr++)
+      {
+         if (itr->varName == name)
+         {
+            return gNewEvalState.globalVars->getVariable(name);
+         }
+      }
+   }
+   
+   return "";
 }
 
 bool getBoolVariable(const char *varName, bool def)
 {
-   const char *value = getVariable(varName);
-   return *value ? dAtob(value) : def;
+   if (varName && varName[0] == '$')
+      varName++;
+   
+   StringTableEntry name = StringTable->insert(varName);
+   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   if (entry)
+   {
+      return dAtob(entry->getStringValue().c_str());
+   }
+   else
+   {
+      return def;
+   }
 }
 
 S32 getIntVariable(const char *varName, S32 def)
 {
-   const char *value = getVariable(varName);
-   return *value ? dAtoi(value) : def;
+   if (varName && varName[0] == '$')
+      varName++;
+   
+   StringTableEntry name = StringTable->insert(varName);
+   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   if (entry)
+   {
+      return entry->getIntValue();
+   }
+   else
+   {
+      return def;
+   }
 }
 
 F32 getFloatVariable(const char *varName, F32 def)
 {
-   const char *value = getVariable(varName);
-   return *value ? dAtof(value) : def;
+   if (varName && varName[0] == '$')
+      varName++;
+   
+   StringTableEntry name = StringTable->insert(varName);
+   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   if (entry)
+   {
+      return entry->getFloatValue();
+   }
+   else
+   {
+      return def;
+   }
 }
 
 //---------------------------------------------------------------------------
 
 bool addVariable(const char *name, S32 t, void *dp)
 {
-   gEvalState.globalVars.addVariable(name, t, dp);
+   if (name && name[0] == '$')
+      name++;
+   
+   gNewEvalState.globalVars->addVariable(name, t, dp);
    return true;
 }
 
 bool removeVariable(const char *name)
 {
-   name = StringTable->lookup(prependDollar(name));
-   return name!=0 && gEvalState.globalVars.removeVariable(name);
+   if (name && name[0] == '$')
+      name++;
+   
+   name = StringTable->lookup(name);
+   return name!=0 && gNewEvalState.globalVars->removeVariable(name);
 }
 
 //---------------------------------------------------------------------------
@@ -885,6 +928,12 @@ void addCommand(const char *nsName, const char *name,BoolCallback cb, const char
 {
    Namespace *ns = lookupNamespace(nsName);
    ns->addCommand(StringTable->insert(name), cb, usage, minArgs, maxArgs);
+}
+
+void addCommand(const char *nsName, const char *name,ValueCallback cc, const char *usage, S32 minArgs, S32 maxArgs)
+{
+   Namespace *ns = lookupNamespace(nsName);
+   ns->addCommand(StringTable->insert(name), cc, usage, minArgs, maxArgs);
 }
 
 void markCommandGroup(const char * nsName, const char *name, const char* usage)
@@ -934,7 +983,7 @@ void addCommand(const char *name,BoolCallback cb,const char *usage, S32 minArgs,
    Namespace::global()->addCommand(StringTable->insert(name), cb, usage, minArgs, maxArgs);
 }
 
-const char *evaluate(const char* string, bool echo, const char *fileName)
+ConsoleValuePtr evaluate(const char *string, bool echo, const char *fileName)
 {
    if (echo)
       Con::printf("%s%s", getVariable( "$Con::Prompt" ), string);
@@ -947,7 +996,7 @@ const char *evaluate(const char* string, bool echo, const char *fileName)
 }
 
 //------------------------------------------------------------------------------
-const char *evaluatef(const char* string, ...)
+ConsoleValuePtr evaluatef(const char *string, ...)
 {
    const char * result = NULL;
    char * buffer = new char[4096];
@@ -968,129 +1017,87 @@ const char *evaluatef(const char* string, ...)
    return result;
 }
 
-const char *execute(S32 argc, const char *argv[])
+ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[])
 {
-#ifdef TORQUE_MULTITHREAD
-   if(isMainThread())
+   StringTableEntry funcName = argv[0].getSTEStringValue();
+   Namespace* ns = Namespace::global();
+   Namespace::Entry* entry = ns->lookup(funcName);
+   
+   if (entry)
    {
-#endif
-      Namespace::Entry *ent;
-      StringTableEntry funcName = StringTable->insert(argv[0]);
-      ent = Namespace::global()->lookup(funcName);
-
-      if(!ent)
-      {
-         warnf(ConsoleLogEntry::Script, "%s: Unknown command.", argv[0]);
-
-         // Clean up arg buffers, if any.
-         STR.clearFunctionOffset();
-         return "";
-      }
-
-      const char *ret = ent->execute(argc, argv, &gEvalState);
-
-      // Reset the function offset so the stack
-      // doesn't continue to grow unnecessarily
-      STR.clearFunctionOffset();
-
-      return ret;
-
-#ifdef TORQUE_MULTITHREAD
+      return entry->execute(argc, argv, &gNewEvalState);
    }
    else
    {
-      SimConsoleThreadExecCallback cb;
-      SimConsoleThreadExecEvent *evt = new SimConsoleThreadExecEvent(argc, argv, false, &cb);
-      Sim::postEvent(Sim::getRootGroup(), evt, Sim::getCurrentTime());
-      
-      return cb.waitForResult();
+      Con::warnf("Couldn't find global function %s.", funcName);
+      return ConsoleValuePtr();
    }
-#endif
 }
 
 //------------------------------------------------------------------------------
-const char *execute(SimObject *object, S32 argc, const char *argv[],bool thisCallOnly)
+ConsoleValuePtr execute(SimObject *object, S32 argc, ConsoleValuePtr argv[],bool thisCallOnly)
 {
-   static char idBuf[16];
-   if(argc < 2)
-      return "";
-
-   // [neo, 10/05/2007 - #3010]
-   // Make sure we don't get recursive calls, respect the flag!   
-   // Should we be calling handlesMethod() first?
-   if( !thisCallOnly )
-   {
-      DynamicConsoleMethodComponent *com = dynamic_cast<DynamicConsoleMethodComponent *>(object);
-      if(com)
-         com->callMethodArgList(argc, argv, false);
-   }
+   StringTableEntry funcName = argv[0].getSTEStringValue();
+   Namespace* ns = object->getNamespace();
+   Namespace::Entry* entry = ns->lookup(funcName);
    
-   if(object->getNamespace())
+   if (entry)
    {
-      StringTableEntry funcName = StringTable->insert(argv[0]);
-      Namespace::Entry *ent = object->getNamespace()->lookup(funcName);
-
-      if(ent == NULL)
-      {
-         //warnf(ConsoleLogEntry::Script, "%s: undefined for object '%s' - id %d", funcName, object->getName(), object->getId());
-
-         // Clean up arg buffers, if any.
-         STR.clearFunctionOffset();
-         return "";
-      }
-
-      // Twiddle %this argument
-      const char *oldArg1 = argv[1];
-      dSprintf(idBuf, sizeof(idBuf), "%d", object->getId());
-      argv[1] = idBuf;
-
-      object->pushScriptCallbackGuard();
-
-      SimObject *save = gEvalState.thisObject;
-      gEvalState.thisObject = object;
-      const char *ret = ent->execute(argc, argv, &gEvalState);
-      gEvalState.thisObject = save;
-
-      object->popScriptCallbackGuard();
-
-      // Twiddle it back
-      argv[1] = oldArg1;
-
-      // Reset the function offset so the stack
-      // doesn't continue to grow unnecessarily
-      STR.clearFunctionOffset();
-
-      return ret;
+      return entry->execute(argc, argv, &gNewEvalState);
    }
-   warnf(ConsoleLogEntry::Script, "Con::execute - %d has no namespace: %s", object->getId(), argv[0]);
-   return "";
-}
-const char *executef(SimObject *object, S32 argc, ...)
-{
-   const char *argv[128];
-
-   va_list args;
-   va_start(args, argc);
-   for(S32 i = 0; i < argc; i++)
-      argv[i+1] = va_arg(args, const char *);
-   va_end(args);
-   argv[0] = argv[1];
-   argc++;
-
-   return execute(object, argc, argv);
+   else
+   {
+      Con::warnf("Couldn't find function %s in object %s.", funcName, ns->mName);
+      return ConsoleValuePtr();
+   }
 }
 
 //------------------------------------------------------------------------------
-const char *executef(S32 argc, ...)
+ConsoleStringValuePtr executeS(S32 argc, const char *argv[])
 {
-   const char *argv[128];
+   StringTableEntry funcName = StringTable->insert(argv[0]);
+   Namespace* ns = Namespace::global();
+   Namespace::Entry* entry = ns->lookup(funcName);
+   
+   if (entry)
+   {
+      // Copy argv to temp list
+      ConsoleValuePtr argvValue[128];
+      for (U32 i=0; i<argc; i++)
+      {
+         argvValue[i].setString(argv[i]);
+      }
+      return entry->execute(argc, argvValue, &gNewEvalState).getStringValue();
+   }
+   else
+   {
+      Con::warnf("Couldn't find function %s in object %s.", funcName, ns->mName);
+      return "";
+   }
+}
 
-   va_list args;
-   va_start(args, argc);
-   for(S32 i = 0; i < argc; i++)
-      argv[i] = va_arg(args, const char *);
-   va_end(args);
-   return execute(argc, argv);
+//------------------------------------------------------------------------------
+ConsoleStringValuePtr executeS(SimObject *object, S32 argc, const char *argv[],bool thisCallOnly)
+{
+   StringTableEntry funcName = StringTable->insert(argv[0]);
+   Namespace* ns = object->getNamespace();
+   Namespace::Entry* entry = ns->lookup(funcName);
+   
+   if (entry)
+   {
+      // Copy argv to temp list
+      ConsoleValuePtr argvValue[128];
+      for (U32 i=0; i<argc; i++)
+      {
+         argvValue[i].setString(argv[i]);
+      }
+      return entry->execute(argc, argvValue, &gNewEvalState).getStringValue();
+   }
+   else
+   {
+      Con::warnf("Couldn't find function %s in object %s.", funcName, ns->mName);
+      return "";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -1160,18 +1167,32 @@ bool classLinkNamespaces(Namespace *parent, Namespace *child)
    return false;
 }
 
-void setData(S32 type, void *dptr, S32 index, S32 argc, const char **argv, EnumTable *tbl, BitSet32 flag)
+void setData(S32 type, void *dataPtr, S32 index, const char* value, EnumTable *tbl)
 {
    ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
    AssertFatal(cbt, "Con::setData - could not resolve type ID!");
-   cbt->setData((void *) (((const char *)dptr) + index * cbt->getTypeSize()),argc, argv, tbl, flag);
+   cbt->setData((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), value, tbl);
 }
 
-const char *getData(S32 type, void *dptr, S32 index, EnumTable *tbl, BitSet32 flag)
+ConsoleStringValuePtr getData(S32 type, void *dataPtr, S32 index, EnumTable *tbl)
 {
    ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
    AssertFatal(cbt, "Con::getData - could not resolve type ID!");
-   return cbt->getData((void *) (((const char *)dptr) + index * cbt->getTypeSize()), tbl, flag);
+   return cbt->getData((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), tbl);
+}
+   
+void setDataFromValue(S32 type, void *dataPtr, S32 index, ConsoleValue value, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::setData - could not resolve type ID!");
+   cbt->setDataFromValue((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), value, tbl);
+}
+
+ConsoleValuePtr getDataValue(S32 type, void *dataPtr, S32 index, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::getData - could not resolve type ID!");
+   return cbt->getDataValue((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), tbl);
 }
 
 //------------------------------------------------------------------------------
@@ -1539,12 +1560,12 @@ bool expandPath( char* pDstPath, U32 size, const char* pSrcPath, const char* pWo
 
     //Using a special case here because the code below barfs on trying to build a full path for apk reading
  #ifdef TORQUE_OS_ANDROID
-    	if (leadingToken == '/' || strstr(pSrcPath, "/") == NULL)
-    		Platform::makeFullPathName( pSrcPath, pathBuffer, sizeof(pathBuffer), pWorkingDirectoryHint );
-    	else
-    		dSprintf(pathBuffer, sizeof(pathBuffer), "/%s", pSrcPath);
+       if (leadingToken == '/' || strstr(pSrcPath, "/") == NULL)
+          Platform::makeFullPathName( pSrcPath, pathBuffer, sizeof(pathBuffer), pWorkingDirectoryHint );
+       else
+          dSprintf(pathBuffer, sizeof(pathBuffer), "/%s", pSrcPath);
 #else
- 	  Platform::makeFullPathName( pSrcPath, pathBuffer, sizeof(pathBuffer), pWorkingDirectoryHint );
+      Platform::makeFullPathName( pSrcPath, pathBuffer, sizeof(pathBuffer), pWorkingDirectoryHint );
 #endif
 
     // Are we ensuring the trailing slash?
@@ -1710,4 +1731,402 @@ bool stripRepeatSlashes( char* pDstPath, const char* pSrcPath, S32 dstSize )
 }
 
 } // end of Console namespace
+
+
+void ConsoleValuePtr::readStack(Stream &s, ConsoleSerializationState &serializationState, Vector<ConsoleValuePtr> &stack)
+{
+    S16 numTypes = 0;
+    s.read(&numTypes);
+    Vector<StringTableEntry> varTypes;
+    varTypes.setSize(numTypes);
+    for (U32 i=0; i<numTypes; i++)
+    {
+        varTypes[i] = s.readSTString();
+    }
+    
+    U32 numStackValues = 0;
+    s.read(&numStackValues);
+    stack.setSize(numStackValues);
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        U16 refType = 0;
+        ConsoleValuePtr &ptr = stack[i];
+        s.read(&refType);
+        
+        // TODO: ConsoleValue itelf should handle I/O i.e.
+        // ConsoleValue::read(Stream &s, S32 typeId)
+        
+        // Internal value, just copy
+        if (refType < TypeReferenceCounted)
+        {
+            ptr.type = refType;
+            
+            if (refType == TypeInternalStringTableEntry || refType == TypeInternalNamespaceName)
+            {
+                ptr.value.string = s.readSTString();
+            }
+            else if (refType == TypeSavedReference)
+            {
+               S32 refIdx = 0;
+               s.read(&refIdx);
+               ptr.type = serializationState.loadedValues[refIdx]->type;
+               ptr.value = serializationState.loadedValues[refIdx]->value;
+               ptr.AddRef();
+            }
+            else
+            {
+                // Can just copy as-is
+                s.read(&ptr.value.ival);
+            }
+            continue;
+        }
+        
+        StringTableEntry varType = varTypes[refType-TypeReferenceCounted];
+        ConsoleBaseType * type = ConsoleBaseType::getTypeByName(varType);
+        
+        ptr.type = type->getTypeID();
+        ptr.value.refValue = type->createReferenceCountedValue();
+        if (ptr.value.refValue)
+        {
+            ptr.value.refValue->read(s, serializationState);
+            ptr.AddRef();
+        }
+        serializationState.loadedValues.push_back(&ptr);
+    }
+}
+
+void ConsoleValuePtr::writeStack(Stream &s, ConsoleSerializationState &serializationState, Vector<ConsoleValuePtr> &stack)
+{
+    U32 numStackValues = stack.size();
+    
+    // Collate together type names
+    Vector<StringTableEntry> varTypes;
+    Vector<U16> varTypeIds;
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        ConsoleValuePtr &ptr = stack[i];
+        
+        if (isRefType(ptr.type))
+        {
+            ConsoleBaseType *type = ptr.value.refValue->getType();
+            StringTableEntry te = StringTable->insert(type->getTypeName());
+            U32 idx = varTypes.indexOf(te);
+            
+            if (idx == (U32)-1)
+            {
+                varTypes.push_back(te);
+                varTypeIds.push_back((varTypes.size()-1)+TypeReferenceCounted);
+            }
+            else
+            {
+                varTypeIds.push_back(idx+TypeReferenceCounted);
+            }
+        }
+        else
+        {
+            varTypeIds.push_back(ptr.type);
+        }
+    }
+    
+    S16 numTypes = varTypes.size();
+    s.write(numTypes);
+    
+    for (U32 i=0; i<numTypes; i++)
+    {
+        s.writeString(varTypes[i]);
+    }
+    
+    s.write(numStackValues);
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        ConsoleValuePtr &ptr = stack[i];
+       
+        
+        if (isRefType(ptr.type))
+        {
+           Con::printf("Var[%i] is %s", i, ptr.value.refValue->getType()->getTypeName());
+            S32 idx = serializationState.getSavedObjectIdx(ptr.value.refValue);
+            if (idx == -1)
+            {
+               s.write(varTypeIds[i]);
+               ptr.value.refValue->write(s, serializationState);
+               serializationState.addSavedObject(ptr.value.refValue);
+            }
+            else
+            {
+               s.write((U16)TypeSavedReference);
+               s.write(idx);
+            }
+        }
+        else
+        {
+           s.write(varTypeIds[i]);
+           if (ptr.type == TypeInternalStringTableEntry || ptr.type == TypeInternalNamespaceName)
+           {
+               s.writeString(ptr.value.string);
+           }
+           else
+           {
+               // Raw write, easy!
+               s.write(ptr.value.ival);
+           }
+        }
+    }
+}
+
+SimObject* ConsoleValue::getSimObject()
+{
+   switch (type)
+   {
+      case TypeInternalNull:
+         return NULL;
+      case TypeInternalInt:
+         return Sim::findObject(value.ival);
+      case TypeInternalFloat:
+         return Sim::findObject((S32)value.fval);
+      default:
+         return Sim::findObject(getTempStringValue());
+   }
+}
+
+#include "io/memStream.h"
+
+void testStackWrite()
+{
+    Vector<ConsoleValuePtr> stack;
+    
+    ConsoleValuePtr var1;
+    ConsoleValuePtr var2;
+    ConsoleValuePtr var3;
+    
+    ConsoleValuePtr var4;
+    ConsoleValuePtr var5;
+    ConsoleValuePtr var6;
+   ConsoleValuePtr var7;
+   ConsoleValuePtr var8;
+   
+   ConsoleSerializationState state;
+   
+    U8 buffer[16 * 1024];
+    MemStream m(sizeof(buffer), buffer, true, true);
+    
+    ConsoleBaseType *type = ConsoleBaseType::getTypeByName("TypeS32Vector");
+    var1.type = type->getTypeID();
+    var1.value.refValue = type->createReferenceCountedValue();
+    var1.AddRef();
+    m.setPosition(0);
+    m.writeLongString(4096, "1 2 3 4 5");
+    m.setPosition(0);
+    var1.value.refValue->read(m, state);
+    
+    type = ConsoleBaseType::getTypeByName("TypeString");
+    var2.type = type->getTypeID();
+    var2.value.refValue = type->createReferenceCountedValue();
+    var2.AddRef();
+    m.setPosition(0);
+    m.writeLongString(4096, "This is a string");
+    m.setPosition(0);
+    var2.value.refValue->read(m, state);
+    
+    type = ConsoleBaseType::getTypeByName("TypeBufferString");
+    var3.type = type->getTypeID();
+    var3.value.refValue = type->createReferenceCountedValue();
+    var3.AddRef();
+    m.setPosition(0);
+    const char *bufferStr = "Buffered string test";
+    U32 len = dStrlen(bufferStr)+1;
+    m.write(len);
+    m.write(len, bufferStr);
+    m.setPosition(0);
+    var3.value.refValue->read(m, state);
+    
+    var4.type = ConsoleValue::TypeInternalNull;
+    var5.type = ConsoleValue::TypeInternalInt;
+    var5.value.ival = 4096;
+    var6.type = ConsoleValue::TypeInternalFloat;
+    var6.value.fval = 4.096;
+    var7.type = ConsoleValue::TypeInternalStringTableEntry;
+    var7.value.string = StringTable->insert("STEString");
+   
+    var8 = var3;
+    
+    stack.push_back(var1);
+    stack.push_back(var2);
+    stack.push_back(var3);
+    stack.push_back(var4);
+    stack.push_back(var5);
+    stack.push_back(var6);
+   stack.push_back(var7);
+   stack.push_back(var8);
+   
+   ConsoleSerializationState serializationState;
+    
+    
+    m.setPosition(0);
+    ConsoleValuePtr::writeStack(m, serializationState, stack);
+    stack.clearAndReset();
+    serializationState.clear();
+    
+    m.setPosition(0);
+    ConsoleValuePtr::readStack(m, serializationState, stack);
+    
+    for (U32 i=0; i<stack.size(); i++)
+    {
+       Con::printf("Stack[%u] type == %u value == %s refCount == %i", i, stack[i].type, stack[i].getStringValue(), ConsoleValue::isRefType(stack[i].type) ? stack[i].value.refValue->refCount : 0);
+    }
+    stack.clearAndReset();
+    
+    
+    
+}
+
+
+ConsoleFunction(testExecute, void, 2, 2, "")
+{
+   SimObject* frodoObject = argv[1].getSimObject();
+   if (frodoObject)
+   {
+      Con::executef(frodoObject, "testFunc", "string", 1, 2);
+   }
+}
+
+ConsoleFunction(testReturnArray, ConsoleValuePtr, 1, 1, "")
+{
+   return ConsoleValuePtr(ConsoleArrayValue::fromValues(0, NULL));
+}
+
+ConsoleMethod(SimObject, testMethod, ConsoleValuePtr, 2, 2, "")
+{
+   ConsoleValuePtr ptr;
+   ptr.setValue(ConsoleStringValuePtr(object->getName()));
+   return ptr;
+}
+
+
+//------------------------------------------------------------------------------
+
+ConsoleValuePtr _BaseEngineConsoleCallbackHelper::_exec()
+{
+   ConsoleValuePtr returnValue;
+   if( mThis )
+   {
+      mArgv[1].setValue(ConsoleSimObjectPtr::fromObject(mThis));
+      
+      // Cannot invoke callback until object has been registered
+      if (mThis->isProperlyAdded()) {
+         
+         Namespace* ns = mThis->getNamespace();
+         Namespace::Entry* entry = ns->lookup(mCallbackName);
+         
+         if (entry)
+         {
+            returnValue.setValue(entry->execute(mArgc, mArgv, &gNewEvalState));
+         }
+         else
+         {
+            Con::warnf("Couldn't find function %s::%s.", ns->mName, mCallbackName);
+            returnValue.setNull();
+         }
+         
+      } else {
+         returnValue.setNull();
+      }
+   }
+   else
+   {
+      Namespace* ns = Namespace::global();
+      Namespace::Entry* entry = ns->lookup(mCallbackName);
+      
+      if (entry)
+      {
+         returnValue.setValue(entry->execute(mArgc, mArgv, &gNewEvalState));
+      }
+      else
+      {
+         Con::warnf("Couldn't find global function %s::%s.", ns->mName, mCallbackName);
+         returnValue.setNull();
+      }
+   }
+   
+   mArgc = mInitialArgc; // reset args
+   return returnValue;
+}
+
+ConsoleValuePtr _BaseEngineConsoleCallbackHelper::_execLater(SimConsoleThreadExecEvent *evt)
+{
+   mArgc = mInitialArgc; // reset args
+   Sim::postEvent((SimObject*)Sim::getRootGroup(), evt, Sim::getCurrentTime());
+   return evt->getCB().waitForResult();
+}
+
+void _BaseEngineConsoleCallbackHelper::postEvent(SimConsoleThreadExecEvent *evt)
+{
+   Sim::postEvent((SimObject*)Sim::getRootGroup(), evt, Sim::getCurrentTime());
+}
+
+
+
+
+void ConsoleStringValue::read(Stream &s, ConsoleSerializationState &state)
+{
+   U32 len = 0;
+   s.read(&len);
+   
+   value.buffer = (char*)dMalloc(len);
+   value.bufferLen = len;
+   s.read(len, value.buffer);
+}
+
+void ConsoleStringValue::write(Stream &s, ConsoleSerializationState &state)
+{
+   s.write(value.bufferLen);
+   s.write(value.bufferLen, value.buffer);
+}
+
+void ConsoleValuePtr::setValue(const ConsoleStringValuePtr &other)
+{
+   DecRef();
+   
+   type = other.value->getInternalType();
+   value.refValue = other.value;
+   value.refValue->addRef();
+}
+
+void ConsoleValuePtr::setString(const char* other)
+{
+   DecRef();
+   
+   value.refValue = ConsoleStringValue::fromString(other);
+   type = value.refValue->getInternalType();
+   value.refValue->addRef();
+}
+
+ConsoleStringValuePtr::ConsoleStringValuePtr(const char *str)
+{
+   value = ConsoleStringValue::fromString(str);
+   value->addRef();
+}
+
+ConsoleStringValuePtr::ConsoleStringValuePtr(SimpleString* str)
+{
+   value = ConsoleStringValue::fromSimpleString(str);
+   value->addRef();
+}
+
+ConsoleStringValuePtr::ConsoleStringValuePtr(ConsoleStringValuePtr* other)
+{
+   value = other->value;
+   value->addRef();
+}
+
+
+ConsoleStringValuePtr::ConsoleStringValuePtr(ConsoleStringValue* newValue)
+{
+   value = newValue;
+   value->addRef();
+}
+
 

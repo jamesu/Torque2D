@@ -130,7 +130,7 @@ ConsoleMethodWithDocs(ShapeVector, setLineColor, ConsoleVoid, 3, 6, (float red, 
         if ( elementCount == 1 )
         {
             // Set color.
-            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getLineColor()), 0, 1, &(argv[2]) );
+            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getLineColor()), 0, argv[2] );
             return;
         }
 
@@ -241,7 +241,7 @@ ConsoleMethodWithDocs(ShapeVector, setFillColor, ConsoleVoid, 3, 3, (float red, 
         if ( elementCount == 1 )
         {
             // Set color.
-            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getFillColor()), 0, 1, &(argv[2]) );
+            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getFillColor()), 0, argv[2] );
             return;
         }
 

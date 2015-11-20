@@ -194,6 +194,6 @@ public:
    void incRefCount();
    void decRefCount();
 };
-DefineConsoleType( TypeGuiProfile)
+DefineNativeConsoleType( TypeGuiProfile, GuiControlProfile* )
 
 #endif //_GUITYPES_H

@@ -809,7 +809,7 @@ void GuiTabBookCtrl::selectPage( GuiTabPageCtrl *page )
          // Notify User
          char *retBuffer = Con::getReturnBuffer( 512 );
          dStrcpy( retBuffer, tab->getText() );
-         Con::executef( this, 2, "onTabSelected",  retBuffer );
+         Con::executef( this, "onTabSelected",  retBuffer );
 
       }
       else
@@ -831,7 +831,7 @@ void GuiTabBookCtrl::selectPage( const char* pageName )
          // Notify User
          char *retBuffer = Con::getReturnBuffer( 512 );
          dStrcpy( retBuffer, tab->getText() );
-         Con::executef( this, 2, "onTabSelected",  retBuffer );
+         Con::executef( this, "onTabSelected",  retBuffer );
 
       }
       else
@@ -883,7 +883,7 @@ void GuiTabBookCtrl::selectNextPage()
          {
             char *retBuffer = Con::getReturnBuffer( 512 );
             dStrcpy( retBuffer, tab->getText() );
-            Con::executef( this, 2, "onTabSelected",  retBuffer );
+            Con::executef( this, "onTabSelected",  retBuffer );
          }
 
          return;
@@ -915,7 +915,7 @@ void GuiTabBookCtrl::selectPrevPage()
          {
             char *retBuffer = Con::getReturnBuffer( 512 );
             dStrcpy( retBuffer, tab->getText() );
-            Con::executef( this, 2, "onTabSelected",  retBuffer );
+            Con::executef( this, "onTabSelected",  retBuffer );
          }
 
          return;
@@ -933,5 +933,5 @@ ConsoleMethod( GuiTabBookCtrl, selectPage, void, 3, 3, "(int pageIndex)")
 
 ConsoleMethod( GuiTabBookCtrl, selectPageName, void, 3, 3, "(pageName)")
 {
-   object->selectPage(argv[2]);
+   object->selectPage(argv[2].getTempStringValue());
 }

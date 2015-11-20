@@ -136,7 +136,7 @@ ConsoleMethod( MessageVector, getNumLines, S32, 2, 2, "() Use the getNumLines me
    return object->getNumLines();
 }
 
-ConsoleMethod( MessageVector, getLineTextByTag, const char*, 3, 3, "( tag ) Use the getLineTextByTag method to scan through the lines in the vector, returning the first line that has a matching tag.\n"
+ConsoleMethod( MessageVector, getLineTextByTag, ConsoleString, 3, 3, "( tag ) Use the getLineTextByTag method to scan through the lines in the vector, returning the first line that has a matching tag.\n"
                                                                 "@param tag An special marker that may have been used when creating lines in the vector.\n"
                                                                 "@return Returns the contents of the first line found with a matching tag or NULL indicating no match.\n"
                                                                 "@sa insertLine, pushBackLine, pushFrontLine")
@@ -162,7 +162,7 @@ ConsoleMethod( MessageVector, getLineIndexByTag, S32, 3, 3, "( tag ) Scan throug
    return -1;
 }
 
-ConsoleMethod( MessageVector, getLineText, const char*, 3, 3, "( index ) Use the getLineIndex method to get the text at a specified line.\n"
+ConsoleMethod( MessageVector, getLineText, ConsoleString, 3, 3, "( index ) Use the getLineIndex method to get the text at a specified line.\n"
                                                                 "@param index The index in the vector from which to retrieve a line of text.\n"
                                                                 "@return Returns the text at the specified line, or NULL indicating a bad index.\n"
                                                                 "@sa insertLine, pushBackLine, pushFrontLine")

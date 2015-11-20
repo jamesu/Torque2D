@@ -212,10 +212,10 @@ ConsoleFunctionWithDocs(OpenALRegisterExtensions, ConsoleVoid, 1, 1, ())
 */
 ConsoleFunctionWithDocs(alGetString, ConsoleString, 2, 2, ( ALEnum ))
 {
-   ALenum e = getEnum(argv[1], (Context|Get));
+   ALenum e = getEnum(argv[1].getTempStringValue(), (Context|Get));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alGetString: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alGetString: invalid enum name '%s'", argv[1].getTempStringValue());
       return "";
    }
 
@@ -234,7 +234,7 @@ ConsoleFunctionWithDocs(alGetString, ConsoleString, 2, 2, ( ALEnum ))
 ConsoleFunctionWithDocs(alxGetAudioLength, ConsoleInt, 2, 2, ( audio-assetId ))
 {
     // Fetch asset Id.
-    const char* pAssetId = argv[1];
+    const char* pAssetId = argv[1].getTempStringValue();
 
     // Acquire audio asset.
     AudioAsset* pAudioAsset = AssetDatabase.acquireAsset<AudioAsset>( pAssetId );
@@ -271,7 +271,7 @@ ConsoleFunctionWithDocs(alxGetAudioLength, ConsoleInt, 2, 2, ( audio-assetId ))
 ConsoleFunctionWithDocs(alxCreateSource, ConsoleInt, 2, 2, (audio-assetId))
 {
     // Fetch asset Id.
-    const char* pAssetId = argv[1];
+    const char* pAssetId = argv[1].getTempStringValue();
 
     // Acquire audio asset.
     AudioAsset* pAudioAsset = AssetDatabase.acquireAsset<AudioAsset>( pAssetId );
@@ -304,14 +304,14 @@ ConsoleFunctionWithDocs(alxCreateSource, ConsoleInt, 2, 2, (audio-assetId))
 */
 ConsoleFunctionWithDocs(alxSourcef, ConsoleVoid, 4, 4, ( handle , ALEnum , value ))
 {
-   ALenum e = getEnum(argv[2], (Source|Set|Float));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Set|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSourcef: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSourcef: invalid enum name '%s'", argv[2].getTempStringValue());
       return;
    }
 
-   alxSourcef(dAtoi(argv[1]), e, dAtof(argv[3]));
+   alxSourcef(dAtoi(argv[1].getTempStringValue()), e, dAtof(argv[3]));
 }
 
 
@@ -325,10 +325,10 @@ ConsoleFunctionWithDocs(alxSourcef, ConsoleVoid, 4, 4, ( handle , ALEnum , value
 */
 ConsoleFunctionWithDocs(alxSource3f, ConsoleVoid, 3, 6, ( handle , ALEnum , x , y , z ))
 {
-   ALenum e = getEnum(argv[2], (Source|Set|Float3));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Set|Float3));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSource3f: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSource3f: invalid enum name '%s'", argv[2].getTempStringValue());
       return;
    }
 
@@ -348,7 +348,7 @@ ConsoleFunctionWithDocs(alxSource3f, ConsoleVoid, 3, 6, ( handle , ALEnum , x , 
       pos.z = dAtof(argv[5]);
    }
 
-   alxSource3f(dAtoi(argv[1]), e, pos.x, pos.y, pos.z);
+   alxSource3f(dAtoi(argv[1].getTempStringValue()), e, pos.x, pos.y, pos.z);
 }
 
 
@@ -362,14 +362,14 @@ ConsoleFunctionWithDocs(alxSource3f, ConsoleVoid, 3, 6, ( handle , ALEnum , x , 
 */
 ConsoleFunctionWithDocs(alxSourcei, ConsoleVoid, 4, 4, ( handle , ALEnum , value ))
 {
-   ALenum e = getEnum(argv[2], (Source|Set|Int));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Set|Int));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSourcei: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxSourcei: invalid enum name '%s'", argv[2].getTempStringValue());
       return;
    }
 
-   alxSourcei(dAtoi(argv[1]), e, static_cast<ALint>(dAtoi(argv[3])));
+   alxSourcei(dAtoi(argv[1].getTempStringValue()), e, static_cast<ALint>(dAtoi(argv[3])));
 }
 
 
@@ -383,15 +383,15 @@ ConsoleFunctionWithDocs(alxSourcei, ConsoleVoid, 4, 4, ( handle , ALEnum , value
 */
 ConsoleFunctionWithDocs(alxGetSourcef, ConsoleFloat, 3, 3, ( handle , ALEnum ))
 {
-   ALenum e = getEnum(argv[2], (Source|Get|Float));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Get|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSourcef: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSourcef: invalid enum name '%s'", argv[2].getTempStringValue());
       return(0.f);
    }
 
    F32 value;
-   alxGetSourcef(dAtoi(argv[1]), e, &value);
+   alxGetSourcef(dAtoi(argv[1].getTempStringValue()), e, &value);
    return(value);
 }
 
@@ -406,15 +406,15 @@ ConsoleFunctionWithDocs(alxGetSourcef, ConsoleFloat, 3, 3, ( handle , ALEnum ))
 */
 ConsoleFunctionWithDocs(alxGetSource3f, ConsoleString, 3, 3, ( handle , ALEnum ))
 {
-   ALenum e = getEnum(argv[2], (Source|Get|Float));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Get|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSource3f: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSource3f: invalid enum name '%s'", argv[2].getTempStringValue());
       return("0 0 0");
    }
 
    F32 value1, value2, value3;
-   alxGetSource3f(dAtoi(argv[1]), e, &value1, &value2, &value3);
+   alxGetSource3f(dAtoi(argv[1].getTempStringValue()), e, &value1, &value2, &value3);
 
    char * ret = Con::getReturnBuffer(64);
    dSprintf(ret, 64, "%7.3f %7.3 %7.3", value1, value2, value3);
@@ -432,15 +432,15 @@ ConsoleFunctionWithDocs(alxGetSource3f, ConsoleString, 3, 3, ( handle , ALEnum )
 */
 ConsoleFunctionWithDocs(alxGetSourcei, ConsoleInt, 3, 3, ( handle , ALEnum ))
 {
-   ALenum e = getEnum(argv[2], (Source|Get|Int));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Get|Int));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSourcei: invalid enum name '%s'", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "cAudio_alxGetSourcei: invalid enum name '%s'", argv[2].getTempStringValue());
       return(0);
    }
 
    ALint value;
-   alxGetSourcei(dAtoi(argv[1]), e, &value);
+   alxGetSourcei(dAtoi(argv[1].getTempStringValue()), e, &value);
    return(static_cast<S32>(value));
 }
 
@@ -453,7 +453,7 @@ ConsoleFunctionWithDocs(alxGetSourcei, ConsoleInt, 3, 3, ( handle , ALEnum ))
 ConsoleFunctionWithDocs(alxPlay, ConsoleInt, 2, 2, (audio-assetId))
 {
     // Fetch asset Id.
-    const char* pAssetId = argv[1];
+    const char* pAssetId = argv[1].getTempStringValue();
 
     // Acquire audio asset.
     AudioAsset* pAudioAsset = AssetDatabase.acquireAsset<AudioAsset>( pAssetId );
@@ -482,7 +482,7 @@ ConsoleFunctionWithDocs(alxPlay, ConsoleInt, 2, 2, (audio-assetId))
 */
 ConsoleFunctionWithDocs(alxPause, ConsoleBool, 2, 2, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
    if(handle == NULL_AUDIOHANDLE)
       return false;
    return alxPause( handle );
@@ -495,7 +495,7 @@ ConsoleFunctionWithDocs(alxPause, ConsoleBool, 2, 2, ( handle ))
 */
 ConsoleFunctionWithDocs(alxUnpause, ConsoleVoid, 2, 2, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
    if(handle == NULL_AUDIOHANDLE)
       return;
    alxUnPause( handle );
@@ -509,7 +509,7 @@ ConsoleFunctionWithDocs(alxUnpause, ConsoleVoid, 2, 2, ( handle ))
 */
 ConsoleFunctionWithDocs(alxStop, ConsoleVoid, 2, 2, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
    if(handle == NULL_AUDIOHANDLE)
       return;
    alxStop(handle);
@@ -533,7 +533,7 @@ ConsoleFunctionWithDocs(alxStopAll, ConsoleVoid, 1, 1, ())
 */
 ConsoleFunctionWithDocs(alxIsPlaying, ConsoleBool, 2, 5, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
    if(handle == NULL_AUDIOHANDLE)
       return false;
    return alxIsPlaying(handle);
@@ -551,14 +551,14 @@ ConsoleFunctionWithDocs(alxIsPlaying, ConsoleBool, 2, 5, ( handle ))
 */
 ConsoleFunctionWithDocs(alxListenerf, ConsoleVoid, 3, 3, ( AlEnum , value ))
 {
-   ALenum e = getEnum(argv[1], (Listener|Set|Float));
+   ALenum e = getEnum(argv[1].getTempStringValue(), (Listener|Set|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alxListenerf: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alxListenerf: invalid enum name '%s'", argv[1].getTempStringValue());
       return;
    }
 
-   alxListenerf(e, dAtof(argv[2]));
+   alxListenerf(e, dAtof(argv[2].getTempStringValue()));
 }
 
 
@@ -571,10 +571,10 @@ ConsoleFunctionWithDocs(alxListenerf, ConsoleVoid, 3, 3, ( AlEnum , value ))
 */
 ConsoleFunctionWithDocs(alListener3f, ConsoleVoid, 3, 5, ( ALEnum , x , y , z))
 {
-   ALenum e = getEnum(argv[1], (Listener|Set|Float3));
+   ALenum e = getEnum(argv[1].getTempStringValue(), (Listener|Set|Float3));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alListener3f: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alListener3f: invalid enum name '%s'", argv[1].getTempStringValue());
       return;
    }
 
@@ -586,7 +586,7 @@ ConsoleFunctionWithDocs(alListener3f, ConsoleVoid, 3, 5, ( ALEnum , x , y , z))
 
    Point3F pos;
    if(argc == 3)
-      dSscanf(argv[2], "%g %g %g", &pos.x, &pos.y, &pos.z);
+      dSscanf(argv[2].getTempStringValue(), "%g %g %g", &pos.x, &pos.y, &pos.z);
    else
    {
       pos.x = dAtof(argv[2]);
@@ -607,10 +607,10 @@ ConsoleFunctionWithDocs(alListener3f, ConsoleVoid, 3, 5, ( ALEnum , x , y , z))
 */
 ConsoleFunctionWithDocs(alxGetListenerf, ConsoleFloat, 2, 2, ( ALEnum ))
 {
-   ALenum e = getEnum(argv[1], (Source|Get|Float));
+   ALenum e = getEnum(argv[1].getTempStringValue(), (Source|Get|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alxGetListenerf: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alxGetListenerf: invalid enum name '%s'", argv[1].getTempStringValue());
       return(0.f);
    }
 
@@ -629,10 +629,10 @@ ConsoleFunctionWithDocs(alxGetListenerf, ConsoleFloat, 2, 2, ( ALEnum ))
 */
 ConsoleFunctionWithDocs(alGetListener3f, ConsoleString, 2, 2, ( ALEnum ))
 {
-   ALenum e = getEnum(argv[2], (Source|Get|Float));
+   ALenum e = getEnum(argv[2].getTempStringValue(), (Source|Get|Float));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alGetListener3f: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alGetListener3f: invalid enum name '%s'", argv[1].getTempStringValue());
       return("0 0 0");
    }
 
@@ -654,10 +654,10 @@ ConsoleFunctionWithDocs(alGetListener3f, ConsoleString, 2, 2, ( ALEnum ))
 */
 ConsoleFunctionWithDocs(alGetListeneri, ConsoleInt, 2, 2, ( ALEnum ))
 {
-   ALenum e = getEnum(argv[1], (Source|Get|Int));
+   ALenum e = getEnum(argv[1].getTempStringValue(), (Source|Get|Int));
    if(e == AL_INVALID)
    {
-      Con::errorf(ConsoleLogEntry::General, "alGetListeneri: invalid enum name '%s'", argv[1]);
+      Con::errorf(ConsoleLogEntry::General, "alGetListeneri: invalid enum name '%s'", argv[1].getTempStringValue());
       return(0);
    }
 
@@ -677,10 +677,10 @@ ConsoleFunctionWithDocs(alGetListeneri, ConsoleInt, 2, 2, ( ALEnum ))
 */
 ConsoleFunctionWithDocs(alxGetChannelVolume, ConsoleFloat, 2, 2, ( channelID ))
 {
-   U32 channel = dAtoi(argv[1]);
+   U32 channel = dAtoi(argv[1].getTempStringValue());
    if(channel >= Audio::AudioVolumeChannels)
    {
-      Con::errorf(ConsoleLogEntry::General, "alxGetChannelVolume: invalid channel '%d'", dAtoi(argv[1]));
+      Con::errorf(ConsoleLogEntry::General, "alxGetChannelVolume: invalid channel '%d'", dAtoi(argv[1].getTempStringValue()));
       return(0.f);
    }
 
@@ -696,8 +696,8 @@ ConsoleFunctionWithDocs(alxGetChannelVolume, ConsoleFloat, 2, 2, ( channelID ))
 */
 ConsoleFunctionWithDocs(alxSetChannelVolume, ConsoleBool, 3, 3, ( channelD , volume ))
 {
-   U32 channel = dAtoi(argv[1]);
-   F32 volume = mClampF(dAtof(argv[2]), 0.f, 1.f);
+   U32 channel = dAtoi(argv[1].getTempStringValue());
+   F32 volume = mClampF(dAtof(argv[2].getTempStringValue()), 0.f, 1.f);
 
    if(channel >= Audio::AudioVolumeChannels)
    {
@@ -718,7 +718,7 @@ ConsoleFunctionWithDocs(alxSetChannelVolume, ConsoleBool, 3, 3, ( channelD , vol
 */
 ConsoleFunctionWithDocs(alxGetStreamPosition, ConsoleFloat, 2, 2, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
 
    if(handle == NULL_AUDIOHANDLE)
       return -1;
@@ -734,7 +734,7 @@ ConsoleFunctionWithDocs(alxGetStreamPosition, ConsoleFloat, 2, 2, ( handle ))
 */
 ConsoleFunctionWithDocs(alxGetStreamDuration, ConsoleFloat, 2, 2, ( handle ))
 {
-   AUDIOHANDLE handle = dAtoi(argv[1]);
+   AUDIOHANDLE handle = dAtoi(argv[1].getTempStringValue());
 
    if(handle == NULL_AUDIOHANDLE)
       return -1;
@@ -750,7 +750,7 @@ ConsoleFunctionWithDocs(alxGetStreamDuration, ConsoleFloat, 2, 2, ( handle ))
 ConsoleFunctionWithDocs(startiOSAudioStream, ConsoleInt, 2, 2, (audio-assetId))
 {
     // Fetch asset Id.
-    const char* pAssetId = argv[1];
+    const char* pAssetId = argv[1].getTempStringValue();
 
     // Acquire audio asset.
     AudioAsset* pAudioAsset = AssetDatabase.acquireAsset<AudioAsset>( pAssetId );
@@ -780,7 +780,7 @@ ConsoleFunctionWithDocs(startiOSAudioStream, ConsoleInt, 2, 2, (audio-assetId))
 */
 ConsoleFunctionWithDocs(stopiOSAudioStream, ConsoleVoid, 2, 2, ( streamId ))
 {
-    SimObjectId streamId = dAtoi( argv[1] );
+    SimObjectId streamId = dAtoi( argv[1].getTempStringValue() );
     iOSStreamSource* pStream = Sim::findObject<iOSStreamSource>( streamId );
 
     if( pStream != NULL )
@@ -797,10 +797,10 @@ ConsoleFunctionWithDocs(stopiOSAudioStream, ConsoleVoid, 2, 2, ( streamId ))
 */
 ConsoleFunctionWithDocs(setiOSAudioStreamVolume, ConsoleVoid, 3, 3, setiPhoneAudioVolume( Stream ID, float volume ))
 {
-    SimObjectId streamId = dAtoi( argv[1] );
+    SimObjectId streamId = dAtoi( argv[1].getTempStringValue() );
     iOSStreamSource* pStream = Sim::findObject<iOSStreamSource>( streamId );
     
-    F32 volume = dAtof( argv[2] );
+    F32 volume = dAtof( argv[2].getTempStringValue() );
     
     if( pStream ) {
         if( pStream->isPlaying() ) {

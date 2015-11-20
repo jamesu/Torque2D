@@ -334,11 +334,11 @@ protected:
     StringTableEntry mClassName;     ///< Stores the class name to link script class namespaces
     StringTableEntry mSuperClassName;   ///< Stores super class name to link script class namespaces
 
-    static bool setClass(void* obj, const char* data)                                { static_cast<SimObject*>(obj)->setClassNamespace(data); return false; };
-    static bool setSuperClass(void* obj, const char* data)                           { static_cast<SimObject*>(obj)->setSuperClassNamespace(data); return false; };
+    static bool setClass(void *obj, const ConsoleValuePtr data)                      { static_cast<SimObject*>(obj)->setClassNamespace(data.getTempStringValue()); return false; };
+    static bool setSuperClass(void *obj, const ConsoleValuePtr data)                 { static_cast<SimObject*>(obj)->setSuperClassNamespace(data.getTempStringValue()); return false; };
     static bool writeCanSaveDynamicFields( void* obj, StringTableEntry pFieldName )  { return static_cast<SimObject*>(obj)->mCanSaveFieldDictionary == false; }
     static bool writeInternalName( void* obj, StringTableEntry pFieldName )          { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mInternalName != NULL && simObject->mInternalName != StringTable->EmptyString; }
-    static bool setParentGroup(void* obj, const char* data);
+    static bool setParentGroup(void *obj, const ConsoleValuePtr data);
     static bool writeParentGroup( void* obj, StringTableEntry pFieldName )           { return static_cast<SimObject*>(obj)->mGroup != NULL; }
     static bool writeSuperclass( void* obj, StringTableEntry pFieldName )            { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mSuperClassName != NULL && simObject->mSuperClassName != StringTable->EmptyString; }
     static bool writeClass( void* obj, StringTableEntry pFieldName )                 { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mClassName != NULL && simObject->mClassName != StringTable->EmptyString; }
@@ -453,7 +453,7 @@ public:
     SimObject( const U8 namespaceLinkMask = LinkSuperClassName | LinkClassName );
     virtual ~SimObject();
 
-    virtual bool processArguments(S32 argc, const char **argv);  ///< Process constructor options. (ie, new SimObject(1,2,3))
+    virtual bool processArguments(S32 argc, ConsoleValuePtr argv[]);  ///< Process constructor options. (ie, new SimObject(1,2,3))
 
     /// @}
 

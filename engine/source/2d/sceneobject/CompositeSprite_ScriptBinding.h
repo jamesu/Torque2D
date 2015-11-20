@@ -83,7 +83,7 @@ ConsoleMethodWithDocs(CompositeSprite, setBatchLayout, ConsoleVoid, 3, 3, (batch
     if ( batchLayoutType == CompositeSprite::INVALID_LAYOUT )
     {
         // Warn.
-        Con::warnf( "CompositeSprite::setBatchLayout() - Unknown batch layout type of '%s'.", argv[2] );
+        Con::warnf( "CompositeSprite::setBatchLayout() - Unknown batch layout type of '%s'.", argv[2].getTempStringValue() );
         return;
     }
 
@@ -164,7 +164,7 @@ ConsoleMethodWithDocs(CompositeSprite, setBatchSortMode, ConsoleVoid, 3, 3, (ren
     if ( batchSortMode == SceneRenderQueue::RENDER_SORT_INVALID )
     {
         // Warn.
-        Con::warnf( "CompositeSprite::setBatchSortMode() - Unknown batch sort mode of '%s'.", argv[2] );
+        Con::warnf( "CompositeSprite::setBatchSortMode() - Unknown batch sort mode of '%s'.", argv[2].getTempStringValue() );
         return;
     }
 
@@ -382,7 +382,7 @@ ConsoleMethodWithDocs(CompositeSprite, setSpriteImage, ConsoleVoid, 3, 4, (image
         else
         {
             // Set the image and pass the named frame string
-            object->setSpriteImage( argv[2], argv[3] );
+            object->setSpriteImage( argv[2].getTempStringValue(), argv[3].getTempStringValue() );
         }
     }
     else
@@ -879,7 +879,7 @@ ConsoleMethodWithDocs(CompositeSprite, setSpriteBlendColor, ConsoleVoid, 3, 6, (
                 return;
             }
 
-            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getSpriteBlendColor()), 0, 1, &(argv[2]) );
+            Con::setData( TypeColorF, &const_cast<ColorF&>(object->getSpriteBlendColor()), 0, argv[2] );
             return;
         }
 
@@ -1089,7 +1089,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickPoint, ConsoleString, 3, 4, (x / y ))
         Con::warnf( "CompositeSprite::pickPoint() - Cannot pick sprites if clipping mode is off." );
 
         // Return nothing.
-        return NULL;
+        return "";
     }
 
     // The point.
@@ -1119,7 +1119,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickPoint, ConsoleString, 3, 4, (x / y ))
     else
     {
         Con::warnf("CompositeSprite::pickPoint() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Fetch the render transform.
@@ -1136,7 +1136,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickPoint, ConsoleString, 3, 4, (x / y ))
 
     // Finish if no results.
     if (resultCount == 0 )
-        return NULL;
+        return "";
 
     // Fetch results.
     typeSpriteBatchQueryResultVector& queryResults = pSpriteBatchQuery->getQueryResults();
@@ -1191,7 +1191,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickArea, ConsoleString, 4, 6, (startx/y,
         Con::warnf( "CompositeSprite::pickArea() - Cannot pick sprites if clipping mode is off." );
 
         // Return nothing.
-        return NULL;
+        return "";
     }
 
     // Upper left and lower right bound.
@@ -1234,7 +1234,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickArea, ConsoleString, 4, 6, (startx/y,
     else
     {
         Con::warnf("CompositeSprite::pickArea() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Calculate normalized AABB.
@@ -1266,7 +1266,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickArea, ConsoleString, 4, 6, (startx/y,
 
     // Finish if no results.
     if (resultCount == 0 )
-        return NULL;
+        return "";
 
     // Fetch results.
     typeSpriteBatchQueryResultVector& queryResults = pSpriteBatchQuery->getQueryResults();
@@ -1321,7 +1321,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickRay, ConsoleString, 4, 6, (startx/y, 
         Con::warnf( "CompositeSprite::pickRay() - Cannot pick sprites if clipping mode is off." );
 
         // Return nothing.
-        return NULL;
+        return "";
     }
 
     // Upper left and lower right bound.
@@ -1364,7 +1364,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickRay, ConsoleString, 4, 6, (startx/y, 
     else
     {
         Con::warnf("CompositeSprite::pickRay() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Fetch the render transform.
@@ -1385,7 +1385,7 @@ ConsoleMethodWithDocs(CompositeSprite, pickRay, ConsoleString, 4, 6, (startx/y, 
 
     // Finish if no results.
     if (resultCount == 0 )
-        return NULL;
+        return "";
 
     // Sort ray-cast result.
     pSpriteBatchQuery->sortRaycastQueryResult();

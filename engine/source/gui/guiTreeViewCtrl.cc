@@ -1094,10 +1094,10 @@ bool GuiTreeViewCtrl::onWake()
    if(mDestroyOnSleep)
    {
       destroyTree();
-      Con::executef(this, 1, "onWake");
+      Con::executef(this, "onWake");
 
       // (Re)build our icon table.
-      const char * res = Con::executef(this, 1, "onDefineIcons");
+      const char * res = Con::executef(this, "onDefineIcons");
 
       // If no icons were defined in script then use defaults.
       if(!(dAtob(res)))
@@ -1273,7 +1273,7 @@ void GuiTreeViewCtrl::setInstantGroup(SimObject * obj)
       Con::setVariable("instantGroup", grp->getIdString());
 
     // Notify Script 
-      Con::executef(this,2,"onInstantGroupSelected",Con::getIntArg(grp->getId()));
+      Con::executef(this, "onInstantGroupSelected", grp->getId());
    }
 }
 
@@ -1410,7 +1410,7 @@ void GuiTreeViewCtrl::removeSelection(S32 itemId)
 
    // Callback - onRemoveSelection( %itemID )
    if (item->getObject())
-      Con::executef(this, 2, "onRemoveSelection", Con::getIntArg(item->getObject()->getId()));
+      Con::executef(this, "onRemoveSelection", item->getObject()->getId());
 }
 
 void GuiTreeViewCtrl::addSelection(S32 itemId)
@@ -1519,7 +1519,7 @@ void GuiTreeViewCtrl::addSelection(S32 itemId)
 
    // Callback - onAddSelection( %itemID )
    if (item->getObject())
-      Con::executef(this, 2, "onAddSelection", Con::getIntArg(item->getObject()->getId()));
+      Con::executef(this, "onAddSelection", item->getObject()->getId());
 }
 
 
@@ -1530,15 +1530,15 @@ void GuiTreeViewCtrl::onItemSelected( Item *item )
    if (item->isInspectorData())
    {
        if(item->getObject())
-      Con::executef(this, 2, "onSelect", Con::getIntArg(item->getObject()->getId()));
+      Con::executef(this, "onSelect", item->getObject()->getId());
       if (!(item->isParent()) && item->getObject())
-         Con::executef(this, 2, "onInspect", Con::getIntArg(item->getObject()->getId()));
+         Con::executef(this, "onInspect", item->getObject()->getId());
    }
    else
    {
-      Con::executef(this, 2, "onSelect", buf);
+      Con::executef(this, "onSelect", buf);
       if (!(item->isParent()))
-         Con::executef(this, 2, "onInspect", buf);
+         Con::executef(this, "onInspect", buf);
    }
    mSelectedItem = item->getID();
 }
@@ -1644,9 +1644,9 @@ bool GuiTreeViewCtrl::setItemSelected(S32 itemId, bool select)
       item->mState.set(Item::Selected, false);
 
       if (item->isInspectorData() && item->getObject())
-         Con::executef(this, 2, "onUnSelect", Con::getIntArg(item->getObject()->getId()));
+         Con::executef(this, "onUnSelect", item->getObject()->getId());
       else
-         Con::executef(this, 2, "onUnSelect", Con::getIntArg(item->mId));
+         Con::executef(this, "onUnSelect", (S32)item->mId);
 
       // remove it from the selected items list
       for (S32 i = 0; i < mSelectedItems.size(); i++)
@@ -1785,7 +1785,7 @@ bool GuiTreeViewCtrl::editItem( S32 itemId, const char* newText, const char* new
 
 void GuiTreeViewCtrl::deleteSelection()
 {
-   Con::executef(this, 1, "onDeleteSelection");
+   Con::executef(this, "onDeleteSelection");
 
    if (mSelectedItems.empty())
    {
@@ -1816,7 +1816,7 @@ void GuiTreeViewCtrl::deleteSelection()
 
    mSelected.clear();
    mSelectedItems.clear();
-   Con::executef( this, 1, "onObjectDeleteCompleted");   
+   Con::executef( this, "onObjectDeleteCompleted");   
 }
 
 //------------------------------------------------------------------------------
@@ -1851,7 +1851,7 @@ bool GuiTreeViewCtrl::onKeyDown( const GuiEvent& event )
       }
  
       //call a generic bit of script that will let the subclass know that a key was pressed
-      Con::executef(this, 3, "onKeyDown", Con::getIntArg(event.modifier), Con::getIntArg(event.keyCode));
+      Con::executef(this, "onKeyDown", (S32)event.modifier, (S32)event.keyCode);
    }
 
    // only do operations if only one item is selected
@@ -2725,7 +2725,7 @@ void GuiTreeViewCtrl::onMouseDown(const GuiEvent & event)
          // already selected, so unselect it and remove it
          removeSelection(item->mId);
          if (item->isInspectorData() && item->getObject())
-            Con::executef(this,2,"onRemoveSelection",Con::getIntArg(item->getObject()->getId()));
+            Con::executef(this, "onRemoveSelection", item->getObject()->getId());
       } else
       {
          // otherwise select it and add it to the list
@@ -2739,7 +2739,7 @@ void GuiTreeViewCtrl::onMouseDown(const GuiEvent & event)
          //if (newSelection) {
          addSelection(item->mId);
          if (item->isInspectorData() && item->getObject())
-            Con::executef(this,2,"onAddSelection",Con::getIntArg(item->getObject()->getId()));
+            Con::executef(this, "onAddSelection", item->getObject()->getId());
          //}
 
 
@@ -2795,7 +2795,7 @@ void GuiTreeViewCtrl::onMouseDown(const GuiEvent & event)
                   {
                      addSelection(mVisibleItems[j]->mId);
                      if (mVisibleItems[j]->isInspectorData())
-                        Con::executef(this,2,"onAddSelection",Con::getIntArg(mVisibleItems[j]->getObject()->getId()));
+                        Con::executef(this, "onAddSelection", mVisibleItems[j]->getObject()->getId());
                   }
                }
             }
@@ -2815,7 +2815,7 @@ void GuiTreeViewCtrl::onMouseDown(const GuiEvent & event)
                   {
                      addSelection(mVisibleItems[j]->mId);
                      if (mVisibleItems[j]->isInspectorData())
-                        Con::executef(this,2,"onAddSelection",Con::getIntArg(mVisibleItems[j]->getObject()->getId()));
+                        Con::executef(this, "onAddSelection", mVisibleItems[j]->getObject()->getId());
                   }
                }
             }
@@ -2848,7 +2848,7 @@ void GuiTreeViewCtrl::onMouseDown(const GuiEvent & event)
       if (newSelection)
       {
          clearSelection();
-         //Con::executef(this, 1, "onClearSelection");
+         //Con::executef(this, "onClearSelection");
          //mSelectedItems.clear();
          setItemSelected(item->mId,true);
       }
@@ -2938,9 +2938,9 @@ void GuiTreeViewCtrl::onRightMouseDown(const GuiEvent & event)
    dSprintf(bufs[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
 
    if (item->isInspectorData() && item->getObject())
-      Con::executef(this,4, "onRightMouseDown", bufs[0],bufs[1],Con::getIntArg(item->getObject()->getId()));
+      Con::executef(this, "onRightMouseDown", bufs[0], bufs[1], item->getObject()->getId());
    else
-      Con::executef(this, 3, "onRightMouseDown", bufs[0], bufs[1]);
+      Con::executef(this, "onRightMouseDown", bufs[0], bufs[1]);
 }
 
 //------------------------------------------------------------------------------
@@ -3213,7 +3213,7 @@ void GuiTreeViewCtrl::onRenderCell(Point2I offset, Point2I cell, bool, bool )
    
    if( mInstantGroup == item->mId)
    {
-        fontColor	=	mProfile->mFontColorHL;
+        fontColor = mProfile->mFontColorHL;
    }
    
    dglSetBitmapModulation( fontColor );
@@ -3243,7 +3243,7 @@ void GuiTreeViewCtrl::clearSelection()
    mSelectedItems.clear();
    mSelected.clear();
    
-   Con::executef(this, 1, "onClearSelection");
+   Con::executef(this, "onClearSelection");
 }
 
 void GuiTreeViewCtrl::lockSelection(bool lock)
@@ -3475,7 +3475,7 @@ void GuiTreeViewCtrl::inspectObject(SimObject *obj, bool okToEdit)
    mFlags.set(IsEditable, okToEdit);
 
    //build our icon table
-   const char * res  = Con::executef(this, 1, "onDefineIcons");
+   const char * res  = Con::executef(this, "onDefineIcons");
 
    if(!(dAtob(res)))
    {
@@ -3685,12 +3685,12 @@ ConsoleMethod( GuiTreeViewCtrl, open, void, 3, 4, "(SimSet obj, bool okToEdit=tr
    object->inspectObject(treeRoot,okToEdit);
 }
 
-ConsoleMethod(GuiTreeViewCtrl, getItemText, const char *, 3, 3, "(TreeItemId item)")
+ConsoleMethod(GuiTreeViewCtrl, getItemText, ConsoleString, 3, 3, "(TreeItemId item)")
 {
    return(object->getItemText(dAtoi(argv[2])));
 }
 
-ConsoleMethod(GuiTreeViewCtrl, getItemValue, const char *, 3, 3, "(TreeItemId item)")
+ConsoleMethod(GuiTreeViewCtrl, getItemValue, ConsoleString, 3, 3, "(TreeItemId item)")
 {
    return(object->getItemValue(dAtoi(argv[2])));
 }
@@ -3785,7 +3785,7 @@ ConsoleMethod(GuiTreeViewCtrl, moveItemDown, void, 3, 3, "(TreeItemId item)")
 
 //-----------------------------------------------------------------------------
 
-ConsoleMethod(GuiTreeViewCtrl, getTextToRoot, const char*,4,4,"(TreeItemId item,Delimiter=none) gets the text from the current node to the root, concatenating at each branch upward, with a specified delimiter optionally")
+ConsoleMethod(GuiTreeViewCtrl, getTextToRoot, ConsoleString, 4, 4, "(TreeItemId item,Delimiter=none) gets the text from the current node to the root, concatenating at each branch upward, with a specified delimiter optionally")
 {
    if ( argc < 4 )
    {
@@ -3798,7 +3798,7 @@ ConsoleMethod(GuiTreeViewCtrl, getTextToRoot, const char*,4,4,"(TreeItemId item,
    return object->getTextToRoot( itemId, delimiter );
 }
 
-ConsoleMethod(GuiTreeViewCtrl,getSelectedItemList,const char*, 2,2,"returns a space seperated list of mulitple item ids")
+ConsoleMethod(GuiTreeViewCtrl, getSelectedItemList, ConsoleString, 2, 2, "returns a space seperated list of mulitple item ids")
 {
     char* buff = Con::getReturnBuffer(1024);
     dSprintf(buff,1024,"");
@@ -3807,11 +3807,11 @@ ConsoleMethod(GuiTreeViewCtrl,getSelectedItemList,const char*, 2,2,"returns a sp
     {
         S32 id  = object->mSelected[i];
         //get the current length of the buffer
-        U32	len = dStrlen(buff);
+        U32 len = dStrlen(buff);
         //the start of the buffer where we want to write
         char* buffPart = buff+len;
         //the size of the remaining buffer (-1 cause dStrlen doesn't count the \0)
-        S32 size	=	1024-len-1;
+        S32 size = 1024-len-1;
         //write it:
         if(size < 1)
         {

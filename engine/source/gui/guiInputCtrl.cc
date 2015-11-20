@@ -88,7 +88,7 @@ bool GuiInputCtrl::onInputEvent( const InputEvent &event )
 
          const char* actionString = ActionMap::buildActionString( &event );
 
-         Con::executef( this, 4, "onInputEvent", deviceString, actionString, "1" );
+         Con::executef( this, "onInputEvent", deviceString, actionString, "1" );
          return( true );
       }
    }
@@ -100,7 +100,7 @@ bool GuiInputCtrl::onInputEvent( const InputEvent &event )
          if ( !ActionMap::getKeyString( event.objInst, keyString ) )
             return( false );
 
-         Con::executef( this, 4, "onInputEvent", "keyboard", keyString, "0" );
+         Con::executef( this, "onInputEvent", "keyboard", keyString, "0" );
          return( true );
       }
    }

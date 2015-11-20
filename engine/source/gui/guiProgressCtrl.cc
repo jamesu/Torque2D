@@ -55,10 +55,10 @@ void GuiProgressCtrl::setScriptValue(const char *value)
 
 void GuiProgressCtrl::onPreRender()
 {
-   const char * var = getVariable();
-   if(var)
+   ConsoleStringValuePtr var = getVariable();
+   if(var.c_str()[0])
    {
-      F32 value = mClampF(dAtof(var), 0.f, 1.f);
+      F32 value = mClampF(dAtof(var.c_str()), 0.f, 1.f);
       if(value != mProgress)
       {
          mProgress = value;

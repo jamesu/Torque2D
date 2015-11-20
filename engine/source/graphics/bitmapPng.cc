@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "io/stream.h"
 #include "io/fileStream.h"
 #include "io/memstream.h"
@@ -298,7 +299,7 @@ bool GBitmap::readPNG(Stream& io_rStream)
     //
    //-Mat if all palleted images are to be converted, set mForce16bit
    if( color_type == PNG_COLOR_TYPE_PALETTE ) {
-       sgForcePalletedPNGsTo16Bit = dAtob( Con::getVariable("$pref::iPhone::ForcePalletedPNGsTo16Bit") );
+       sgForcePalletedPNGsTo16Bit = Con::getBoolVariable("$pref::iPhone::ForcePalletedPNGsTo16Bit");
        if( sgForcePalletedPNGsTo16Bit ) {
            mForce16Bit = true;
        }

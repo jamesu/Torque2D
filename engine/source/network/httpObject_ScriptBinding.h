@@ -26,7 +26,7 @@ ConsoleMethodGroupBeginWithDocs(HTTPObject, TCPObject)
 */
 ConsoleMethodWithDocs( HTTPObject, get, ConsoleVoid, 4, 5, (TransportAddress addr, string requirstURI, string query=NULL))
 {
-   object->get(argv[2], argv[3], argc == 4 ? NULL : argv[4]);
+   object->get(argv[2].getTempStringValue(), argv[3].getTempStringValue(), argc == 4 ? NULL : argv[4].getTempStringValue());
 }
 
 /*! 

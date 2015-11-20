@@ -45,7 +45,7 @@ ConsoleMethodWithDocs(AssetQuery, set, ConsoleBool, 3, 3, (assetQuery))
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetQuery::set() - Could not find asset query '%s'.", argv[2] );
+        Con::warnf( "AssetQuery::set() - Could not find asset query '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -80,7 +80,7 @@ ConsoleMethodWithDocs(AssetQuery, getAsset, ConsoleString, 3, 3, (int resultInde
     if ( resultIndex >= object->size() )
     {
         // No, so warn.
-        Con::warnf( "AssetQuery::getAsset() - Result index '%s' is out of bounds.", argv[2] );
+        Con::warnf( "AssetQuery::getAsset() - Result index '%s' is out of bounds.", argv[2].getTempStringValue() );
         return StringTable->EmptyString;
     }
 

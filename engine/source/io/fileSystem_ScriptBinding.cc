@@ -613,7 +613,7 @@ ConsoleFunctionWithDocs(getMainDotCsDir, ConsoleString, 1, 1, ())
 ConsoleFunctionWithDocs(makeFullPath, ConsoleString, 2, 3, (string path, [string currentWorkingDir]?))
 {
    char *buf = Con::getReturnBuffer(512);
-   Platform::makeFullPathName(argv[1], buf, 512, argc > 2 ? argv[2] : NULL);
+   Platform::makeFullPathName(argv[1], buf, 512, argc > 2 ? argv[2].getTempStringValue() : NULL);
    return buf;
 }
 

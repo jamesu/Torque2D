@@ -312,7 +312,7 @@ ConsoleMethod(LangTable, addLanguage, S32, 3, 4, "(string filename, [string lang
 	return object->addLanguage(scriptFilenameBuffer, argc == 4 ? (const UTF8*)argv[3] : NULL);
 }
 
-ConsoleMethod(LangTable, getString, const char *, 3, 3, "(string) ")
+ConsoleMethod(LangTable, getString, ConsoleString, 3, 3, "(string) ")
 {
 	char *ret;
 	const char *str;
@@ -346,7 +346,7 @@ ConsoleMethod(LangTable, getCurrentLanguage, S32, 2, 2, "() @return Returns the 
 	return object->getCurrentLanguage();
 }
 
-ConsoleMethod(LangTable, getLangName, const char *, 3, 3, "(int language) Returns the name of the langauge specified by the given ID\n"
+ConsoleMethod(LangTable, getLangName, ConsoleString, 3, 3, "(int language) Returns the name of the langauge specified by the given ID\n"
 			  "@param language The ID of the desired language to check\n"
 			  "@return The name of the specified language, or the empty string on failure.")
 {
@@ -383,23 +383,23 @@ UTF8 *sanitiseVarName(const UTF8 *varName, UTF8 *buffer, U32 bufsize)
 	
 	dStrcpy(buffer, (const UTF8*)"I18N::");
 	
-	UTF8 *dptr = buffer + 6;
+	UTF8 *dataPtr = buffer + 6;
 	const UTF8 *sptr = varName;
 	while(*sptr)
 	{
 		if(dIsalnum(*sptr))
-			*dptr++ = *sptr++;
+			*dataPtr++ = *sptr++;
 		else
 		{
-			if(*(dptr - 1) != '_')
-				*dptr++ = '_';
+			if(*(dataPtr - 1) != '_')
+				*dataPtr++ = '_';
 			sptr++;
 		}
 		
-		if((dptr - buffer) >= S32(bufsize - 1))
+		if((dataPtr - buffer) >= S32(bufsize - 1))
 			break;
 	}
-	*dptr = 0;
+	*dataPtr = 0;
 	
 	return buffer;
 }

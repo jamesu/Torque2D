@@ -77,7 +77,7 @@ ConsoleMethodWithDocs( GameConnection, delete, ConsoleVoid, 2, 3, ( [ reason ]? 
 
 /*! Get the server connection if any.
 */
-ConsoleStaticMethodWithDocs(GameConnection, getServerConnection, ConsoleInt, 2, 2, ())
+ConsoleStaticMethodWithDocs(GameConnection, getServerConnection, S32, 2, 2, ())
 {
    if(GameConnection::getConnectionToServer())
       return GameConnection::getConnectionToServer()->getId();

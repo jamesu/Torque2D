@@ -149,8 +149,8 @@ public:
    {
    };
 
-   virtual void undo() { Con::executef(this, 1, "undo"); };
-   virtual void redo() { Con::executef(this, 1, "redo"); }
+   virtual void undo() { Con::executef(this, "undo"); };
+   virtual void redo() { Con::executef(this, "redo"); }
 
    virtual bool onAdd()
    {

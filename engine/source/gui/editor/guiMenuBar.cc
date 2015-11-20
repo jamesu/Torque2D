@@ -94,10 +94,10 @@ ConsoleMethod(GuiMenuBar, addMenu, void, 4, 4, "( menuName , menuID ) Adds a new
 {
    if(dIsdigit(argv[2][0]))
    {
-      Con::errorf("Cannot add menu %s (id = %s).  First character of a menu's text cannot be a digit.", argv[2], argv[3]);
+      Con::errorf("Cannot add menu %s (id = %s).  First character of a menu's text cannot be a digit.", argv[2].getTempStringValue(), argv[3].getTempStringValue());
       return;
    }
-   object->addMenu(argv[2], dAtoi(argv[3]));
+   object->addMenu(argv[2].getTempStringValue(), dAtoi(argv[3]));
 }
 
 ConsoleMethod(GuiMenuBar, addMenuItem, void, 5, 7, "( menuID | menuName , menuItemName , menuItemID , [ accelerator ] , [ checkGroup ] ) Adds a sub-menu entry to the specified menu.\n"
@@ -111,13 +111,13 @@ ConsoleMethod(GuiMenuBar, addMenuItem, void, 5, 7, "( menuID | menuName , menuIt
 {
    if(dIsdigit(argv[3][0]))
    {
-      Con::errorf("Cannot add menu item %s (id = %s).  First character of a menu item's text cannot be a digit.", argv[3], argv[4]);
+      Con::errorf("Cannot add menu item %s (id = %s).  First character of a menu item's text cannot be a digit.", argv[3].getTempStringValue(), argv[4].getTempStringValue());
       return;
    }
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for addMenuItem.", argv[2]);
+      Con::errorf("Cannot find menu %s for addMenuItem.", argv[2].getTempStringValue());
       return;
    }
    object->addMenuItem(menu, argv[3], dAtoi(argv[4]), argc == 5 ? "" : argv[5], argc < 7 ? -1 : dAtoi(argv[6]));
@@ -134,13 +134,13 @@ ConsoleMethod(GuiMenuBar, setMenuItemEnable, void, 5, 5, "( menuID | menuName , 
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemEnable.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemEnable.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setMenuItemEnable.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setMenuItemEnable.", argv[3].getTempStringValue());
       return;
    }
    menuItem->enabled = dAtob(argv[4]);
@@ -163,13 +163,13 @@ ConsoleMethod(GuiMenuBar, setMenuItemChecked, void, 5, 5, "( menuID | menuName ,
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemChecked.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemChecked.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setMenuItemChecked.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setMenuItemChecked.", argv[3].getTempStringValue());
       return;
    }
    bool checked = dAtob(argv[4]);
@@ -191,13 +191,13 @@ ConsoleMethod(GuiMenuBar, setMenuText, void, 4, 4, "( menuID | menuName , newMen
 {
    if(dIsdigit(argv[3][0]))
    {
-      Con::errorf("Cannot name menu %s to %s.  First character of a menu's text cannot be a digit.", argv[2], argv[3]);
+      Con::errorf("Cannot name menu %s to %s.  First character of a menu's text cannot be a digit.", argv[2].getTempStringValue(), argv[3].getTempStringValue());
       return;
    }
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuText.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuText.", argv[2].getTempStringValue());
       return;
    }
    dFree(menu->text);
@@ -210,7 +210,7 @@ ConsoleMethod(GuiMenuBar, setMenuBitmapIndex, void, 6, 6, "(string menu, S32 bit
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuBitmapIndex.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuBitmapIndex.", argv[2].getTempStringValue());
       return;
    }
 
@@ -230,7 +230,7 @@ ConsoleMethod(GuiMenuBar, setMenuVisible, void, 4, 4, "( menuID | menuName , vis
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuVisible.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuVisible.", argv[2].getTempStringValue());
       return;
    }
    menu->visible = dAtob(argv[3]);
@@ -248,19 +248,19 @@ ConsoleMethod(GuiMenuBar, setMenuItemText, void, 5, 5, "( menuID | menuName , me
 {
    if(dIsdigit(argv[4][0]))
    {
-      Con::errorf("Cannot name menu item %s to %s.  First character of a menu item's text cannot be a digit.", argv[3], argv[4]);
+      Con::errorf("Cannot name menu item %s to %s.  First character of a menu item's text cannot be a digit.", argv[3].getTempStringValue(), argv[4].getTempStringValue());
       return;
    }
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemText.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemText.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setMenuItemText.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setMenuItemText.", argv[3].getTempStringValue());
       return;
    }
    dFree(menuItem->text);
@@ -278,13 +278,13 @@ ConsoleMethod(GuiMenuBar, setMenuItemVisible, void, 5, 5, "( menuID | menuName, 
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemVisible.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemVisible.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setMenuItemVisible.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setMenuItemVisible.", argv[3].getTempStringValue());
       return;
    }
    menuItem->visible = dAtob(argv[4]);
@@ -301,13 +301,13 @@ ConsoleMethod(GuiMenuBar, setMenuItemBitmap, void, 5, 5, "( menuID | menuName , 
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemBitmap.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemBitmap.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setMenuItemBitmap.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setMenuItemBitmap.", argv[3].getTempStringValue());
       return;
    }
    menuItem->bitmapIndex = dAtoi(argv[4]);
@@ -323,13 +323,13 @@ ConsoleMethod(GuiMenuBar, removeMenuItem, void, 4, 4, "( menuID | menuName , men
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for removeMenuItem.", argv[2]);
+      Con::errorf("Cannot find menu %s for removeMenuItem.", argv[2].getTempStringValue());
       return;
    }
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for removeMenuItem.", argv[3]);
+      Con::errorf("Cannot find menu item %s for removeMenuItem.", argv[3].getTempStringValue());
       return;
    }
    object->removeMenuItem(menu, menuItem);
@@ -343,7 +343,7 @@ ConsoleMethod(GuiMenuBar, clearMenuItems, void, 3, 3, "( menuID | menuName ) Rem
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      //Con::errorf("Cannot find menu %s for clearMenuItems.", argv[2]);
+      //Con::errorf("Cannot find menu %s for clearMenuItems.", argv[2].getTempStringValue());
       return;
    }
    object->clearMenuItems(menu);
@@ -360,7 +360,7 @@ ConsoleMethod(GuiMenuBar, removeMenu, void, 3, 3, "( menuID | menuName ) Removes
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      //Con::errorf("Cannot find menu %s for removeMenu.", argv[2]);
+      //Con::errorf("Cannot find menu %s for removeMenu.", argv[2].getTempStringValue());
       return;
    }
    object->clearMenuItems(menu);
@@ -381,14 +381,14 @@ ConsoleMethod(GuiMenuBar, setMenuItemSubmenuState, void, 5, 5, "(string menu, st
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setMenuItemSubmenuState.", argv[2]);
+      Con::errorf("Cannot find menu %s for setMenuItemSubmenuState.", argv[2].getTempStringValue());
       return;
    }
 
    GuiMenuBar::MenuItem *menuitem = object->findMenuItem(menu, argv[3]);
    if(!menuitem)
    {
-      Con::errorf("Cannot find menuitem %s for setMenuItemSubmenuState.", argv[3]);
+      Con::errorf("Cannot find menuitem %s for setMenuItemSubmenuState.", argv[3].getTempStringValue());
       return;
    }
 
@@ -399,21 +399,21 @@ ConsoleMethod(GuiMenuBar, addSubmenuItem, void, 6, 8, "(string menu, string menu
 {
    if(dIsdigit(argv[4][0]))
    {
-      Con::errorf("Cannot add submenu item %s (id = %s).  First character of a menu item's text cannot be a digit.", argv[4], argv[5]);
+      Con::errorf("Cannot add submenu item %s (id = %s).  First character of a menu item's text cannot be a digit.", argv[4].getTempStringValue(), argv[5].getTempStringValue());
       return;
    }
 
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for addMenuItem.", argv[2]);
+      Con::errorf("Cannot find menu %s for addMenuItem.", argv[2].getTempStringValue());
       return;
    }
 
    GuiMenuBar::MenuItem *menuitem = object->findMenuItem(menu, argv[3]);
    if(!menuitem)
    {
-      Con::errorf("Cannot find menuitem %s for addSubmenuItem.", argv[3]);
+      Con::errorf("Cannot find menuitem %s for addSubmenuItem.", argv[3].getTempStringValue());
       return;
    }
 
@@ -426,14 +426,14 @@ ConsoleMethod(GuiMenuBar, clearSubmenuItems, void, 4, 4, "(string menu, string m
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for clearSubmenuItems.", argv[2]);
+      Con::errorf("Cannot find menu %s for clearSubmenuItems.", argv[2].getTempStringValue());
       return;
    }
 
    GuiMenuBar::MenuItem *menuitem = object->findMenuItem(menu, argv[3]);
    if(!menuitem)
    {
-      Con::errorf("Cannot find menuitem %s for clearSubmenuItems.", argv[3]);
+      Con::errorf("Cannot find menuitem %s for clearSubmenuItems.", argv[3].getTempStringValue());
       return;
    }
 
@@ -446,7 +446,7 @@ ConsoleMethod(GuiMenuBar, setSubmenuItemChecked, void, 6, 6, "(string menu, stri
    GuiMenuBar::Menu *menu = object->findMenu(argv[2]);
    if(!menu)
    {
-      Con::errorf("Cannot find menu %s for setSubmenuItemChecked.", argv[2]);
+      Con::errorf("Cannot find menu %s for setSubmenuItemChecked.", argv[2].getTempStringValue());
       return;
    }
 
@@ -454,7 +454,7 @@ ConsoleMethod(GuiMenuBar, setSubmenuItemChecked, void, 6, 6, "(string menu, stri
    GuiMenuBar::MenuItem *menuItem = object->findMenuItem(menu, argv[3]);
    if(!menuItem)
    {
-      Con::errorf("Cannot find menu item %s for setSubmenuItemChecked.", argv[3]);
+      Con::errorf("Cannot find menu item %s for setSubmenuItemChecked.", argv[3].getTempStringValue());
       return;
    }
 
@@ -462,7 +462,7 @@ ConsoleMethod(GuiMenuBar, setSubmenuItemChecked, void, 6, 6, "(string menu, stri
    GuiMenuBar::MenuItem *submenuItem = object->findSubmenuItem(menu, argv[3], argv[4]);
    if(!submenuItem)
    {
-      Con::errorf("Cannot find submenu item %s for setSubmenuItemChecked.", argv[4]);
+      Con::errorf("Cannot find submenu item %s for setSubmenuItemChecked.", argv[4].getTempStringValue());
       return;
    }
 
@@ -906,7 +906,7 @@ void GuiMenuBar::onMouseLeave(const GuiEvent &event)
    // within it.
    if(mCountMouseOver && mMouseOverCounter >= mMouseHoverAmount)
    {
-      Con::executef( this, 3, "onMouseInMenu", "0"); // Last parameter indicates if we've entered or left the menu
+      Con::executef( this, "onMouseInMenu", "0"); // Last parameter indicates if we've entered or left the menu
    }
    mCountMouseOver = false;
    mMouseOverCounter = 0;
@@ -1063,7 +1063,7 @@ void GuiMenuBar::acceleratorKeyPress(U32 index)
          if(item->acceleratorIndex == index)
          {
             // first, call the script callback for menu selection:
-            Con::executef( this, 4, "onMenuSelect", Con::getIntArg(menu->id), 
+            Con::executef( this, "onMenuSelect", menu->id, 
                         menu->text);
             if(item->visible)
                menuItemSelected(menu, item);
@@ -1269,8 +1269,8 @@ bool GuiSubmenuBackgroundCtrl::pointInControl(const Point2I& parentCoordPoint)
 void GuiMenuBar::menuItemSelected(GuiMenuBar::Menu *menu, GuiMenuBar::MenuItem *item)
 {
    if(item->enabled)
-      Con::executef( this, 6, "onMenuItemSelect", Con::getIntArg(menu->id), 
-               menu->text, Con::getIntArg(item->id), item->text);
+      Con::executef( this, "onMenuItemSelect", menu->id, 
+               menu->text, item->id, item->text);
 }
 
 void GuiMenuBar::onSleep()
@@ -1363,7 +1363,7 @@ void GuiMenuBar::onAction()
       return;
 
    // first, call the script callback for menu selection:
-   Con::executef( this, 4, "onMenuSelect", Con::getIntArg(mouseDownMenu->id), 
+   Con::executef( this, "onMenuSelect", mouseDownMenu->id, 
                mouseDownMenu->text);
 
    MenuItem *visWalk = mouseDownMenu->firstMenuItem;
@@ -1480,7 +1480,7 @@ void GuiMenuBar::onSubmenuAction(S32 selectionIndex, RectI bounds, Point2I cellS
       return;
 
    // first, call the script callback for menu selection:
-   Con::executef( this, 4, "onSubmenuSelect", Con::getIntArg(mouseOverSubmenu->id), 
+   Con::executef( this, "onSubmenuSelect", mouseOverSubmenu->id, 
                mouseOverSubmenu->text);
 
    MenuItem *visWalk = mouseOverSubmenu->firstSubmenuItem;
@@ -1670,7 +1670,7 @@ void GuiMenuBar::processTick()
       } else if(mMouseOverCounter == mMouseHoverAmount)
       {
          ++mMouseOverCounter;
-         Con::executef( this, 3, "onMouseInMenu", "1"); // Last parameter indicates if we've entered or left the menu
+         Con::executef( this, "onMouseInMenu", "1"); // Last parameter indicates if we've entered or left the menu
       }
    }
 }

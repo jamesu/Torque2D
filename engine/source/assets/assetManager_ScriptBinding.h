@@ -35,7 +35,7 @@ ConsoleMethodWithDocs( AssetManager, compileReferencedAssets, ConsoleBool, 3, 3,
     if ( pModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::compileReferencedAssets() - Could not find the module definition '%s'.", argv[2] );        
+        Con::warnf( "AssetManager::compileReferencedAssets() - Could not find the module definition '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -58,7 +58,7 @@ ConsoleMethodWithDocs( AssetManager, addModuleDeclaredAssets, ConsoleBool, 3, 3,
     if ( pModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::addDeclaredAssets() - Could not find the module definition '%s'.", argv[2] );        
+        Con::warnf( "AssetManager::addDeclaredAssets() - Could not find the module definition '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -81,7 +81,7 @@ ConsoleMethodWithDocs( AssetManager, addDeclaredAsset, ConsoleBool, 4, 4, (modul
     if ( pModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::addDeclaredAsset() - Could not find the module definition '%s'.", argv[2] );        
+        Con::warnf( "AssetManager::addDeclaredAsset() - Could not find the module definition '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -107,7 +107,7 @@ ConsoleMethodWithDocs( AssetManager, addPrivateAsset, ConsoleString, 3, 3, (asse
     if ( pAssetBase == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::addPrivateAsset() - Could not find the asset '%s'.", argv[2] );        
+        Con::warnf( "AssetManager::addPrivateAsset() - Could not find the asset '%s'.", argv[2].getTempStringValue() );
         return StringTable->EmptyString;
     }
 
@@ -130,7 +130,7 @@ ConsoleMethodWithDocs( AssetManager, removeDeclaredAssets, ConsoleBool, 3, 3, (m
     if ( pModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::removeDeclaredAssets() - Could not find the module definition '%s'.", argv[2] );        
+        Con::warnf( "AssetManager::removeDeclaredAssets() - Could not find the module definition '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -482,7 +482,7 @@ ConsoleMethodWithDocs( AssetManager, findAllAssets, ConsoleInt, 3, 5, (assetQuer
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAllAssets() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAllAssets() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -521,7 +521,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetName, ConsoleInt, 4, 5, (assetQuer
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetName() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetName() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -556,7 +556,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetCategory, ConsoleInt, 4, 5, (asset
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetCategory() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetCategory() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -594,7 +594,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetAutoUnload, ConsoleInt, 4, 5, (ass
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetAutoUnload() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetAutoUnload() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -632,7 +632,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetInternal, ConsoleInt, 4, 5, (asset
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetInternal() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetInternal() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -670,7 +670,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetPrivate, ConsoleInt, 4, 5, (assetQ
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetPrivate() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetPrivate() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -708,7 +708,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetType, ConsoleInt, 4, 5, (assetQuer
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetType() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetType() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -745,7 +745,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetDependsOn, ConsoleInt, 4, 4, (asse
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetDependsOn() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetDependsOn() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -772,7 +772,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetIsDependedOn, ConsoleInt, 4, 4, (a
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetIsDependedOn() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetIsDependedOn() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -798,7 +798,7 @@ ConsoleMethodWithDocs( AssetManager, findInvalidAssetReferences, ConsoleInt, 3, 
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findInvalidAssetReferences() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findInvalidAssetReferences() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -823,7 +823,7 @@ ConsoleMethodWithDocs( AssetManager, findTaggedAssets, ConsoleInt, 4, 5, (assetQ
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findTaggedAssets() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findTaggedAssets() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 
@@ -858,7 +858,7 @@ ConsoleMethodWithDocs( AssetManager, findAssetLooseFile, ConsoleInt, 4, 5, (asse
     if ( pAssetQuery == NULL )
     {
         // No, so warn.
-        Con::warnf( "AssetManager::findAssetLooseFile() - Could not find the asset query object '%s'.", argv[2] );
+        Con::warnf( "AssetManager::findAssetLooseFile() - Could not find the asset query object '%s'.", argv[2].getTempStringValue() );
         return -1;
     }
 

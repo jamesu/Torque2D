@@ -53,24 +53,26 @@ IMPLEMENT_CONOBJECT(ScriptMsgListener);
 
 bool ScriptMsgListener::onMessageReceived(StringTableEntry queue, const char* event, const char* data)
 {
-   return dAtob(Con::executef(this, 4, "onMessageReceived", queue, event, data));
+   ConsoleValuePtr value = Con::executef(this, "onMessageReceived", queue, event, data);
+   return value.getBoolValue();
 }
 
 bool ScriptMsgListener::onMessageObjectReceived(StringTableEntry queue, Message *msg)
 {
-   return dAtob(Con::executef(this, 4, "onMessageObjectReceived", queue, Con::getIntArg(msg->getId())));
+   ConsoleValuePtr value = Con::executef(this, "onMessageObjectReceived", queue, msg->getId());
+   return value.getBoolValue();
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 void ScriptMsgListener::onAddToQueue(StringTableEntry queue)
 {
-   Con::executef(this, 2, "onAddToQueue", queue);
+   Con::executef(this, "onAddToQueue", queue);
    IMLParent::onAddToQueue(queue);
 }
 
 void ScriptMsgListener::onRemoveFromQueue(StringTableEntry queue)
 {
-   Con::executef(this, 2, "onRemoveFromQueue", queue);
+   Con::executef(this, "onRemoveFromQueue", queue);
    IMLParent::onRemoveFromQueue(queue);
 }

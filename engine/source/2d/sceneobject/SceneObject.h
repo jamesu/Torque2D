@@ -584,21 +584,21 @@ protected:
 
 protected:
     /// Lifetime.
-    static bool             setLifetime(void* obj, const char* data)    { static_cast<SceneObject*>(obj)->setLifetime(dAtof(data)); return false; }
+    static bool             setLifetime(void *obj, const ConsoleValuePtr data)    { static_cast<SceneObject*>(obj)->setLifetime(dAtof(data)); return false; }
     static bool             writeLifetime( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getLifetime() > 0.0f ; }
 
     /// Scene layers.
-    static bool             setSceneLayer(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setSceneLayer(dAtoi(data)); return false; }
+    static bool             setSceneLayer(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setSceneLayer(dAtoi(data)); return false; }
     static bool             writeSceneLayer( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getSceneLayer() > 0 ; }
-    static bool             setSceneLayerDepth(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setSceneLayerDepth(dAtof(data)); return false; }
+    static bool             setSceneLayerDepth(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setSceneLayerDepth(dAtof(data)); return false; }
     static bool             writeSceneLayerDepth( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<SceneObject*>(obj)->getSceneLayerDepth()); }
 
     /// Scene groups.
-    static bool             setSceneGroup(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setSceneGroup(dAtoi(data)); return false; }
+    static bool             setSceneGroup(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setSceneGroup(dAtoi(data)); return false; }
     static bool             writeSceneGroup( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getSceneGroup() > 0 ; }
 
     /// Area.
-    static bool             setSize(void* obj, const char* data)
+    static bool             setSize(void *obj, const ConsoleValuePtr data)
     {
         SceneObject* pSceneObject = static_cast<SceneObject*>(obj);
         if ( pSceneObject->getAutoSizing() )
@@ -607,27 +607,27 @@ protected:
             return false;
         }
             
-        pSceneObject->setSize(Vector2(data));
+        pSceneObject->setSize(Vector2(data.getTempStringValue()));
         return false;
     }
     static bool             writeSize( void* obj, StringTableEntry pFieldName ) { SceneObject* pSceneObject = static_cast<SceneObject*>(obj); return !pSceneObject->getAutoSizing() && pSceneObject->getSize().notEqual(Vector2::getOne()); }
 
     /// Position / Angle.
-    static bool             setPosition(void* obj, const char* data)    { static_cast<SceneObject*>(obj)->setPosition(Vector2(data)); return false; }
-    static const char*      getPosition(void* obj, const char* data)    { return static_cast<SceneObject*>(obj)->getPosition().scriptThis(); }
+    static bool             setPosition(void *obj, const ConsoleValuePtr data)    { static_cast<SceneObject*>(obj)->setPosition(Vector2(data.getTempStringValue())); return false; }
+    static ConsoleValuePtr      getPosition(void *obj, const ConsoleValuePtr data)    { return static_cast<SceneObject*>(obj)->getPosition().scriptThis(); }
     static bool             writePosition( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getPosition().notZero(); }
-    static bool             setAngle(void* obj, const char* data)       { static_cast<SceneObject*>(obj)->setAngle(mDegToRad(dAtof(data))); return false; }
-    static const char*      getAngle(void* obj, const char* data)       { return Con::getFloatArg( mRadToDeg(static_cast<SceneObject*>(obj)->getAngle() ) ); }
+    static bool             setAngle(void *obj, const ConsoleValuePtr data)       { static_cast<SceneObject*>(obj)->setAngle(mDegToRad(dAtof(data))); return false; }
+    static ConsoleValuePtr      getAngle(void *obj, const ConsoleValuePtr data)       { return Con::getFloatArg( mRadToDeg(static_cast<SceneObject*>(obj)->getAngle() ) ); }
     static bool             writeAngle( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<SceneObject*>(obj)->getAngle()); }
-    static bool             setFixedAngle(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setFixedAngle(dAtob(data)); return false; }
-    static const char*      getFixedAngle(void* obj, const char* data)  { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getFixedAngle() ); }
+    static bool             setFixedAngle(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setFixedAngle(dAtob(data)); return false; }
+    static ConsoleValuePtr      getFixedAngle(void *obj, const ConsoleValuePtr data)  { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getFixedAngle() ); }
     static bool             writeFixedAngle( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getFixedAngle() == true; }
 
     /// Body.
-    static bool setBodyType(void* obj, const char* data)
+    static bool setBodyType(void *obj, const ConsoleValuePtr data)
     {
         // Fetch body type.
-        const b2BodyType type = getBodyTypeEnum( data );
+        const b2BodyType type = getBodyTypeEnum( data.getTempStringValue() );
 
         // Check for error.
         if ( type != b2_staticBody && type != b2_kinematicBody && type != b2_dynamicBody )
@@ -636,55 +636,55 @@ protected:
         static_cast<SceneObject*>(obj)->setBodyType(type);
         return false;
     }
-    static const char*      getBodyType(void* obj, const char* data)        { return getBodyTypeDescription( static_cast<SceneObject*>(obj)->getBodyType() ); }
+    static ConsoleValuePtr      getBodyType(void *obj, const ConsoleValuePtr data)        { return getBodyTypeDescription( static_cast<SceneObject*>(obj)->getBodyType() ); }
     static bool             writeBodyType( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getBodyType() != b2_dynamicBody; }
-    static bool             setActive(void* obj, const char* data)          { static_cast<SceneObject*>(obj)->setActive(dAtob(data)); return false; }
-    static const char*      getActive(void* obj, const char* data)          { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getActive() ); }
+    static bool             setActive(void *obj, const ConsoleValuePtr data)          { static_cast<SceneObject*>(obj)->setActive(dAtob(data)); return false; }
+    static ConsoleValuePtr      getActive(void *obj, const ConsoleValuePtr data)          { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getActive() ); }
     static bool             writeActive( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getActive() == false; }
-    static bool             setAwake(void* obj, const char* data)           { static_cast<SceneObject*>(obj)->setAwake(dAtob(data)); return false; }
-    static const char*      getAwake(void* obj, const char* data)           { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getAwake() ); }
+    static bool             setAwake(void *obj, const ConsoleValuePtr data)           { static_cast<SceneObject*>(obj)->setAwake(dAtob(data)); return false; }
+    static ConsoleValuePtr      getAwake(void *obj, const ConsoleValuePtr data)           { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getAwake() ); }
     static bool             writeAwake( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getAwake() == false; }
-    static bool             setBullet(void* obj, const char* data)          { static_cast<SceneObject*>(obj)->setBullet(dAtob(data)); return false; }
-    static const char*      getBullet(void* obj, const char* data)          { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getBullet() ); }
+    static bool             setBullet(void *obj, const ConsoleValuePtr data)          { static_cast<SceneObject*>(obj)->setBullet(dAtob(data)); return false; }
+    static ConsoleValuePtr      getBullet(void *obj, const ConsoleValuePtr data)          { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getBullet() ); }
     static bool             writeBullet( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getBullet() == true; }
-    static bool             setSleepingAllowed(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setSleepingAllowed(dAtob(data)); return false; }
-    static const char*      getSleepingAllowed(void* obj, const char* data) { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getSleepingAllowed() ); }
+    static bool             setSleepingAllowed(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setSleepingAllowed(dAtob(data)); return false; }
+    static ConsoleValuePtr      getSleepingAllowed(void *obj, const ConsoleValuePtr data) { return Con::getBoolArg( static_cast<SceneObject*>(obj)->getSleepingAllowed() ); }
     static bool             writeSleepingAllowed( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getSleepingAllowed() == false; }
 
     /// Collision control.
-    static bool             setDefaultDensity(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setDefaultDensity(dAtof(data)); return false; }
+    static bool             setDefaultDensity(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setDefaultDensity(dAtof(data)); return false; }
     static bool             writeDefaultDensity( void* obj, StringTableEntry pFieldName ) { return mNotEqual(static_cast<SceneObject*>(obj)->getDefaultDensity(), 1.0f); }
-    static bool             setDefaultFriction(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setDefaultFriction(dAtof(data)); return false; }
+    static bool             setDefaultFriction(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setDefaultFriction(dAtof(data)); return false; }
     static bool             writeDefaultFriction( void* obj, StringTableEntry pFieldName ) {return mNotEqual(static_cast<SceneObject*>(obj)->getDefaultFriction(), 0.2f); }
-    static bool             setDefaultRestitution(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setDefaultRestitution(dAtof(data)); return false; }
+    static bool             setDefaultRestitution(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setDefaultRestitution(dAtof(data)); return false; }
     static bool             writeDefaultRestitution( void* obj, StringTableEntry pFieldName ) { return mNotEqual(static_cast<SceneObject*>(obj)->getDefaultRestitution(), 0.0f); }
-    static bool             setCollisionGroups(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setCollisionGroupMask(Utility::mConvertStringToMask(data)); return false; }
-    static const char*      getCollisionGroups(void* obj, const char* data) { return Utility::mConvertMaskToString( static_cast<SceneObject*>(obj)->getCollisionGroupMask() ); }
+    static bool             setCollisionGroups(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setCollisionGroupMask(Utility::mConvertStringToMask(data.getTempStringValue())); return false; }
+    static ConsoleValuePtr      getCollisionGroups(void *obj, const ConsoleValuePtr data) { return Utility::mConvertMaskToString( static_cast<SceneObject*>(obj)->getCollisionGroupMask() ); }
     static bool             writeCollisionGroups( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getCollisionGroupMask() != MASK_ALL; }
-    static bool             setCollisionLayers(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setCollisionLayerMask(Utility::mConvertStringToMask(data)); return false; }
-    static const char*      getCollisionLayers(void* obj, const char* data) { return Utility::mConvertMaskToString( static_cast<SceneObject*>(obj)->getCollisionLayerMask() ); }
+    static bool             setCollisionLayers(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setCollisionLayerMask(Utility::mConvertStringToMask(data.getTempStringValue())); return false; }
+    static ConsoleValuePtr      getCollisionLayers(void *obj, const ConsoleValuePtr data) { return Utility::mConvertMaskToString( static_cast<SceneObject*>(obj)->getCollisionLayerMask() ); }
     static bool             writeCollisionLayers( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getCollisionLayerMask() != MASK_ALL; }
     static bool             writeCollisionSuppress( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getCollisionSuppress() == true; }
-    static bool             setGatherContacts(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setGatherContacts(dAtoi(data)); return false; }
+    static bool             setGatherContacts(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setGatherContacts(dAtoi(data)); return false; }
     static bool             writeGatherContacts( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getGatherContacts() == true; }
 
     /// Velocities.
-    static bool             setLinearVelocity(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setLinearVelocity(Vector2(data)); return false; }
-    static const char*      getLinearVelocity(void* obj, const char* data)  { return static_cast<SceneObject*>(obj)->getLinearVelocity().scriptThis(); }
+    static bool             setLinearVelocity(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setLinearVelocity(Vector2(data.getTempStringValue())); return false; }
+    static ConsoleValuePtr      getLinearVelocity(void *obj, const ConsoleValuePtr data)  { return static_cast<SceneObject*>(obj)->getLinearVelocity().scriptThis(); }
     static bool             writeLinearVelocity( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getLinearVelocity().notZero(); }
-    static bool             setAngularVelocity(void* obj, const char* data) { static_cast<SceneObject*>(obj)->setAngularVelocity(mDegToRad(dAtof(data))); return false; }
-    static const char*      getAngularVelocity(void* obj, const char* data) { return Con::getFloatArg( mRadToDeg(static_cast<SceneObject*>(obj)->getAngularVelocity() ) ); }
+    static bool             setAngularVelocity(void *obj, const ConsoleValuePtr data) { static_cast<SceneObject*>(obj)->setAngularVelocity(mDegToRad(dAtof(data))); return false; }
+    static ConsoleValuePtr      getAngularVelocity(void *obj, const ConsoleValuePtr data) { return Con::getFloatArg( mRadToDeg(static_cast<SceneObject*>(obj)->getAngularVelocity() ) ); }
     static bool             writeAngularVelocity( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<SceneObject*>(obj)->getAngularVelocity()); }
-    static bool             setLinearDamping(void* obj, const char* data)   { static_cast<SceneObject*>(obj)->setLinearDamping(dAtof(data)); return false; }
-    static const char*      getLinearDamping(void* obj, const char* data)   { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getLinearDamping() ); }
+    static bool             setLinearDamping(void *obj, const ConsoleValuePtr data)   { static_cast<SceneObject*>(obj)->setLinearDamping(dAtof(data)); return false; }
+    static ConsoleValuePtr      getLinearDamping(void *obj, const ConsoleValuePtr data)   { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getLinearDamping() ); }
     static bool             writeLinearDamping( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<SceneObject*>(obj)->getLinearDamping()); }
-    static bool             setAngularDamping(void* obj, const char* data)  { static_cast<SceneObject*>(obj)->setAngularDamping(dAtof(data)); return false; }
-    static const char*      getAngularDamping(void* obj, const char* data)  { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getAngularDamping() ); }
+    static bool             setAngularDamping(void *obj, const ConsoleValuePtr data)  { static_cast<SceneObject*>(obj)->setAngularDamping(dAtof(data)); return false; }
+    static ConsoleValuePtr      getAngularDamping(void *obj, const ConsoleValuePtr data)  { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getAngularDamping() ); }
     static bool             writeAngularDamping( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<SceneObject*>(obj)->getAngularDamping()); }
 
     /// Gravity scaling.
-    static bool             setGravityScale(void* obj, const char* data)    { static_cast<SceneObject*>(obj)->setGravityScale(dAtof(data)); return false; }
-    static const char*      getGravityScale(void* obj, const char* data)    { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getGravityScale() ); }
+    static bool             setGravityScale(void *obj, const ConsoleValuePtr data)    { static_cast<SceneObject*>(obj)->setGravityScale(dAtof(data)); return false; }
+    static ConsoleValuePtr      getGravityScale(void *obj, const ConsoleValuePtr data)    { return Con::getFloatArg( static_cast<SceneObject*>(obj)->getGravityScale() ); }
     static bool             writeGravityScale( void* obj, StringTableEntry pFieldName ) { return mNotEqual(static_cast<SceneObject*>(obj)->getGravityScale(), 1.0f); }
 
     /// Render visibility.
@@ -713,7 +713,7 @@ protected:
     static bool             writeSleepingCallback( void* obj, StringTableEntry pFieldName ) { return static_cast<SceneObject*>(obj)->getSleepingCallback() == true; }
 
     /// Scene.
-    static bool             setScene(void* obj, const char* data)
+    static bool             setScene(void *obj, const ConsoleValuePtr data)
     {
         Scene* pScene = dynamic_cast<Scene*>(Sim::findObject(data));
         SceneObject* object = static_cast<SceneObject*>(obj);

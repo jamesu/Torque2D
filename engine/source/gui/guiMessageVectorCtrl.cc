@@ -37,7 +37,7 @@ ConsoleMethod(GuiMessageVectorCtrl, attach, bool, 3, 3, "( aVector ) Make this g
    MessageVector* pMV = NULL;
    Sim::findObject(argv[2], pMV);
    if (pMV == NULL) {
-      Con::errorf(ConsoleLogEntry::General, "Could not find MessageVector: %s", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "Could not find MessageVector: %s", argv[2].getTempStringValue());
       return false;
    }
 
@@ -822,7 +822,7 @@ void GuiMessageVectorCtrl::onMouseUp(const GuiEvent& event)
       dStrncpy(copyURL, &mMessageVector->getLine(currSpecialLine).message[specialStart], specialEnd - specialStart + 1);
       copyURL[specialEnd - specialStart + 1] = '\0';
 
-      Con::executef(this, 2, "urlClickCallback", copyURL);
+      Con::executef(this, "urlClickCallback", copyURL);
       delete [] copyURL;
    }
 

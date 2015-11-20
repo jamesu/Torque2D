@@ -25,6 +25,6 @@
 
 #include "consoleNamespace.h"
 #include "consoleDictionary.h"
-#include "consoleExprEvalState.h"
+#include "codeblockEvalState.h"
 
 #endif // _CONSOLEINTERNAL_H_

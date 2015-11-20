@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+
 #include "platform/platform.h"
 #include "sim/simBase.h"
 #include "string/stringTable.h"
@@ -82,12 +83,12 @@ void SimSet::popObject()
 
 //-----------------------------------------------------------------------------
 
-void SimSet::callOnChildren( const char * method, S32 argc, const char *argv[], bool executeOnChildGroups )
+void SimSet::callOnChildren(const char *method, S32 argc, ConsoleValuePtr argv[], bool executeOnChildGroups)
 {
    // Prep the arguments for the console exec...
    // Make sure and leave args[1] empty.
-   const char* args[21];
-   args[0] = method;
+   ConsoleValuePtr args[21];
+   args[0].setSTE(StringTable->insert(method));
    for (S32 i = 0; i < argc; i++)
       args[i + 2] = argv[i];
 
@@ -464,7 +465,7 @@ SimObject* SimObject::findObject(const char* )
 
 //////////////////////////////////////////////////////////////////////////
 
-bool SimGroup::processArguments(S32, const char **)
+bool SimGroup::processArguments(S32, ConsoleValuePtr argv[])
 {
    return true;
 }

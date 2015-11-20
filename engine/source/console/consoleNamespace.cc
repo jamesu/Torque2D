@@ -20,10 +20,10 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
-#include "consoleNamespace.h"
-
 #include "platform/platform.h"
 #include "console/console.h"
+
+#include "consoleNamespace.h"
 
 #include "console/ast.h"
 #include "collection/findIterator.h"
@@ -33,6 +33,7 @@
 #include "console/consoleInternal.h"
 #include "io/fileStream.h"
 #include "console/compiler.h"
+#include "sim/simBase.h"
 
 #include "consoleNamespace_ScriptBinding.h"
 
@@ -353,6 +354,8 @@ void Namespace::addFunction(StringTableEntry name, CodeBlock *cb, U32 functionOf
    ent->mUsage = usage;
    ent->mCode = cb;
    ent->mFunctionOffset = functionOffset;
+   ent->mMinArgs = 0;
+   ent->mMaxArgs = cb->functions[functionOffset]->numArgs+1; // includes function name
    ent->mCode->incRefCount();
    ent->mType = Entry::ScriptFunctionType;
 }
@@ -422,6 +425,19 @@ void Namespace::addCommand(StringTableEntry name,BoolCallback cb, const char *us
    ent->cb.mBoolCallbackFunc = cb;
 }
 
+void Namespace::addCommand(StringTableEntry name,ValueCallback cc, const char *usage, S32 minArgs, S32 maxArgs)
+{
+   Entry *ent = createLocalEntry(name);
+   trashCache();
+   
+   ent->mUsage = usage;
+   ent->mMinArgs = minArgs;
+   ent->mMaxArgs = maxArgs;
+   
+   ent->mType = Entry::ValueCallbackType;
+   ent->cb.mValueCallbackFunc = cc;
+}
+
 void Namespace::addOverload(const char * name, const char *altUsage)
 {
    static U32 uid=0;
@@ -442,7 +458,7 @@ void Namespace::addOverload(const char * name, const char *altUsage)
    ent->cb.mGroupName = name;
 }
 
-void Namespace::markGroup(const char* name, const char* usage)
+void Namespace::markGroup(const char *name, const char *usage)
 {
    static U32 uid=0;
    char buffer[1024];
@@ -466,14 +482,15 @@ void Namespace::markGroup(const char* name, const char* usage)
    ent->cb.mGroupName = name;
 }
 
-extern S32 executeBlock(StmtNode *block, ExprEvalState *state);
-
-const char *Namespace::Entry::execute(S32 argc, const char **argv, ExprEvalState *state)
+ConsoleValuePtr Namespace::Entry::execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state)
 {
    if(mType == ScriptFunctionType)
    {
       if(mFunctionOffset)
-         return mCode->exec(mFunctionOffset, argv[0], mNamespace, argc, argv, false, mPackage);
+      {
+         //
+         return mCode->exec(mFunctionOffset, argv[0].getSTEStringValue(), mNamespace, argc, argv, false, mPackage);
+      }
       else
          return "";
    }
@@ -484,26 +501,33 @@ const char *Namespace::Entry::execute(S32 argc, const char **argv, ExprEvalState
       Con::warnf(ConsoleLogEntry::Script, "usage: %s", mUsage);
       return "";
    }
+   
+   // TOFIX need to do this better
+   SimObject* thisObject = argc > 1 ? Sim::findObject<SimObject>(argv[1]) : NULL;
 
    static char returnBuffer[32];
    switch(mType)
    {
       case StringCallbackType:
-         return cb.mStringCallbackFunc(state->thisObject, argc, argv);
+      {
+         ConsoleValuePtr strValue;
+         strValue.setValue(cb.mStringCallbackFunc(thisObject, argc, argv).getPtr());
+         return strValue;
+      }
       case IntCallbackType:
          dSprintf(returnBuffer, sizeof(returnBuffer), "%d",
-            cb.mIntCallbackFunc(state->thisObject, argc, argv));
+            cb.mIntCallbackFunc(thisObject, argc, argv));
          return returnBuffer;
       case FloatCallbackType:
          dSprintf(returnBuffer, sizeof(returnBuffer), "%.9g",
-            cb.mFloatCallbackFunc(state->thisObject, argc, argv));
+            cb.mFloatCallbackFunc(thisObject, argc, argv));
          return returnBuffer;
       case VoidCallbackType:
-         cb.mVoidCallbackFunc(state->thisObject, argc, argv);
+         cb.mVoidCallbackFunc(thisObject, argc, argv);
          return "";
       case BoolCallbackType:
          dSprintf(returnBuffer, sizeof(returnBuffer), "%d",
-            (U32)cb.mBoolCallbackFunc(state->thisObject, argc, argv));
+            (U32)cb.mBoolCallbackFunc(thisObject, argc, argv));
          return returnBuffer;
    }
 

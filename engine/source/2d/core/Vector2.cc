@@ -28,31 +28,59 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( Vector2, TypeVector2, sizeof(Vector2), "" )
+ConsoleUseDefaultReferenceType( TypeVector2, Vector2 )
 
-ConsoleGetType( TypeVector2 )
+ConsoleTypeToString( TypeVector2 )
 {
-    return ((Vector2*)dptr)->scriptThis();
+    return ((Vector2*)dataPtr)->scriptThis();
 }
 
-ConsoleSetType( TypeVector2 )
+ConsoleTypeFromConsoleValue( TypeVector2 )
 {
-    // Fetch vector.
-    Vector2* pVector = (Vector2*)dptr;
-
-    // "x y".
-    if( argc == 1 )
-    {
-        pVector->setString( argv[0] );
-        return;
-    }
-
-    // "x,y".
-    if( argc == 2 )
-    {
-        pVector->Set(dAtof(argv[0]), dAtof(argv[1]));
-        return;
-    }
-
-    // Warn.
-    Con::printf("Vector2 must be set as { x, y } or \"x y\"");
+   // Fetch vector.
+   Vector2* pVector = (Vector2*)dataPtr;
+   
+   if (ConsoleValue::isRefType(value.type))
+   {
+      // We have three possibilities:
+      // 1) it's a string
+      // 2) it's a list
+      // 3) it's some sort of hashtable
+      
+      ConsoleValue arr;
+      arr.type = ConsoleValue::TypeInternalInt;
+      arr.value.ival = 0;
+      
+      ConsoleValuePtr xValue;
+      ConsoleValuePtr yValue;
+      
+      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+      ConsoleReferenceCountedType* refValue = value.value.refValue;
+      if (refValue->getDataField(stGetIndex, arr, xValue))
+      {
+         arr.value.ival = 1;
+         refValue->getDataField(stGetIndex, arr, yValue);
+      }
+      else
+      {
+         static StringTableEntry xName = StringTable->insert("x");
+         static StringTableEntry yName = StringTable->insert("y");
+         
+         arr.type = ConsoleValue::TypeInternalNull;
+         if (refValue->getDataField(xName, arr, xValue))
+         {
+            refValue->getDataField(yName, arr, yValue);
+         }
+         else
+         {
+            Con::errorf("Vector2 must be set as { x, y } or \"x y\"");
+         }
+      }
+      
+      pVector->Set(xValue.getFloatValue(), yValue.getFloatValue());
+   }
+   else
+   {
+      pVector->setString(value.getTempStringValue());
+   }
 }

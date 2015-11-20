@@ -868,7 +868,7 @@ void ParticlePlayer::stop( const bool waitForParticles, const bool killEffect )
 
     // Perform the callback.
     if( isMethod( "onStopParticlePlayer" ) )
-        Con::executef( this, 1, "onStopParticlePlayer" );
+        Con::executef( this, "onStopParticlePlayer" );
 
     // Flag for immediate deletion if killing.
     if ( killEffect )

@@ -44,7 +44,7 @@ ConsoleMethodWithDocs( GuiCanvas, setContent, ConsoleVoid, 3, 3, ( handle ))
    {
       if (!Sim::findObject(argv[2], gui))
       {
-         Con::printf("%s(): Invalid control: %s", argv[0], argv[2]);
+         Con::printf("%s(): Invalid control: %s", argv[0].getTempStringValue(), argv[2].getTempStringValue());
          return;
       }
    }
@@ -64,7 +64,7 @@ ConsoleMethodWithDocs( GuiCanvas, pushDialog, ConsoleVoid, 3, 4, ( handle [ , la
 
    if (!	Sim::findObject(argv[2], gui))
    {
-      Con::printf("%s(): Invalid control: %s", argv[0], argv[2]);
+      Con::printf("%s(): Invalid control: %s", argv[0].getTempStringValue(), argv[2].getTempStringValue());
       return;
    }
 
@@ -91,7 +91,7 @@ ConsoleMethodWithDocs( GuiCanvas, popDialog, ConsoleVoid, 2, 3, ( handle ))
    {
       if (!Sim::findObject(argv[2], gui))
       {
-         Con::printf("%s(): Invalid control: %s", argv[0], argv[2]);
+         Con::printf("%s(): Invalid control: %s", argv[0].getTempStringValue(), argv[2].getTempStringValue());
          return;
       }
    }
@@ -143,7 +143,7 @@ ConsoleMethodWithDocs( GuiCanvas, setCursor, ConsoleVoid, 3, 3, ( cursorHandle )
    {
       if(!Sim::findObject(argv[2], curs))
       {
-         Con::printf("%s is not a valid cursor.", argv[2]);
+         Con::printf("%s is not a valid cursor.", argv[2].getTempStringValue());
          return;
       }
    }
@@ -416,7 +416,7 @@ ConsoleFunctionWithDocs(screenShot, ConsoleVoid, 3, 3, (string file, string form
     FileStream fStream;
    if(!fStream.open(argv[1], FileStream::Write))
    {   
-      Con::printf("Failed to open file '%s'.", argv[1]);
+      Con::printf("Failed to open file '%s'.", argv[1].getTempStringValue());
       return;
    }
     

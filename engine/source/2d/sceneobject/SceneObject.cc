@@ -630,7 +630,7 @@ void SceneObject::postIntegrate(const F32 totalTime, const F32 elapsedTime, Debu
     if ( mUpdateCallback )
     {
         PROFILE_SCOPE(SceneObject_onUpdateCallback);
-        Con::executef(this, 1, "onUpdate");
+        Con::executef(this, "onUpdate");
     }
 
     // Are we using the sleeping callback?
@@ -649,9 +649,9 @@ void SceneObject::postIntegrate(const F32 totalTime, const F32 elapsedTime, Debu
 
             // Perform the appropriate callback.
             if ( currentAwakeState )
-                Con::executef(this, 1, "onWake");
+                Con::executef(this, "onWake");
             else
-                Con::executef(this, 1, "onSleep");
+                Con::executef(this, "onSleep");
         }
     }
 }
@@ -2661,7 +2661,7 @@ void SceneObject::onInputEvent( StringTableEntry name, const GuiEvent& event, co
     dSprintf(argBuffer[2], 32, "%d", event.mouseClickCount);
 
     // Call Scripts.
-    Con::executef(this, 4, name, argBuffer[0], argBuffer[1], argBuffer[2]);
+    Con::executef(this, name, argBuffer[0], argBuffer[1], argBuffer[2]);
 }
 
 //-----------------------------------------------------------------------------

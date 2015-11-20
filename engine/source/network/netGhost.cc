@@ -106,7 +106,7 @@ public:
    }
    void process(NetConnection *ps)
    {
-      Con::executef(1, "onGhostAlwaysObjectReceived");
+      Con::executef("onGhostAlwaysObjectReceived");
 
       ps->setGhostAlwaysObject(object, ghostIndex);
       object = NULL;
@@ -756,7 +756,7 @@ void NetConnection::handleConnectionMessage(U32 message, U32 sequence, U32 ghost
       case ReadyForNormalGhosts:
          if(sequence != mGhostingSequence)
             return;
-         Con::executef(this, 1, "onGhostAlwaysObjectsReceived");
+         Con::executef(this, "onGhostAlwaysObjectsReceived");
          Con::printf("Ghost Always objects received.");
          mGhosting = true;
          for(i = 0; i < (S32)mGhostFreeIndex; i++)
@@ -783,7 +783,7 @@ void NetConnection::handleConnectionMessage(U32 message, U32 sequence, U32 ghost
          }
          break;
       case GhostAlwaysStarting:
-         Con::executef(2, "onGhostAlwaysStarted", Con::getIntArg(ghostCount));
+         Con::executef("onGhostAlwaysStarted", ghostCount);
          break;
       case SendNextDownloadRequest:
          sendNextFileDownloadRequest();

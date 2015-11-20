@@ -196,9 +196,9 @@ void TelnetConsole::process()
                Game->postEvent(mPostEvent);
 
                // note - send prompt next
-               const char *prompt = Con::getVariable("Con::Prompt");
+               ConsoleStringValuePtr prompt = Con::getVariable("Con::Prompt");
                if ( client->socket != InvalidSocket )
-                  Net::send(client->socket, (const unsigned char*)prompt, dStrlen(prompt));
+                  Net::send(client->socket, (const unsigned char*)prompt.c_str(), dStrlen(prompt.c_str()));
             }
             else if(client->state == ReadOnlyConnected)
             {
@@ -216,9 +216,9 @@ void TelnetConsole::process()
                   replyPos = 0;
 
                   // send prompt
-                  const char *prompt = Con::getVariable("Con::Prompt");
+                  ConsoleStringValuePtr prompt = Con::getVariable("Con::Prompt");
                   if ( client->socket != InvalidSocket )
-                     Net::send(client->socket, (const unsigned char*)prompt, dStrlen(prompt));
+                     Net::send(client->socket, (const unsigned char*)prompt.c_str(), dStrlen(prompt.c_str()));
                   client->state = FullAccessConnected;
                }
                else if(!dStrncmp(client->curLine, mListenPassword, PasswordMaxLength))

@@ -110,7 +110,7 @@ void Trigger::integrateObject( const F32 totalTime, const F32 elapsedTime, Debug
 
         for ( collideCallbackType::iterator contactItr = mEnterColliders.begin(); contactItr != mEnterColliders.end(); ++contactItr )
         {
-            Con::executef(this, 2, "onEnter", (*contactItr)->getIdString());
+            Con::executef(this, "onEnter", (*contactItr)->getIdString());
         }
     }
 
@@ -131,7 +131,7 @@ void Trigger::integrateObject( const F32 totalTime, const F32 elapsedTime, Debug
             // Fetch colliding object.
             SceneObject* pCollideWidth = contactItr->getCollideWith( this );
 
-            Con::executef(this, 2, "onStay", pCollideWidth->getIdString());
+            Con::executef(this, "onStay", pCollideWidth->getIdString());
         }
     }
 
@@ -143,7 +143,7 @@ void Trigger::integrateObject( const F32 totalTime, const F32 elapsedTime, Debug
 
         for ( collideCallbackType::iterator contactItr = mLeaveColliders.begin(); contactItr != mLeaveColliders.end(); ++contactItr )
         {
-            Con::executef(this, 2, "onLeave", (*contactItr)->getIdString());
+            Con::executef(this, "onLeave", (*contactItr)->getIdString());
         }
     }
 }

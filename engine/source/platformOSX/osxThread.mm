@@ -259,18 +259,18 @@ void ExecuteThread::run(void* arg)
 {
     // call the common run, but since we're in a thread, this won't block other processes
     U32 ret = runNoThread( this->executable, this->zargs, this->directory );
-    Con::executef(2, "onExecuteDone", Con::getIntArg(ret));
+    Con::executef("onExecuteDone", ret);
     printf("done nstask\n");
 }
 
 ConsoleFunction(shellExecute, bool, 2, 4, "(executable, [args], [directory])")
 {
     ExecuteThread *et;
-    et = new ExecuteThread(argv[1], argc > 2 ? argv[2] : NULL, argc > 3 ? argv[3] : NULL);
+    et = new ExecuteThread(argv[1], argc > 2 ? argv[2].getTempStringValue() : NULL, argc > 3 ? argv[3].getTempStringValue() : NULL);
     return true; // Bug: BPNC error: need feedback on whether the command was sucessful
 }
 
 ConsoleFunction(shellExecuteBlocking, int, 2, 4, "(executable, [args], [directory])")
 {
-    return (int)ExecuteThread::runNoThread( argv[1], argc > 2 ? argv[2] : NULL, argc > 3 ? argv[3] : NULL );
+    return (int)ExecuteThread::runNoThread( argv[1], argc > 2 ? argv[2].getTempStringValue() : NULL, argc > 3 ? argv[3].getTempStringValue() : NULL );
 }

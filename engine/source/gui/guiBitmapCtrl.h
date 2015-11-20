@@ -38,8 +38,8 @@ private:
    typedef GuiControl Parent;
 
 protected:
-   static bool setBitmapName( void *obj, const char *data );
-   static const char *getBitmapName( void *obj, const char *data );
+   static bool setBitmapName( void *obj, ConsoleValuePtr data );
+   ConsoleValuePtr getBitmapName( void *obj, ConsoleValuePtr data );
 
    StringTableEntry mBitmapName;
    TextureHandle mTextureHandle;

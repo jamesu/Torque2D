@@ -141,7 +141,7 @@ void GuiSliderCtrl::onMouseDragged(const GuiEvent &event)
         AssertFatal(value <= mRange.y && value >= mRange.x, "Error, out of bounds value generated from shift-snap of slider");
     }
 
-    Con::executef(this, 1, "onMouseDragged");
+    Con::executef(this, "onMouseDragged");
 
     updateThumb(value, !(event.modifier & SI_SHIFT));
 }

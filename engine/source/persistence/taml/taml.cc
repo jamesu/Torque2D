@@ -1002,7 +1002,8 @@ SimObject* Taml::createType( StringTableEntry typeName, const Taml* pTaml, const
 bool Taml::generateTamlSchema()
 {
     // Fetch any TAML Schema file reference.
-    const char* pTamlSchemaFile = Con::getVariable( TAML_SCHEMA_VARIABLE );
+    ConsoleStringValuePtr pTamlSchemaFileV = Con::getVariable( TAML_SCHEMA_VARIABLE );
+    const char* pTamlSchemaFile = pTamlSchemaFileV.c_str();
 
     // Do we have a schema file reference?
     if ( pTamlSchemaFile == NULL || *pTamlSchemaFile == 0 )
@@ -1389,7 +1390,7 @@ bool Taml::generateTamlSchema()
                 {
                     pFieldTypeDescription = "xs:int";
                 }
-                else if( fieldType == TypeBool || fieldType == TypeFlag )
+                else if( fieldType == TypeBool )
                 {
                     pFieldTypeDescription = "xs:boolean";
                 }

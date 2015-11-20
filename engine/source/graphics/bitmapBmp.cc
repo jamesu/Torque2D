@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "graphics/gBitmap.h"
 #include "graphics/gPalette.h"
 #include "io/stream.h"
@@ -138,7 +139,7 @@ bool GBitmap::readMSBmp(Stream& stream)
    delete[] rowBuffer;
 
    //-Mat set the mForce16Bit to true for these, if the script variable is set
-   sgForcePalletedBMPsTo16Bit = Con::getVariable("$pref::iPhone::ForcePalletedBMPsTo16Bit");
+   sgForcePalletedBMPsTo16Bit = Con::getBoolVariable("$pref::iPhone::ForcePalletedBMPsTo16Bit");
    if( bi.biBitCount == 8 && sgForcePalletedBMPsTo16Bit ) {
        mForce16Bit = true;
    }

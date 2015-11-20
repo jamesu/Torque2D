@@ -498,10 +498,10 @@ void Scene::dispatchBeginContactCallbacks( void )
         const F32 tangentImpulse2 = tickContact.mTangentImpulses[1];
 
         // Format objects.
-        char sceneObjectABuffer[16];
-        char sceneObjectBBuffer[16];
-        dSprintf( sceneObjectABuffer, sizeof(sceneObjectABuffer), "%d", pSceneObjectA->getId() );
-        dSprintf( sceneObjectBBuffer, sizeof(sceneObjectBBuffer), "%d", pSceneObjectB->getId() );
+        ConsoleValuePtr sceneObjectABuffer;
+        ConsoleValuePtr sceneObjectBBuffer;
+        sceneObjectABuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectA));
+        sceneObjectBBuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectB));
 
         // Format miscellaneous information.
         char miscInfoBuffer[128];
@@ -540,7 +540,7 @@ void Scene::dispatchBeginContactCallbacks( void )
         if ( pNamespace != NULL && pNamespace->lookup( StringTable->insert( "onSceneCollision" ) ) != NULL )
         {
             // Yes, so perform script callback on the Scene.
-            Con::executef( this, 4, "onSceneCollision",
+            Con::executef( this, "onSceneCollision",
                 sceneObjectABuffer,
                 sceneObjectBBuffer,
                 miscInfoBuffer );
@@ -548,7 +548,12 @@ void Scene::dispatchBeginContactCallbacks( void )
         else
         {
             // No, so call it on its behaviors.
-            const char* args[5] = { "onSceneCollision", "", sceneObjectABuffer, sceneObjectBBuffer, miscInfoBuffer };
+            ConsoleValuePtr args[5];
+            args[0].setSTE(StringTable->insert("onSceneCollision"));
+            args[1].setNull();
+            args[2].setValue(sceneObjectABuffer);
+            args[3].setValue(sceneObjectBBuffer);
+            args[4].setString(miscInfoBuffer);
             callOnBehaviors( 5, args );
         }
 
@@ -560,14 +565,18 @@ void Scene::dispatchBeginContactCallbacks( void )
             if ( pSceneObjectA->isMethod("onCollision") )            
             {
                 // Yes, so perform the script callback on it.
-                Con::executef( pSceneObjectA, 3, "onCollision",
+                Con::executef( pSceneObjectA, "onCollision",
                     sceneObjectBBuffer,
                     miscInfoBuffer );
             }
             else
             {
                 // No, so call it on its behaviors.
-                const char* args[4] = { "onCollision", "", sceneObjectBBuffer, miscInfoBuffer };
+                ConsoleValuePtr args[4];
+                args[0].setSTE(StringTable->insert("onCollision"));
+                args[1].setNull();
+                args[2].setValue(sceneObjectBBuffer);
+                args[3].setString(miscInfoBuffer);
                 pSceneObjectA->callOnBehaviors( 4, args );
             }
         }
@@ -580,14 +589,18 @@ void Scene::dispatchBeginContactCallbacks( void )
             if ( pSceneObjectB->isMethod("onCollision") )            
             {
                 // Yes, so perform the script callback on it.
-                Con::executef( pSceneObjectB, 3, "onCollision",
+                Con::executef( pSceneObjectB, "onCollision",
                     sceneObjectABuffer,
                     miscInfoBuffer );
             }
             else
             {
                 // No, so call it on its behaviors.
-                const char* args[4] = { "onCollision", "", sceneObjectABuffer, miscInfoBuffer };
+                ConsoleValuePtr args[4];
+                args[0].setSTE(StringTable->insert("onCollision"));
+                args[1].setNull();
+                args[2].setValue(sceneObjectABuffer);
+                args[3].setString(miscInfoBuffer);
                 pSceneObjectB->callOnBehaviors( 4, args );
             }
         }
@@ -638,10 +651,10 @@ void Scene::dispatchEndContactCallbacks( void )
         AssertFatal( shapeIndexB >= 0, "Scene::dispatchEndContactCallbacks() - Cannot find shape index reported on physics proxy of a fixture." );
 
         // Format objects.
-        char sceneObjectABuffer[16];
-        char sceneObjectBBuffer[16];
-        dSprintf( sceneObjectABuffer, sizeof(sceneObjectABuffer), "%d", pSceneObjectA->getId() );
-        dSprintf( sceneObjectBBuffer, sizeof(sceneObjectBBuffer), "%d", pSceneObjectB->getId() );
+        ConsoleValuePtr sceneObjectABuffer;
+        ConsoleValuePtr sceneObjectBBuffer;
+        sceneObjectABuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectA));
+        sceneObjectBBuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectB));
 
         // Format miscellaneous information.
         char miscInfoBuffer[32];
@@ -652,7 +665,7 @@ void Scene::dispatchEndContactCallbacks( void )
         if ( pNamespace != NULL && pNamespace->lookup( StringTable->insert( "onSceneEndCollision" ) ) != NULL )
         {
             // Yes, so does the scene handle the collision callback?
-            Con::executef( this, 4, "onSceneEndCollision",
+            Con::executef( this, "onSceneEndCollision",
                 sceneObjectABuffer,
                 sceneObjectBBuffer,
                 miscInfoBuffer );
@@ -660,8 +673,14 @@ void Scene::dispatchEndContactCallbacks( void )
         else
         {
             // No, so call it on its behaviors.
-            const char* args[5] = { "onSceneEndCollision", "", sceneObjectABuffer, sceneObjectBBuffer, miscInfoBuffer };
-            callOnBehaviors( 5, args );
+           
+           ConsoleValuePtr args[5];
+           args[0].setSTE(StringTable->insert("onSceneEndCollision"));
+           args[1].setNull();
+           args[2].setValue(sceneObjectABuffer);
+           args[3].setValue(sceneObjectBBuffer);
+           args[4].setString(miscInfoBuffer);
+           callOnBehaviors( 5, args );
         }
 
         // Is object A allowed to collide with object B?
@@ -672,14 +691,19 @@ void Scene::dispatchEndContactCallbacks( void )
             if ( pSceneObjectA->isMethod("onEndCollision") )            
             {
                 // Yes, so perform the script callback on it.
-                Con::executef( pSceneObjectA, 3, "onEndCollision",
+                Con::executef( pSceneObjectA, "onEndCollision",
                     sceneObjectBBuffer,
                     miscInfoBuffer );
             }
             else
             {
                 // No, so call it on its behaviors.
-                const char* args[4] = { "onEndCollision", "", sceneObjectBBuffer, miscInfoBuffer };
+               
+                 ConsoleValuePtr args[4];
+                args[0].setSTE(StringTable->insert("onEndCollision"));
+                args[1].setNull();
+                args[2].setValue(sceneObjectBBuffer);
+                args[3].setString(miscInfoBuffer);
                 pSceneObjectA->callOnBehaviors( 4, args );
             }
         }
@@ -692,14 +716,18 @@ void Scene::dispatchEndContactCallbacks( void )
             if ( pSceneObjectB->isMethod("onEndCollision") )            
             {
                 // Yes, so perform the script callback on it.
-                Con::executef( pSceneObjectB, 3, "onEndCollision",
+                Con::executef( pSceneObjectB, "onEndCollision",
                     sceneObjectABuffer,
                     miscInfoBuffer );
             }
             else
             {
                 // No, so call it on its behaviors.
-                const char* args[4] = { "onEndCollision", "", sceneObjectABuffer, miscInfoBuffer };
+                ConsoleValuePtr args[4];
+                args[0].setSTE(StringTable->insert("onEndCollision"));
+                args[1].setNull();
+                args[2].setValue(sceneObjectABuffer);
+                args[3].setString(miscInfoBuffer);
                 pSceneObjectB->callOnBehaviors( 4, args );
             }
         }
@@ -889,7 +917,7 @@ void Scene::processTick( void )
             // Debug Profiling.
             PROFILE_SCOPE(Scene_OnSceneUpdatetCallback);
 
-            Con::executef( this, 1, "onSceneUpdate" );
+            Con::executef( this, "onSceneUpdate" );
         }
 
         // Only dispatch contacts if a "normal" scene.
@@ -1267,7 +1295,7 @@ void Scene::sceneRender( const SceneRenderState* pSceneRenderState )
         PROFILE_SCOPE(Scene_OnSceneRendertCallback);
 
         // Yes, so perform callback.
-        Con::executef( this, 1, "onSceneRender" );
+        Con::executef( this, "onSceneRender" );
     }
 }
 
@@ -1341,7 +1369,7 @@ void Scene::addToScene( SceneObject* pSceneObject )
     // Perform callback only if properly added to the simulation.
     if ( pSceneObject->isProperlyAdded() )
     {
-        Con::executef(pSceneObject, 2, "onAddToScene", getIdString());
+        Con::executef(pSceneObject, "onAddToScene", getIdString());
     }
     else
     {
@@ -1394,7 +1422,7 @@ void Scene::removeFromScene( SceneObject* pSceneObject )
     }
 
     // Perform callback.
-    Con::executef( pSceneObject, 2, "onRemoveFromScene", getIdString() );
+    Con::executef( pSceneObject, "onRemoveFromScene", getIdString() );
 }
 
 //-----------------------------------------------------------------------------
@@ -3721,7 +3749,7 @@ void Scene::processDeleteRequests( const bool forceImmediate )
             SceneObject* pSceneObject = mDeleteRequestsTemp[requestIndex].mpSceneObject;
 
             // Do script callback.
-            Con::executef(this, 2, "onSafeDelete", pSceneObject->getIdString() );
+            Con::executef(this, "onSafeDelete", pSceneObject->getIdString() );
 
             // Destroy the object.
             pSceneObject->deleteObject();
@@ -3745,7 +3773,7 @@ void Scene::processDeleteRequests( const bool forceImmediate )
                 SceneObject* pSceneObject = deleteRequest.mpSceneObject;
 
                 // Do script callback.
-                Con::executef(this, 2, "onSafeDelete", pSceneObject->getIdString() );
+                Con::executef(this, "onSafeDelete", pSceneObject->getIdString() );
 
                 // Destroy the object.
                 pSceneObject->deleteObject();

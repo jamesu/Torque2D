@@ -66,6 +66,9 @@
 		2AF1C54016B439BB00C1CF3A /* declaredAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53C16B439BB00C1CF3A /* declaredAssets.cc */; };
 		2AF1C54116B439BB00C1CF3A /* referencedAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53E16B439BB00C1CF3A /* referencedAssets.cc */; };
 		2AF3633916A9BBE0004ED7AA /* ParticleSystem.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */; };
+		3266D2D01BFE613100446D93 /* codeblockEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */; };
+		3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */; };
+		3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CF1BFE613100446D93 /* consoleValue.cc */; };
 		86063A251654180000362D83 /* platformOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 86063A241654180000362D83 /* platformOSX.mm */; };
 		8609FE2F16556DD2004662ED /* osxSemaphore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE2E16556DD2004662ED /* osxSemaphore.mm */; };
 		8609FE3116556E5A004662ED /* osxThread.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE3016556E5A004662ED /* osxThread.mm */; };
@@ -262,7 +265,6 @@
 		86D76FBA165687060046D71F /* dynamicConsoleMethodComponent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 86BC7F4016518D4600D96ADF /* dynamicConsoleMethodComponent.cpp */; };
 		86D76FBC165687060046D71F /* simComponent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 86BC7F4516518D4600D96ADF /* simComponent.cpp */; };
 		86D76FBD165687060046D71F /* consoleDictionary.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B316518DF400D96ADF /* consoleDictionary.cc */; };
-		86D76FBE165687060046D71F /* consoleExprEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B516518DF400D96ADF /* consoleExprEvalState.cc */; };
 		86D76FBF165687060046D71F /* consoleNamespace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B716518DF400D96ADF /* consoleNamespace.cc */; };
 		86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B916518DF400D96ADF /* consoleBaseType.cc */; };
 		86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */; };
@@ -279,7 +281,6 @@
 		86D76FCC165687060046D71F /* consoleFunctions.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C916518DF400D96ADF /* consoleFunctions.cc */; };
 		86D76FCD165687060046D71F /* consoleLogger.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82CA16518DF400D96ADF /* consoleLogger.cc */; };
 		86D76FCE165687060046D71F /* consoleObject.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82CB16518DF400D96ADF /* consoleObject.cc */; };
-		86D76FCF165687060046D71F /* consoleParser.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82CC16518DF400D96ADF /* consoleParser.cc */; };
 		86D76FD0165687060046D71F /* consoleTypes.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82CD16518DF400D96ADF /* consoleTypes.cc */; };
 		86D76FD1165687060046D71F /* profiler.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC7F7416518D4600D96ADF /* profiler.cc */; };
 		86D76FD2165687060046D71F /* RemoteDebugger1.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC7F7716518D4600D96ADF /* RemoteDebugger1.cc */; };
@@ -647,6 +648,14 @@
 		2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ParticleSystem.cc; sourceTree = "<group>"; };
 		2AF3633816A9BBE0004ED7AA /* ParticleSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleSystem.h; sourceTree = "<group>"; };
 		2AF80CFF16A80CB400CE13F1 /* ParticleAssetEmitter_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleAssetEmitter_ScriptBinding.h; sourceTree = "<group>"; };
+		3266D2CB1BFE613100446D93 /* codeblockEvalState_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockEvalState_ScriptBinding.h; sourceTree = "<group>"; };
+		3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codeblockEvalState.cc; sourceTree = "<group>"; };
+		3266D2CD1BFE613100446D93 /* codeblockEvalState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockEvalState.h; sourceTree = "<group>"; };
+		3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleSerialization.cpp; sourceTree = "<group>"; };
+		3266D2CF1BFE613100446D93 /* consoleValue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleValue.cc; sourceTree = "<group>"; };
+		32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleCallbackHelper.h; sourceTree = "<group>"; };
+		32BA90FB1BE6DF7A0041D293 /* consoleValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleValue.h; sourceTree = "<group>"; };
+		32BA90FC1BEC20930041D293 /* consoleSerialization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleSerialization.h; sourceTree = "<group>"; };
 		86063A231654180000362D83 /* platformOSX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platformOSX.h; sourceTree = "<group>"; };
 		86063A241654180000362D83 /* platformOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = platformOSX.mm; sourceTree = "<group>"; };
 		8609FE2E16556DD2004662ED /* osxSemaphore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = osxSemaphore.mm; sourceTree = "<group>"; };
@@ -1368,15 +1377,12 @@
 		86BC815516518D4600D96ADF /* torqueConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = torqueConfig.h; path = ../../../source/torqueConfig.h; sourceTree = "<group>"; };
 		86BC82B316518DF400D96ADF /* consoleDictionary.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleDictionary.cc; sourceTree = "<group>"; };
 		86BC82B416518DF400D96ADF /* consoleDictionary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleDictionary.h; sourceTree = "<group>"; };
-		86BC82B516518DF400D96ADF /* consoleExprEvalState.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleExprEvalState.cc; sourceTree = "<group>"; };
-		86BC82B616518DF400D96ADF /* consoleExprEvalState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleExprEvalState.h; sourceTree = "<group>"; };
 		86BC82B716518DF400D96ADF /* consoleNamespace.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleNamespace.cc; sourceTree = "<group>"; };
 		86BC82B816518DF400D96ADF /* consoleNamespace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleNamespace.h; sourceTree = "<group>"; };
 		86BC82B916518DF400D96ADF /* consoleBaseType.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleBaseType.cc; sourceTree = "<group>"; };
 		86BC82BA16518DF400D96ADF /* consoleBaseType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleBaseType.h; sourceTree = "<group>"; };
 		86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleTypeValidators.cc; sourceTree = "<group>"; };
 		86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleTypeValidators.h; sourceTree = "<group>"; };
-		86BC82BD16518DF400D96ADF /* astNodeSizes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = astNodeSizes.h; sourceTree = "<group>"; };
 		86BC82BE16518DF400D96ADF /* Package.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Package.cc; sourceTree = "<group>"; };
 		86BC82BF16518DF400D96ADF /* Package.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Package.h; sourceTree = "<group>"; };
 		86BC82C016518DF400D96ADF /* astAlloc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = astAlloc.cc; sourceTree = "<group>"; };
@@ -1391,7 +1397,6 @@
 		86BC82C916518DF400D96ADF /* consoleFunctions.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleFunctions.cc; sourceTree = "<group>"; };
 		86BC82CA16518DF400D96ADF /* consoleLogger.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleLogger.cc; sourceTree = "<group>"; };
 		86BC82CB16518DF400D96ADF /* consoleObject.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleObject.cc; sourceTree = "<group>"; };
-		86BC82CC16518DF400D96ADF /* consoleParser.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleParser.cc; sourceTree = "<group>"; };
 		86BC82CD16518DF400D96ADF /* consoleTypes.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleTypes.cc; sourceTree = "<group>"; };
 		86BC82CE16518DF400D96ADF /* ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast.h; sourceTree = "<group>"; };
 		86BC82CF16518DF400D96ADF /* cmdgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cmdgram.h; sourceTree = "<group>"; };
@@ -1402,7 +1407,6 @@
 		86BC82D416518DF400D96ADF /* consoleInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleInternal.h; sourceTree = "<group>"; };
 		86BC82D516518DF400D96ADF /* consoleLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleLogger.h; sourceTree = "<group>"; };
 		86BC82D616518DF400D96ADF /* consoleObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleObject.h; sourceTree = "<group>"; };
-		86BC82D716518DF400D96ADF /* consoleParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleParser.h; sourceTree = "<group>"; };
 		86BC82D816518DF400D96ADF /* consoleTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleTypes.h; sourceTree = "<group>"; };
 		86BC833816518FB100D96ADF /* popupMenu.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = popupMenu.cc; sourceTree = "<group>"; };
 		86BC833916518FB100D96ADF /* popupMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = popupMenu.h; sourceTree = "<group>"; };
@@ -1507,7 +1511,6 @@
 		B350D159174EF65E00033EBB /* resourceManager_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resourceManager_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15A174EF67100033EBB /* zipObject_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zipObject_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15B174EF71B00033EBB /* consoleDoc_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleDoc_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D15C174EF71B00033EBB /* consoleExprEvalState_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleExprEvalState_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15D174EF71B00033EBB /* consoleLogger_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleLogger_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15E174EF71B00033EBB /* consoleNamespace_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleNamespace_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15F174EF71B00033EBB /* expando_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expando_ScriptBinding.h; sourceTree = "<group>"; };
@@ -2445,8 +2448,15 @@
 		86BC7F4716518D4600D96ADF /* console */ = {
 			isa = PBXGroup;
 			children = (
+				3266D2CB1BFE613100446D93 /* codeblockEvalState_ScriptBinding.h */,
+				3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */,
+				3266D2CD1BFE613100446D93 /* codeblockEvalState.h */,
+				3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */,
+				3266D2CF1BFE613100446D93 /* consoleValue.cc */,
+				32BA90FC1BEC20930041D293 /* consoleSerialization.h */,
+				32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */,
+				32BA90FB1BE6DF7A0041D293 /* consoleValue.h */,
 				B350D15B174EF71B00033EBB /* consoleDoc_ScriptBinding.h */,
-				B350D15C174EF71B00033EBB /* consoleExprEvalState_ScriptBinding.h */,
 				B350D15D174EF71B00033EBB /* consoleLogger_ScriptBinding.h */,
 				B350D15E174EF71B00033EBB /* consoleNamespace_ScriptBinding.h */,
 				B350D15F174EF71B00033EBB /* expando_ScriptBinding.h */,
@@ -2456,15 +2466,12 @@
 				B350D163174EF71B00033EBB /* taggedStrings_ScriptBinding.h */,
 				86BC82B316518DF400D96ADF /* consoleDictionary.cc */,
 				86BC82B416518DF400D96ADF /* consoleDictionary.h */,
-				86BC82B516518DF400D96ADF /* consoleExprEvalState.cc */,
-				86BC82B616518DF400D96ADF /* consoleExprEvalState.h */,
 				86BC82B716518DF400D96ADF /* consoleNamespace.cc */,
 				86BC82B816518DF400D96ADF /* consoleNamespace.h */,
 				86BC82B916518DF400D96ADF /* consoleBaseType.cc */,
 				86BC82BA16518DF400D96ADF /* consoleBaseType.h */,
 				86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */,
 				86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */,
-				86BC82BD16518DF400D96ADF /* astNodeSizes.h */,
 				86BC82BE16518DF400D96ADF /* Package.cc */,
 				86BC82BF16518DF400D96ADF /* Package.h */,
 				86BC82C016518DF400D96ADF /* astAlloc.cc */,
@@ -2479,7 +2486,6 @@
 				86BC82C916518DF400D96ADF /* consoleFunctions.cc */,
 				86BC82CA16518DF400D96ADF /* consoleLogger.cc */,
 				86BC82CB16518DF400D96ADF /* consoleObject.cc */,
-				86BC82CC16518DF400D96ADF /* consoleParser.cc */,
 				86BC82CD16518DF400D96ADF /* consoleTypes.cc */,
 				86BC82CE16518DF400D96ADF /* ast.h */,
 				86BC82CF16518DF400D96ADF /* cmdgram.h */,
@@ -2490,7 +2496,6 @@
 				86BC82D416518DF400D96ADF /* consoleInternal.h */,
 				86BC82D516518DF400D96ADF /* consoleLogger.h */,
 				86BC82D616518DF400D96ADF /* consoleObject.h */,
-				86BC82D716518DF400D96ADF /* consoleParser.h */,
 				86BC82D816518DF400D96ADF /* consoleTypes.h */,
 			);
 			name = console;
@@ -3345,6 +3350,7 @@
 				86D770B81656873C0046D71F /* stringBuffer.cc in Sources */,
 				86D770B91656873C0046D71F /* stringStack.cc in Sources */,
 				86D770BA1656873C0046D71F /* stringTable.cc in Sources */,
+				3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */,
 				86D770BB1656873C0046D71F /* stringUnit.cpp in Sources */,
 				86D770BC1656873C0046D71F /* unicode.cc in Sources */,
 				86D7703E165687220046D71F /* actionMap.cc in Sources */,
@@ -3382,7 +3388,6 @@
 				86D76FBA165687060046D71F /* dynamicConsoleMethodComponent.cpp in Sources */,
 				86D76FBC165687060046D71F /* simComponent.cpp in Sources */,
 				86D76FBD165687060046D71F /* consoleDictionary.cc in Sources */,
-				86D76FBE165687060046D71F /* consoleExprEvalState.cc in Sources */,
 				86D76FBF165687060046D71F /* consoleNamespace.cc in Sources */,
 				86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */,
 				86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */,
@@ -3400,7 +3405,6 @@
 				86D76FCC165687060046D71F /* consoleFunctions.cc in Sources */,
 				86D76FCD165687060046D71F /* consoleLogger.cc in Sources */,
 				86D76FCE165687060046D71F /* consoleObject.cc in Sources */,
-				86D76FCF165687060046D71F /* consoleParser.cc in Sources */,
 				86D76FD0165687060046D71F /* consoleTypes.cc in Sources */,
 				86D76FD1165687060046D71F /* profiler.cc in Sources */,
 				27908E0A18A3F8CB002D41BD /* SkeletonBounds.c in Sources */,
@@ -3488,6 +3492,7 @@
 				86D77033165687060046D71F /* guiSliderCtrl.cc in Sources */,
 				86D77034165687060046D71F /* guiTabPageCtrl.cc in Sources */,
 				86D77035165687060046D71F /* guiTextCtrl.cc in Sources */,
+				3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */,
 				86D77036165687060046D71F /* guiTextEditCtrl.cc in Sources */,
 				86D77037165687060046D71F /* guiTextEditSliderCtrl.cc in Sources */,
 				86D77038165687060046D71F /* guiTextListCtrl.cc in Sources */,
@@ -3656,6 +3661,7 @@
 				865A234E1651881300527C44 /* pngwrite.c in Sources */,
 				865A234F1651881300527C44 /* pngwtran.c in Sources */,
 				865A23501651881300527C44 /* pngwutil.c in Sources */,
+				3266D2D01BFE613100446D93 /* codeblockEvalState.cc in Sources */,
 				865A235A16518AD300527C44 /* AppDelegate.mm in Sources */,
 				865A235B16518AD300527C44 /* main.mm in Sources */,
 				86063A251654180000362D83 /* platformOSX.mm in Sources */,
@@ -3775,7 +3781,7 @@
 		865A20AF165152EA00527C44 /* Shipping */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
@@ -3860,6 +3866,7 @@
 				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "";
 				GCC_C_LANGUAGE_STANDARD = gnu89;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					TORQUE_RELEASE,
 					GTEST_OS_MAC,
@@ -3881,7 +3888,7 @@
 		869FF8D71651518C002FE082 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
@@ -3922,10 +3929,11 @@
 		869FF8D81651518C002FE082 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Torque2D/Torque2D-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (

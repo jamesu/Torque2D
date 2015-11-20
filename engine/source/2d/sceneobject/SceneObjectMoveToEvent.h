@@ -63,7 +63,7 @@ public:
         pSceneObject->mMoveToEventId = 0;
 
         // Script callback.
-        Con::executef( object, 2, "onMoveToComplete", mTargetWorldPoint.scriptThis() );
+        Con::executef( object, "onMoveToComplete", mTargetWorldPoint.scriptThis() );
     }
 
 private:

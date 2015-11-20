@@ -48,79 +48,79 @@ class AbstractClassRep;
 
 class Package
 {
-    enum {
-        MaxActivePackages = 512,
-    };
+   enum {
+      MaxActivePackages = 512,
+   };
 
 public:
-    StringTableEntry mName;
+   StringTableEntry mName;
 
-    Package *mParent;
-    AbstractClassRep *mClassRep;
-    U32 mRefCountToParent;
-    const char* mUsage;
-    // Script defined usage strings need to be cleaned up. This
-    // field indicates whether or not the usage was set from script.
-    bool mCleanUpUsage;
-	int mActivePosition;
+   Package *mParent;
+   AbstractClassRep *mClassRep;
+   U32 mRefCountToParent;
+   const char* mUsage;
+   // Script defined usage strings need to be cleaned up. This
+   // field indicates whether or not the usage was set from script.
+   bool mCleanUpUsage;
+   int mActivePosition;
 
 
-    Package();
-    ~Package();
-	
-	typedef tHashTable<StringTableEntry, Namespace*>::Iterator nameSpaceIterator;
-	typedef tHashTable<StringTableEntry, Package*>::Iterator packageIterator;
-	tHashTable<StringTableEntry, Namespace*> *mChildNamespaceList;
-	tHashTable<StringTableEntry, Package*> *mChildPackageList;
+   Package();
+   ~Package();
 
-	Namespace *mDefaultNamespace;
+   typedef tHashTable<StringTableEntry, Namespace*>::Iterator nameSpaceIterator;
+   typedef tHashTable<StringTableEntry, Package*>::Iterator packageIterator;
+   tHashTable<StringTableEntry, Namespace*> *mChildNamespaceList;
+   tHashTable<StringTableEntry, Package*> *mChildPackageList;
 
-	//-Mat, maybe put these into ExprEvalState
-	static Package *smRootPackage;
-	static Package *smMainPackage;
+   Namespace *mDefaultNamespace;
 
-	static void init();
-	static void shutdown();
+   //-Mat, maybe put these into ExprEvalState
+   static Package *smRootPackage;
+   static Package *smMainPackage;
 
-	static Package *getRootPackage() { return smRootPackage; }
-	static Package *getMainNamespacePackage() { return smMainPackage; }
-	//this namespace be be the child of smMainPackage
-	static Namespace *getMainNamespace() { return smMainPackage->getDefaultNamespace(); }
+   static void init();
+   static void shutdown();
 
-	//this will find the most recently activated package
-	static Package *getCurrentPackage();
+   static Package *getRootPackage() { return smRootPackage; }
+   static Package *getMainNamespacePackage() { return smMainPackage; }
+   //this namespace be be the child of smMainPackage
+   static Namespace *getMainNamespace() { return smMainPackage->getDefaultNamespace(); }
 
-	static Package *findPackage(StringTableEntry);
-	static Package *findAndCreatePackage(StringTableEntry name);
+   //this will find the most recently activated package
+   static Package *getCurrentPackage();
 
-    static void activatePackage(StringTableEntry name);
-    static void deactivatePackage(StringTableEntry name);
-    static void dumpNamespaces( bool dumpScript = true, bool dumpEngine = true );
-    static void unlinkPackages();
-    static void relinkPackages();
+   static Package *findPackage(StringTableEntry);
+   static Package *findAndCreatePackage(StringTableEntry name);
 
-	//Namespace::Entry *lookupEntryInActivePackages( StringTableEntry, StringTableEntry );
-	static Namespace *lookupNamespaceInActivePackages( StringTableEntry);
-	
-	Namespace *getDefaultNamespace() { return mDefaultNamespace; }
-	//-Mat functions to help with new Namespace organization	
-	Namespace *findNamespace(StringTableEntry name);
-	Namespace *findAndCreateNamespace(StringTableEntry name);
+   static void activatePackage(StringTableEntry name);
+   static void deactivatePackage(StringTableEntry name);
+   static void dumpNamespaces( bool dumpScript = true, bool dumpEngine = true );
+   static void unlinkPackages();
+   static void relinkPackages();
 
-	Namespace *addAndCreateNamespace( StringTableEntry );
-	Namespace *addNamespace( Namespace* );
-	Namespace *swapNamespace( Namespace* );
-	
-	Package *addPackage(Package*);
+   //Namespace::Entry *lookupEntryInActivePackages( StringTableEntry, StringTableEntry );
+   static Namespace *lookupNamespaceInActivePackages( StringTableEntry);
 
-	void activate(int activePosition) { mActivePosition = activePosition; }
-	void deActivate() { mActivePosition = -1; }
-	bool isActive() { return mActivePosition != -1; }
+   Namespace *getDefaultNamespace() { return mDefaultNamespace; }
+   //-Mat functions to help with new Namespace organization   
+   Namespace *findNamespace(StringTableEntry name);
+   Namespace *findAndCreateNamespace(StringTableEntry name);
+
+   Namespace *addAndCreateNamespace( StringTableEntry );
+   Namespace *addNamespace( Namespace* );
+   Namespace *swapNamespace( Namespace* );
+
+   Package *addPackage(Package*);
+
+   void activate(int activePosition) { mActivePosition = activePosition; }
+   void deActivate() { mActivePosition = -1; }
+   bool isActive() { return mActivePosition != -1; }
 
 private:
-	//private so that we can make sure no Namespace has a NULL parent because of this
-	//use SwapNamespace to "remove" a namespace (it will get moved to the MainPackage)
-	Namespace *removeNamespace( Namespace* );
+   //private so that we can make sure no Namespace has a NULL parent because of this
+   //use SwapNamespace to "remove" a namespace (it will get moved to the MainPackage)
+   Namespace *removeNamespace( Namespace* );
 };
 
 

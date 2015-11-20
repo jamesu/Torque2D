@@ -49,7 +49,7 @@ ConsoleMethodWithDocs(ImageFont, getImage, ConsoleString, 2, 2, ())
 */
 ConsoleMethodWithDocs(ImageFont, setText, ConsoleVoid, 3, 3, (text))
 {
-    object->setText(argv[2]);
+    object->setText(argv[2].getTempStringValue());
 }
 
 //-----------------------------------------------------------------------------

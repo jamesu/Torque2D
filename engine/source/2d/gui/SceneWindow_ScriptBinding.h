@@ -82,7 +82,7 @@ ConsoleMethodWithDocs(SceneWindow, setScene, ConsoleVoid, 2, 3, (Scene))
     // Validate Object.
     if ( !pScene )
     {
-        Con::warnf("SceneWindow::setScene() - Couldn't find object '%s'.", argv[2]);
+        Con::warnf("SceneWindow::setScene() - Couldn't find object '%s'.", argv[2].getTempStringValue());
         return;
     }
 
@@ -634,7 +634,7 @@ ConsoleMethodWithDocs(SceneWindow, mount, ConsoleVoid, 3, 8, (sceneObject, [offs
     // Validate Object.
     if (!pSceneObject)
     {
-        Con::warnf("SceneWindow::mount() - Couldn't find/Invalid object '%s'.", argv[2]);
+        Con::warnf("SceneWindow::mount() - Couldn't find/Invalid object '%s'.", argv[2].getTempStringValue());
         return;
     }
 
@@ -1280,7 +1280,7 @@ ConsoleMethodWithDocs(SceneWindow, addInputListener, ConsoleBool, 3, 3, (inputLi
     if ( pSimObject == NULL )
     {
         // No, so warn.
-        Con::warnf( "SceneWindow::addInputListener() - Could not find the object '%s' to add as an input event listener.", argv[2] );
+        Con::warnf( "SceneWindow::addInputListener() - Could not find the object '%s' to add as an input event listener.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -1305,7 +1305,7 @@ ConsoleMethodWithDocs(SceneWindow, removeInputListener, ConsoleBool, 3, 3, (inpu
     if ( pSimObject == NULL )
     {
         // No, so warn.
-        Con::warnf( "SceneWindow::removeInputListener() - Could not find the object '%s' to remove from being an input event listener.", argv[2] );
+        Con::warnf( "SceneWindow::removeInputListener() - Could not find the object '%s' to remove from being an input event listener.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -1414,7 +1414,7 @@ ConsoleMethodWithDocs(SceneWindow, getWorldPoint, ConsoleString, 3, 4, (X / Y))
    else
    {
       Con::warnf("SceneWindow::getWorldPoint() - Invalid number of parameters!");
-      return NULL;
+      return "";
    }
    
    // Destination Point.
@@ -1452,7 +1452,7 @@ ConsoleMethodWithDocs(SceneWindow, getWindowPoint, ConsoleString, 3, 4, (X / Y))
    else
    {
       Con::warnf("SceneWindow::getWindowPoint() - Invalid number of parameters!");
-      return NULL;
+      return "";
    }
    
    // Destination Point.
@@ -1493,7 +1493,7 @@ ConsoleMethodWithDocs(SceneWindow, getCanvasPoint, ConsoleString, 3, 4, (X / Y))
    else
    {
       Con::warnf("SceneWindow::getCanvasPoint() - Invalid number of parameters!");
-      return NULL;
+      return "";
    }
 
     // Do Conversion.

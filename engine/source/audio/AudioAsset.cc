@@ -35,44 +35,46 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( audioAssetPtr, TypeAudioAssetPtr, sizeof(AssetPtr<AudioAsset>), ASSET_ID_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAudioAssetPtr, AssetPtr<AudioAsset> )
 
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeAudioAssetPtr )
+ConsoleTypeToString( TypeAudioAssetPtr )
 {
     // Fetch asset Id.
-    return (*((AssetPtr<AudioAsset>*)dptr)).getAssetId();
+    return (*((AssetPtr<AudioAsset>*)dataPtr)).getAssetId();
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeAudioAssetPtr )
+ConsoleTypeFromConsoleValue( TypeAudioAssetPtr )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
-
-        // Fetch asset pointer.
-        AssetPtr<AudioAsset>* pAssetPtr = dynamic_cast<AssetPtr<AudioAsset>*>((AssetPtrBase*)(dptr));
-
-        // Is the asset pointer the correct type?
-        if ( pAssetPtr == NULL )
-        {
-            // No, so fail.
-            Con::warnf( "(TypeAudioAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
-            return;
-        }
-
-        // Set asset.
-        pAssetPtr->setAssetId( pFieldValue );
-
-        return;
+   // Check we have the right sort of value here
+   if (ConsoleValue::isRefType(value.type))
+   {
+      if (value.value.refValue->isEnumerable())
+      {
+         Con::warnf( "(TypeAudioAssetPtr) - Cannot set multiple args to a single asset." );
+         return;
+      }
    }
-
-    // Warn.
-    Con::warnf( "(TypeAudioAssetPtr) - Cannot set multiple args to a single asset." );
+   
+   // Fetch field value.
+   const char* pFieldValue = value.getTempStringValue();
+   
+   // Fetch asset pointer.
+   AssetPtr<AudioAsset>* pAssetPtr = dynamic_cast<AssetPtr<AudioAsset>*>((AssetPtrBase*)(dataPtr));
+   
+   // Is the asset pointer the correct type?
+   if ( pAssetPtr == NULL )
+   {
+      // No, so fail.
+      Con::warnf( "(TypeAudioAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
+      return;
+   }
+   
+   // Set asset.
+   pAssetPtr->setAssetId( pFieldValue );
 }
 
 //--------------------------------------------------------------------------
@@ -87,7 +89,7 @@ AudioAsset::AudioAsset()
    mDescription.mVolume              = 1.0f;
    mDescription.mVolumeChannel       = 0;
    mDescription.mIsLooping           = false;
-   mDescription.mIsStreaming		 = false;
+   mDescription.mIsStreaming       = false;
 
    mDescription.mIs3D                = false;
    mDescription.mReferenceDistance   = 1.0f;

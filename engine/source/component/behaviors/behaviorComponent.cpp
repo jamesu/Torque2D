@@ -203,7 +203,7 @@ bool BehaviorComponent::addBehavior( BehaviorInstance* bi )
     bi->setBehaviorId( mMasterBehaviorId++ );
 
     if( bi->isMethod("onBehaviorAdd") )
-        Con::executef( bi , 1, "onBehaviorAdd" );
+        Con::executef( bi , "onBehaviorAdd" );
 
     return true;
 }
@@ -220,7 +220,7 @@ bool BehaviorComponent::removeBehavior( BehaviorInstance *bi, bool deleteBehavio
 
             // Perform callback if allowed.
             if( bi->isProperlyAdded() && bi->isMethod("onBehaviorRemove") )
-                Con::executef( bi , 1, "onBehaviorRemove" );
+                Con::executef( bi , "onBehaviorRemove" );
 
             // Destroy any output connections.
             destroyBehaviorOutputConnections( bi );
@@ -688,7 +688,7 @@ bool BehaviorComponent::raise( BehaviorInstance* pOutputBehavior, StringTableEnt
 
     // Execute a callback for the output.
     // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-    Con::executef( this, 2, pOutputName, pOutputBehavior->getIdString() );
+    Con::executef( this, pOutputName, pOutputBehavior->getIdString() );
 
     // Find behavior instance connections.
     typeInstanceConnectionHash::iterator instanceItr = mBehaviorConnections.find( pOutputBehavior->getId() );
@@ -735,7 +735,7 @@ bool BehaviorComponent::raise( BehaviorInstance* pOutputBehavior, StringTableEnt
 #endif
         // Execute a callback for the input.
         // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-        Con::executef( pInputBehavior, 3, pInputName, pOutputBehavior->getIdString(), pOutputName );
+        Con::executef( pInputBehavior, pInputName, pOutputBehavior->getIdString(), pOutputName );
     }
 
     return true;
@@ -943,25 +943,25 @@ bool BehaviorComponent::handlesConsoleMethod( const char *fname, S32 *routingId 
 //-----------------------------------------------------------------------------
 
 // Needed to be able to directly call execute on a Namespace::Entry
-extern ExprEvalState gEvalState;
+extern CodeBlockEvalState gNewEvalState;
 
-const char *BehaviorComponent::callOnBehaviors( U32 argc, const char *argv[] )
+ConsoleValuePtr BehaviorComponent::callOnBehaviors( U32 argc, ConsoleValuePtr argv[] )
 {   
     if( mBehaviors.empty() )   
         return Parent::callOnBehaviors( argc, argv );
       
     // Copy the arguments to avoid weird clobbery situations.
-    FrameTemp<char *> argPtrs (argc);
-   
+	 ConsoleValuePtr argPtrs[128];
+	
+	 StringTableEntry cbName = argv[0].getSTEStringValue();
     U32 strdupWatermark = FrameAllocator::getWaterMark();
     for( U32 i = 0; i < argc; i++ )
     {
-        argPtrs[i] = reinterpret_cast<char *>( FrameAllocator::alloc( dStrlen( argv[i] ) + 1 ) );
-        dStrcpy( argPtrs[i], argv[i] );
+		 argPtrs[i].setValue(argv[i]);
     }
 
     // Walk backwards through the list just as with components
-    const char* result = "";
+    ConsoleValuePtr result;
     bool handled = false;
     for( SimSet::iterator i = (mBehaviors.end()-1); i >= mBehaviors.begin(); i-- )
     {
@@ -975,20 +975,15 @@ const char *BehaviorComponent::callOnBehaviors( U32 argc, const char *argv[] )
             continue;
 
         // Lookup the Callback Namespace entry and then splice callback
-        const char *cbName = StringTable->insert(argv[0]);
         Namespace::Entry *pNSEntry = pNamespace->lookup(cbName);
         if( pNSEntry )
         {
             // Set %this to our BehaviorInstance's Object ID
-            argPtrs[1] = const_cast<char *>( pBehavior->getIdString() );
-
-            // Change the Current Console object, execute, restore Object
-            SimObject *save = gEvalState.thisObject;
-            gEvalState.thisObject = pBehavior;
-
-            result = pNSEntry->execute(argc, const_cast<const char **>( ~argPtrs ), &gEvalState);
-
-            gEvalState.thisObject = save;
+            argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
+			  
+			   //ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state);
+            result = pNSEntry->execute(argc, argPtrs, &gNewEvalState);
+			  
             handled = true;
             break;
         }
@@ -1009,19 +1004,17 @@ const char *BehaviorComponent::callOnBehaviors( U32 argc, const char *argv[] )
 
 //-----------------------------------------------------------------------------
 
-const char *BehaviorComponent::_callMethod( U32 argc, const char *argv[], bool callThis /* = true  */ )
-{   
+ConsoleValuePtr BehaviorComponent::_callMethod( U32 argc, ConsoleValuePtr argv[], bool callThis /* = true  */ )
+{
     if( mBehaviors.empty() )   
         return Parent::_callMethod( argc, argv, callThis );
      
     // Copy the arguments to avoid weird clobbery situations.
-    FrameTemp<char *> argPtrs (argc);
-   
-    U32 strdupWatermark = FrameAllocator::getWaterMark();
+    ConsoleValuePtr argPtrs[128];
+	
     for( U32 i = 0; i < argc; i++ )
     {
-        argPtrs[i] = reinterpret_cast<char *>( FrameAllocator::alloc( dStrlen( argv[i] ) + 1 ) );
-        dStrcpy( argPtrs[i], argv[i] );
+		  argPtrs[i].setValue(argv[i]);
     }
 
     for( SimSet::iterator i = mBehaviors.begin(); i != mBehaviors.end(); i++ )
@@ -1041,24 +1034,15 @@ const char *BehaviorComponent::_callMethod( U32 argc, const char *argv[], bool c
         if( pNSEntry )
         {
             // Set %this to our BehaviorInstance's Object ID
-            argPtrs[1] = const_cast<char *>( pBehavior->getIdString() );
+			   argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
 
-            // Change the Current Console object, execute, restore Object
-            SimObject *save = gEvalState.thisObject;
-            gEvalState.thisObject = pBehavior;
-
-            pNSEntry->execute(argc, const_cast<const char **>( ~argPtrs ), &gEvalState);
-
-            gEvalState.thisObject = save;
+            pNSEntry->execute(argc, argPtrs, &gNewEvalState);
         }
     }
 
     // Pass this up to the parent since a BehaviorComponent is still a DynamicConsoleMethodComponent
     // it needs to be able to contain other components and behave properly
     const char* fnRet = Parent::_callMethod( argc, argv, callThis );
-
-    // Clean up.
-    FrameAllocator::setWaterMark( strdupWatermark );
 
     return fnRet;
 }
@@ -1309,7 +1293,7 @@ void BehaviorComponent::onTamlCustomRead( const TamlCustomNodes& customNodes )
                     Con::warnf( "BehaviorComponent::onTamlCustomRead() - Missing Behavior '%s'", pBehaviorNode->getNodeName() );
 
                     if( isMethod( "onBehaviorMissing" ) )
-                        Con::executef( this, 2, "onBehaviorMissing", pBehaviorNode->getNodeName() );
+                        Con::executef( this, "onBehaviorMissing", pBehaviorNode->getNodeName() );
 
                     // Skip it.
                     continue;
@@ -1325,7 +1309,7 @@ void BehaviorComponent::onTamlCustomRead( const TamlCustomNodes& customNodes )
                     Con::warnf( "BehaviorComponent::onTamlCustomRead() - Found behavior could not create an instance '%s'", pBehaviorNode->getNodeName() );
 
                     if( isMethod( "onBehaviorMissing" ) )
-                        Con::executef( this, 2, "onBehaviorMissing", pBehaviorNode->getNodeName() );
+                        Con::executef( this, "onBehaviorMissing", pBehaviorNode->getNodeName() );
 
                     // Skip it.
                     continue;

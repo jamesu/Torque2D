@@ -62,7 +62,7 @@ bool DynamicConsoleMethodComponent::handlesConsoleMethod( const char *fname, S32
 
 const char *DynamicConsoleMethodComponent::callMethod( S32 argc, const char* methodName, ... )
 {
-   const char *argv[128];
+   ConsoleValuePtr argv[128];
    methodName = StringTable->insert( methodName );
 
    argc++;
@@ -70,25 +70,22 @@ const char *DynamicConsoleMethodComponent::callMethod( S32 argc, const char* met
    va_list args;
    va_start(args, methodName);
    for(S32 i = 0; i < argc; i++)
-      argv[i+2] = va_arg(args, const char *);
+      argv[i+2].setString(va_arg(args, const char *));
    va_end(args);
 
-   // FIXME: the following seems a little excessive. I wonder why it's needed?
-   argv[0] = methodName;
-   argv[1] = methodName;
-   argv[2] = methodName;
+   argv[0].setString(methodName);
 
    return callMethodArgList( argc , argv );
 }
 
-const char* DynamicConsoleMethodComponent::callMethodArgList( U32 argc, const char *argv[], bool callThis /* = true  */ )
+const char* DynamicConsoleMethodComponent::callMethodArgList( U32 argc, ConsoleValuePtr argv[], bool callThis /* = true  */ )
 {
    return _callMethod( argc, argv, callThis );
 }
 
 // Call all components that implement methodName giving them a chance to operate
 // Components are called in reverse order of addition
-const char *DynamicConsoleMethodComponent::_callMethod( U32 argc, const char *argv[], bool callThis /* = true  */ )
+ConsoleValuePtr DynamicConsoleMethodComponent::_callMethod( U32 argc, ConsoleValuePtr argv[], bool callThis /* = true  */ )
 {
    // Set Owner
    SimObject *pThis = dynamic_cast<SimObject *>( this );
@@ -101,7 +98,7 @@ const char *DynamicConsoleMethodComponent::_callMethod( U32 argc, const char *ar
       VectorPtr<SimComponent *>&componentList = lockComponentList();
       for( SimComponentIterator nItr = (componentList.end()-1);  nItr >= componentList.begin(); nItr-- )
       {
-         argv[0] = cbName;
+         argv[0].setSTE(cbName);
 
          SimComponent *pComponent = (*nItr);
          AssertFatal( pComponent, "DynamicConsoleMethodComponent::callMethod - NULL component in list!" );
@@ -129,14 +126,14 @@ const char *DynamicConsoleMethodComponent::_callMethod( U32 argc, const char *ar
    return result;
 }
 
-const char *DynamicConsoleMethodComponent::callOnBehaviors( U32 argc, const char *argv[] )
+ConsoleValuePtr DynamicConsoleMethodComponent::callOnBehaviors( U32 argc, ConsoleValuePtr argv[] )
 {
    // Set Owner
    SimObject *pThis;
    pThis = dynamic_cast<SimObject *>( this );
    AssertFatal( pThis, "DynamicConsoleMethodComponent::callOnBehaviors : this should always exist!" );
 
-   const char* result = "";
+   ConsoleValuePtr result;
    bool handled = false;
 
    if( getComponentCount() > 0 )
@@ -144,7 +141,7 @@ const char *DynamicConsoleMethodComponent::callOnBehaviors( U32 argc, const char
       VectorPtr<SimComponent *>&componentList = lockComponentList();
       for( SimComponentIterator nItr = (componentList.end()-1);  nItr >= componentList.begin(); nItr-- )
       {
-         argv[0] = StringTable->insert(argv[0]);
+         argv[0].setSTE(StringTable->insert(argv[0]));
 
          SimComponent *pComponent = (*nItr);
          AssertFatal( pComponent, "DynamicConsoleMethodComponent::callOnBehaviors - NULL component in list!" );
@@ -158,7 +155,7 @@ const char *DynamicConsoleMethodComponent::callOnBehaviors( U32 argc, const char
 
    if (!handled)
    {
-      result = "ERR_CALL_NOT_HANDLED";
+      result.setString("ERR_CALL_NOT_HANDLED");
    }
 
    return result;

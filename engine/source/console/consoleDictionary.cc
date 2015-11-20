@@ -20,11 +20,12 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
-#include "console/consoleDictionary.h"
-#include "console/consoleNamespace.h"
-
 #include "platform/platform.h"
 #include "console/console.h"
+#include "console/consoleSerialization.h"
+
+#include "console/consoleDictionary.h"
+#include "console/consoleNamespace.h"
 
 #include "console/ast.h"
 #include "collection/findIterator.h"
@@ -33,10 +34,14 @@
 #include "string/findMatch.h"
 #include "io/fileStream.h"
 #include "console/compiler.h"
+#include "string/stringStack.h"
+
+#include "sim/simBase.h"
 
 static char scratchBuffer[1024];
 #define ST_INIT_SIZE 15
 
+extern StringStack STR;
 
 struct StringValue
 {
@@ -129,7 +134,7 @@ void Dictionary::exportVariables(const char *varString, const char *fileName, bo
             dSprintf(buffer, sizeof(buffer), "%s = %g;%s", (*s)->name, (*s)->fval, cat);
             break;
          default:
-            expandEscape(expandBuffer, (*s)->getStringValue());
+            expandEscape(expandBuffer, (*s)->getStringValue().c_str());
             dSprintf(buffer, sizeof(buffer), "%s = \"%s\";%s", (*s)->name, expandBuffer, cat);
             break;
       }
@@ -248,7 +253,7 @@ Dictionary::Dictionary()
 {
 }
 
-Dictionary::Dictionary(ExprEvalState *state, Dictionary* ref)
+Dictionary::Dictionary(CodeBlockEvalState *state, Dictionary* ref)
    :  hashTable( NULL ),
       exprState( NULL ),
       scopeName( NULL ),
@@ -259,7 +264,7 @@ Dictionary::Dictionary(ExprEvalState *state, Dictionary* ref)
    setState(state,ref);
 }
 
-void Dictionary::setState(ExprEvalState *state, Dictionary* ref)
+void Dictionary::setState(CodeBlockEvalState *state, Dictionary* ref)
 {
    exprState = state;
 
@@ -348,7 +353,7 @@ Dictionary::Entry::~Entry()
       dFree(sval);
 }
 
-const char *Dictionary::getVariable(StringTableEntry name, bool *entValid)
+ConsoleStringValuePtr Dictionary::getVariable(StringTableEntry name, bool *entValid)
 {
    Entry *ent = lookup(name);
    if(ent)
@@ -415,7 +420,7 @@ void Dictionary::Entry::setStringValue(const char * value)
       dStrcpy(sval, value);
    }
    else
-      Con::setData(type, dataPtr, 0, 1, &value);
+      Con::setData(type, dataPtr, 0, value);
 }
 
 void Dictionary::setVariable(StringTableEntry name, const char *value)
@@ -452,3 +457,6 @@ bool Dictionary::removeVariable(StringTableEntry name)
    }
    return false;
 }
+
+
+

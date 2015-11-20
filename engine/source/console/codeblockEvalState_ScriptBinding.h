@@ -35,27 +35,26 @@ ConsoleFunctionWithDocs(backtrace, ConsoleVoid, 1, 1, ())
 {
    U32 totalSize = 1;
 
-   for(U32 i = 0; i < (U32)gEvalState.stack.size(); i++)
+   for(U32 i = 0; i < (U32)gNewEvalState.frames.size(); i++)
    {
-      totalSize += dStrlen(gEvalState.stack[i]->scopeName) + 3;
-      if(gEvalState.stack[i]->scopeNamespace && gEvalState.stack[i]->scopeNamespace->mName)
-         totalSize += dStrlen(gEvalState.stack[i]->scopeNamespace->mName) + 2;
+      totalSize += dStrlen(gNewEvalState.frames[i].function->name) + 3;
+      if(gNewEvalState.frames[i].ns)
+         totalSize += dStrlen(gNewEvalState.frames[i].ns) + 2;
    }
 
    char *buf = Con::getReturnBuffer(totalSize);
    buf[0] = 0;
-   for(U32 i = 0; i < (U32)gEvalState.stack.size(); i++)
+   for(U32 i = 0; i < (U32)gNewEvalState.frames.size(); i++)
    {
       dStrcat(buf, "->");
-      if(gEvalState.stack[i]->scopeNamespace && gEvalState.stack[i]->scopeNamespace->mName)
+      if(gNewEvalState.frames[i].ns && gNewEvalState.frames[i].function->name)
       {
-         dStrcat(buf, gEvalState.stack[i]->scopeNamespace->mName);
+         dStrcat(buf, gNewEvalState.frames[i].ns);
          dStrcat(buf, "::");
       }
-      dStrcat(buf, gEvalState.stack[i]->scopeName);
+      dStrcat(buf, gNewEvalState.frames[i].function->name);
    }
    Con::printf("BackTrace: %s", buf);
-
 }
 
 /*! @} */ // group Callstack

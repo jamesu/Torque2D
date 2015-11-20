@@ -129,7 +129,7 @@ ConsoleMethodWithDocs(Scene, add, ConsoleVoid, 3, 3, (sceneObject))
     if ( !pSceneObject )
     {
         // No, so warn.
-        Con::warnf("Scene::addToScene() - Could not find the specified object '%s'.", argv[2]);
+        Con::warnf("Scene::addToScene() - Could not find the specified object '%s'.", argv[2].getTempStringValue());
         return;
     }
 
@@ -152,7 +152,7 @@ ConsoleMethodWithDocs(Scene, remove, ConsoleVoid, 3, 3, (sceneObject))
     if ( !pSceneObject )
     {
         // No, so warn.
-        Con::warnf("Scene::removeFromScene() - Could not find the specified object '%s'.", argv[2]);
+        Con::warnf("Scene::removeFromScene() - Could not find the specified object '%s'.", argv[2].getTempStringValue());
         return;
     }
 
@@ -246,7 +246,7 @@ ConsoleMethodWithDocs(Scene, getSceneObjectList, ConsoleString, 2, 2, ())
     // Finish here if there are no scene objects.
     U32 objCount = object->getSceneObjects( objList );
     if( objCount == 0 )
-        return NULL;
+        return "";
 
     // Our return buffer will be 6 times the size of our object list (4 for Id (+1 for future size?) + 1 for space).
     U32 maxBufferSize = objCount * 12;
@@ -359,7 +359,7 @@ ConsoleMethodWithDocs(Scene, mergeScene, ConsoleVoid, 3, 3, (scene))
     if ( pScene == NULL )
     {
         // No, so warn.
-        Con::warnf( "Scene::mergeScene() - Could not find the specified scene '%s'.", argv[2] );
+        Con::warnf( "Scene::mergeScene() - Could not find the specified scene '%s'.", argv[2].getTempStringValue() );
         return;
     }
 
@@ -989,7 +989,7 @@ ConsoleMethodWithDocs(Scene, getRevoluteJointLimit, ConsoleString, 3, 3, (jointI
     // Access joint.
     if ( !object->getRevoluteJointLimit( jointId, enableLimit, lowerAngle, upperAngle ) )
     {
-        return NULL;
+        return "";
     }
 
     // Format output.
@@ -1040,7 +1040,7 @@ ConsoleMethodWithDocs(Scene, getRevoluteJointMotor, ConsoleString, 3, 3, (jointI
     // Access joint.
     if ( !object->getRevoluteJointMotor( jointId, enableMotor, motorSpeed, maxMotorTorque ) )
     {
-        return NULL;
+        return "";
     }
 
     // Format output.
@@ -1421,7 +1421,7 @@ ConsoleMethodWithDocs(Scene, getWheelJointMotor, ConsoleString, 3, 3, (jointId))
     // Access joint.
     if ( !object->getWheelJointMotor( jointId, enableMotor, motorSpeed, maxMotorTorque ) )
     {
-        return NULL;
+        return "";
     }
 
     // Format output.
@@ -1834,7 +1834,7 @@ ConsoleMethodWithDocs(Scene, getPrismaticJointLimit, ConsoleString, 3, 3, (joint
     // Access joint.
     if ( !object->getPrismaticJointLimit( jointId, enableLimit, lowerTranslation, upperTranslation ) )
     {
-        return NULL;
+        return "";
     }
 
     // Format output.
@@ -1884,7 +1884,7 @@ ConsoleMethodWithDocs(Scene, getPrismaticJointMotor, ConsoleString, 3, 3, (joint
     // Access joint.
     if ( !object->getPrismaticJointMotor( jointId, enableMotor, motorSpeed, maxMotorForce ) )
     {
-        return NULL;
+        return "";
     }
 
     // Format output.
@@ -2054,7 +2054,7 @@ ConsoleMethodWithDocs(Scene, createTargetJoint, ConsoleInt, 5, 10, (sceneObject,
     // Check scene object.
     if ( !pSceneObject )
     {
-        Con::warnf("Scene::createTargetJoint() - Could not find scene object %d.", argv[2]);
+        Con::warnf("Scene::createTargetJoint() - Could not find scene object %d.", argv[2].getTempStringValue());
         return -1;
     }
 
@@ -2546,7 +2546,7 @@ ConsoleMethodWithDocs(Scene, pickArea, ConsoleString, 4, 9, (startx/y, endx/y, [
     else
     {
         Con::warnf("Scene::pickArea() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Calculate scene group mask.
@@ -2573,7 +2573,7 @@ ConsoleMethodWithDocs(Scene, pickArea, ConsoleString, 4, 9, (startx/y, endx/y, [
     }
     if ( pickMode == Scene::PICK_INVALID )
     {
-        Con::warnf("Scene::pickArea() - Invalid pick mode of %s", argv[firstArg + 2]);
+        Con::warnf("Scene::pickArea() - Invalid pick mode of %s", argv[firstArg + 2].getTempStringValue());
         pickMode = Scene::PICK_OOBB;
     }
 
@@ -2619,7 +2619,7 @@ ConsoleMethodWithDocs(Scene, pickArea, ConsoleString, 4, 9, (startx/y, endx/y, [
 
     // Finish if no results.
     if ( resultCount == 0 )
-        return NULL;
+        return "";
 
     // Fetch results.
     typeWorldQueryResultVector& queryResults = pWorldQuery->getQueryResults();
@@ -2707,7 +2707,7 @@ ConsoleMethodWithDocs(Scene, pickRay, ConsoleString, 4, 9, (startx/y, endx/y, [s
     else
     {
         Con::warnf("Scene::pickRay() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Calculate scene group mask.
@@ -2734,7 +2734,7 @@ ConsoleMethodWithDocs(Scene, pickRay, ConsoleString, 4, 9, (startx/y, endx/y, [s
     }
     if ( pickMode == Scene::PICK_INVALID )
     {
-        Con::warnf("Scene::pickRay() - Invalid pick mode of %s", argv[firstArg + 2]);
+        Con::warnf("Scene::pickRay() - Invalid pick mode of %s", argv[firstArg + 2].getTempStringValue());
         pickMode = Scene::PICK_OOBB;
     }
 
@@ -2776,7 +2776,7 @@ ConsoleMethodWithDocs(Scene, pickRay, ConsoleString, 4, 9, (startx/y, endx/y, [s
 
     // Finish if no results.
     if ( resultCount == 0 )
-        return NULL;
+        return "";
 
     // Sort ray-cast result.
     pWorldQuery->sortRaycastQueryResult();
@@ -2853,7 +2853,7 @@ ConsoleMethodWithDocs(Scene, pickPoint, ConsoleString, 3, 7, (x / y, [sceneGroup
     else
     {
         Con::warnf("Scene::pickPoint() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Calculate scene group mask.
@@ -2880,7 +2880,7 @@ ConsoleMethodWithDocs(Scene, pickPoint, ConsoleString, 3, 7, (x / y, [sceneGroup
     }
     if ( pickMode == Scene::PICK_INVALID )
     {
-        Con::warnf("Scene::pickPoint() - Invalid pick mode of %s", argv[firstArg + 2]);
+        Con::warnf("Scene::pickPoint() - Invalid pick mode of %s", argv[firstArg + 2].getTempStringValue());
         pickMode = Scene::PICK_OOBB;
     }
 
@@ -2919,7 +2919,7 @@ ConsoleMethodWithDocs(Scene, pickPoint, ConsoleString, 3, 7, (x / y, [sceneGroup
 
     // Finish if no results.
     if ( resultCount == 0 )
-        return NULL;
+        return "";
 
     // Fetch results.
     typeWorldQueryResultVector& queryResults = pWorldQuery->getQueryResults();
@@ -2994,7 +2994,7 @@ ConsoleMethodWithDocs(Scene, pickCircle, ConsoleString, 4, 8, (x / y, radius, [s
     else
     {
         Con::warnf("Scene::pickPoint() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Fetch radius.
@@ -3031,7 +3031,7 @@ ConsoleMethodWithDocs(Scene, pickCircle, ConsoleString, 4, 8, (x / y, radius, [s
     }
     if ( pickMode == Scene::PICK_INVALID )
     {
-        Con::warnf("Scene::pickPoint() - Invalid pick mode of %s", argv[firstArg + 2]);
+        Con::warnf("Scene::pickPoint() - Invalid pick mode of %s", argv[firstArg + 2].getTempStringValue());
         pickMode = Scene::PICK_OOBB;
     }
 
@@ -3070,7 +3070,7 @@ ConsoleMethodWithDocs(Scene, pickCircle, ConsoleString, 4, 8, (x / y, radius, [s
 
     // Finish if no results.
     if ( resultCount == 0 )
-        return NULL;
+        return "";
 
     // Fetch results.
     typeWorldQueryResultVector& queryResults = pWorldQuery->getQueryResults();
@@ -3160,7 +3160,7 @@ ConsoleMethodWithDocs(Scene, pickRayCollision, ConsoleString, 4, 8, (startx/y, e
     else
     {
         Con::warnf("Scene::pickRayCollision() - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Calculate scene group mask.
@@ -3197,7 +3197,7 @@ ConsoleMethodWithDocs(Scene, pickRayCollision, ConsoleString, 4, 8, (startx/y, e
 
     // Finish if no results.
     if ( resultCount == 0 )
-        return NULL;
+        return "";
 
     // Sort ray-cast result.
     pWorldQuery->sortRaycastQueryResult();

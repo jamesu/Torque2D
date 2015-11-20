@@ -29,7 +29,7 @@ ConsoleMethodGroupBeginWithDocs(TCPObject, SimObject)
 ConsoleMethodWithDocs( TCPObject, send, ConsoleVoid, 3, 0, ( ... ))
 {
    for(S32 i = 2; i < argc; i++)
-      object->send((const U8 *) argv[i], dStrlen(argv[i]));
+      object->send((const U8 *) argv[i].getTempStringValue(), dStrlen(argv[i]));
 }
 
 /*! Use the listen method to allow this TCPObject to accept connections on the specified port.
@@ -81,7 +81,7 @@ ConsoleMethodWithDocs(TCPObject, URLEncodeString, ConsoleString, 3, 3, (string d
     U32	iNewBufferLen;
 
 
-    pEncodedString = object->URLEncodeData((U8 *)argv[2], dStrlen(argv[2]) + 1, &iNewBufferLen);
+    pEncodedString = object->URLEncodeData((U8 *)argv[2].getTempStringValue(), dStrlen(argv[2]) + 1, &iNewBufferLen);
 
     //copy string to return buffer
     char	*pcReturnBuffer = Con::getReturnBuffer(iNewBufferLen);

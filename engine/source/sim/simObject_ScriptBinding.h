@@ -349,7 +349,7 @@ ConsoleMethodWithDocs(SimObject, isMethod, ConsoleBool, 3, 3, (string methodName
 	%object.call(%method, %newNamespace);
 	@endcode
 */
-ConsoleMethodWithDocs( SimObject, call, ConsoleString, 2, 0, ( methodName, [args]* ))
+ConsoleMethodWithDocs(SimObject, call, ConsoleValuePtr, 2, 0, ( methodName, [args]* ))
 {
    argv[1] = argv[2];
    return Con::execute( object, argc - 1, argv + 1 );
@@ -600,7 +600,7 @@ ConsoleMethodWithDocs(SimObject, getDynamicField, ConsoleString, 3, 3, (index))
       if (!(*itr))
       {
          Con::warnf("Invalid dynamic field index passed to SimObject::getDynamicField!");
-         return NULL;
+         return "";
       }
       ++itr;
    }
@@ -614,7 +614,7 @@ ConsoleMethodWithDocs(SimObject, getDynamicField, ConsoleString, 3, 3, (index))
    }
 
    Con::warnf("Invalid dynamic field index passed to SimObject::getDynamicField!");
-   return NULL;
+   return "";
 }
 
 /*! return the number of static ("built-in") fields.
@@ -627,7 +627,7 @@ ConsoleMethodWithDocs(SimObject, getDynamicField, ConsoleString, 3, 3, (index))
 
 	@see getDynamicField, getDynamicFieldCount, getField
 */
-ConsoleMethodWithDocs( SimObject, getFieldCount, ConsoleInt, 2, 2, ())
+ConsoleMethodWithDocs(SimObject, getFieldCount, ConsoleInt, 2, 2, ())
 {
    const AbstractClassRep::FieldList &list = object->getFieldList();
    const AbstractClassRep::Field* f;
@@ -679,7 +679,7 @@ ConsoleMethodWithDocs( SimObject, getFieldCount, ConsoleInt, 2, 2, ())
 	@see getDynamicField, getDynamicFieldCount, getFieldCount
 
 */
-ConsoleMethodWithDocs( SimObject, getField, ConsoleString, 3, 3, (int index))
+ConsoleMethodWithDocs(SimObject, getField, ConsoleString, 3, 3, (int index))
 {
    S32 index = dAtoi( argv[2] );
    const AbstractClassRep::FieldList &list = object->getFieldList();
@@ -808,7 +808,7 @@ ConsoleMethodWithDocs(SimObject, getFieldType, ConsoleString, 3, 3, (fieldName))
 
 	@see SimGroup, getInternalName, isChildOfGroup, getGroup
 */
-ConsoleMethodWithDocs( SimObject, setInternalName, ConsoleVoid, 3, 3, (string InternalName))
+ConsoleMethodWithDocs(SimObject, setInternalName, ConsoleVoid, 3, 3, (string InternalName))
 {
    object->setInternalName(argv[2]);
 }
@@ -822,7 +822,7 @@ ConsoleMethodWithDocs( SimObject, setInternalName, ConsoleVoid, 3, 3, (string In
 
 	@see SimGroup, setInternalName, isChildOfGroup, getGroup
 */
-ConsoleMethodWithDocs( SimObject, getInternalName, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(SimObject, getInternalName, ConsoleString, 2, 2, ())
 {
    return object->getInternalName();
 }
@@ -1011,7 +1011,7 @@ ConsoleMethodWithDocs(SimObject,schedule, ConsoleInt, 4, 0, (time , command , [a
    S32 ret = Sim::postEvent(object, evt, Sim::getCurrentTime() + timeDelta);
 // #ifdef DEBUG
 //    Con::printf("obj %s schedule(%s) = %d", argv[3], argv[2], ret);
-//    Con::executef(1, "backtrace");
+//    Con::executef("backtrace");
 // #endif
    return ret;
 }

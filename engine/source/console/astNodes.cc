@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2013 GarageGames, LLC
+// Copyright (c) 2012 GarageGames, LLC
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -35,72 +35,49 @@
 
 #include "sim/simBase.h"
 
-// This enables extra breakpoint lines in the DSO output at the
-// exit points of functions as well as on code outside of functions
-// in the main body of a script file.  In practice the only overhead
-// is the one extra NOP per function regardless of size.  This #define
-// is here for those that want to disable this.
-#define TORQUE_EXTRA_BREAKLINES
+template< typename T >
+struct Token
+{
+    T value;
+    S32 lineNumber;
+};
+#include "console/cmdgram.h"
+
+ReferencedVariableNode *gCurrentLocalVariables = NULL;
+ReferencedVariableNode *gLocalVariableStack[16];
+U32 gLocalVariableStackIdx = 0;
 
 
 namespace Compiler
 {
-   U32 precompileBlock(StmtNode *block, U32 loopCount)
-   {
-      U32 sum = 0;
-      for(StmtNode *walk = block; walk; walk = walk->getNext())
-         sum += walk->precompileStmt(loopCount);
-      return sum;
-   }
-
-   U32 compileBlock(StmtNode *block, U32 *codeStream, U32 ip, U32 continuePoint, U32 breakPoint)
-   {
-      for(StmtNode *walk = block; walk; walk = walk->getNext())
-         ip = walk->compileStmt(codeStream, ip, continuePoint, breakPoint);
-      return ip;
-   }
-};
+    U32 compileBlock(StmtNode *block, CodeStream &codeStream, U32 ip)
+    {
+        for(StmtNode *walk = block; walk; walk = walk->getNext())
+            ip = walk->compileStmt(codeStream, ip);
+        return codeStream.tell();
+    }
+}
 
 using namespace Compiler;
 
 //-----------------------------------------------------------------------------
 
-void StmtNode::addBreakCount()
+void StmtNode::addBreakLine(CodeStream &code)
 {
-   #ifndef TORQUE_EXTRA_BREAKLINES      
-   if(CodeBlock::smInFunction)
-   #endif
-      CodeBlock::smBreakLineCount++;
-}
-
-void StmtNode::addBreakLine(U32 ip)
-{
-   #ifndef TORQUE_EXTRA_BREAKLINES      
-   if(CodeBlock::smInFunction)
-   {
-   #endif
-
-      U32 line = CodeBlock::smBreakLineCount * 2;
-      CodeBlock::smBreakLineCount++;
-
-      if(getBreakCodeBlock()->lineBreakPairs)
-      {
-         getBreakCodeBlock()->lineBreakPairs[line] = dbgLineNumber;
-         getBreakCodeBlock()->lineBreakPairs[line+1] = ip;
-      }
-
-   #ifndef TORQUE_EXTRA_BREAKLINES      
-   }
-   #endif
+    code.addBreakLine(dbgLineNumber, code.tell());
 }
 
 //------------------------------------------------------------
 
+extern const char *CMDgetFileLine(int &lineNumber);
+extern const char *CMDGetCurrentFile();
+extern S32 CMDGetCurrentLine();
+
 StmtNode::StmtNode()
 {
    next = NULL;
-   dbgFileName = CodeBlock::smCurrentParser->getCurrentFile();
-   dbgLineNumber = CodeBlock::smCurrentParser->getCurrentLine();
+   dbgFileName = CMDGetCurrentFile();
+   dbgLineNumber = CMDGetCurrentLine();
 }
 
 void StmtNode::setPackage(StringTableEntry)
@@ -109,16 +86,16 @@ void StmtNode::setPackage(StringTableEntry)
 
 void StmtNode::append(StmtNode *next)
 {
-   StmtNode *walk = this;
-   while(walk->next)
-      walk = walk->next;
-   walk->next = next;
+    StmtNode *walk = this;
+    while(walk->next)
+        walk = walk->next;
+    walk->next = next;
 }
 
 
 void FunctionDeclStmtNode::setPackage(StringTableEntry packageName)
 {
-   package = packageName;
+    package = packageName;
 }
 
 //------------------------------------------------------------
@@ -127,1656 +104,2235 @@ void FunctionDeclStmtNode::setPackage(StringTableEntry packageName)
 //
 //------------------------------------------------------------
 
-static U32 conversionOp(TypeReq src, TypeReq dst)
+U32 BreakStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   if(src == TypeReqString)
-   {
-      switch(dst)
-      {
-      case TypeReqUInt:
-         return OP_STR_TO_UINT;
-      case TypeReqFloat:
-         return OP_STR_TO_FLT;
-      case TypeReqNone:
-         return OP_STR_TO_NONE;
-      default:
-         break;
-      }
-   }
-   else if(src == TypeReqFloat)
-   {
-      switch(dst)
-      {
-      case TypeReqUInt:
-         return OP_FLT_TO_UINT;
-      case TypeReqString:
-         return OP_FLT_TO_STR;
-      case TypeReqNone:
-         return OP_FLT_TO_NONE;
-      default:
-        break;
-      }
-   }
-   else if(src == TypeReqUInt)
-   {
-      switch(dst)
-      {
-      case TypeReqFloat:
-         return OP_UINT_TO_FLT;
-      case TypeReqString:
-         return OP_UINT_TO_STR;
-      case TypeReqNone:
-         return OP_UINT_TO_NONE;
-      default:
-         break;
-      }
-   }
-   return OP_INVALID;
+    if(codeStream.inLoop())
+    {
+        addBreakLine(codeStream);
+        codeStream.emitFix(CodeStream::FIXTYPE_BREAK);
+    }
+    else
+    {
+        Con::warnf(ConsoleLogEntry::General, "%s (%d): break outside of loop... ignoring.", dbgFileName, dbgLineNumber);
+    }
+    return codeStream.tell();
 }
 
 //------------------------------------------------------------
 
-U32 BreakStmtNode::precompileStmt(U32 loopCount)
+U32 ContinueStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   if(loopCount)
-   {
-      addBreakCount();
-      return 2;
-   }
-   Con::warnf(ConsoleLogEntry::General, "%s (%d): break outside of loop... ignoring.", dbgFileName, dbgLineNumber);
-   return 0;
-}
-
-U32 BreakStmtNode::compileStmt(U32 *codeStream, U32 ip, U32, U32 breakPoint)
-{
-   if(breakPoint)
-   {
-      addBreakLine(ip);
-      codeStream[ip++] = OP_JMP;
-      codeStream[ip++] = breakPoint;
-   }
-   return ip;
+    if(codeStream.inLoop())
+    {
+        addBreakLine(codeStream);
+        codeStream.emitFix(CodeStream::FIXTYPE_CONTINUE);
+    }
+    else
+    {
+        Con::warnf(ConsoleLogEntry::General, "%s (%d): continue outside of loop... ignoring.", dbgFileName, dbgLineNumber);
+    }
+    return codeStream.tell();
 }
 
 //------------------------------------------------------------
 
-U32 ContinueStmtNode::precompileStmt(U32 loopCount)
+U32 ExprNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   if(loopCount)
-   {
-      addBreakCount();
-      return 2;
-   }
-   Con::warnf(ConsoleLogEntry::General, "%s (%d): continue outside of loop... ignoring.", dbgFileName, dbgLineNumber);
-   return 0;
-}
-
-U32 ContinueStmtNode::compileStmt(U32 *codeStream, U32 ip, U32 continuePoint, U32)
-{
-   if(continuePoint)
-   {
-      addBreakLine(ip);
-      codeStream[ip++] = OP_JMP;
-      codeStream[ip++] = continuePoint;
-   }
-   return ip;
+    addBreakLine(codeStream);
+    return compile(codeStream, ip, TypeReqNone);
 }
 
 //------------------------------------------------------------
 
-U32 ExprNode::precompileStmt(U32)
+U32 ReturnStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   addBreakCount();
-   return precompile(TypeReqNone);
-}
-
-U32 ExprNode::compileStmt(U32 *codeStream, U32 ip, U32, U32)
-{
-   addBreakLine(ip);
-   return compile(codeStream, ip, TypeReqNone);
-}
-
-//------------------------------------------------------------
-
-U32 ReturnStmtNode::precompileStmt(U32)
-{
-   addBreakCount();
-   if(!expr)
-      return 1;
-   else
-      return 1 + expr->precompile(TypeReqString);
-}
-
-U32 ReturnStmtNode::compileStmt(U32 *codeStream, U32 ip, U32, U32)
-{
-   addBreakLine(ip);
-   if(!expr)
-      codeStream[ip++] = OP_RETURN;
-   else
-   {
-      ip = expr->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_RETURN;
-   }
-   return ip;
+    addBreakLine(codeStream);
+    if(!expr)
+       codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
+    else
+    {
+       ip = expr->compile(codeStream, ip, TypeReqString);
+       CodeStream::RegisterTarget returnTarget = codeStream.popTarget();
+       codeStream.emitOpcodeABC(Compiler::OP_RETURN, 1, codeStream.emitTargetRef(returnTarget), 0);
+    }
+    return codeStream.tell();
 }
 
 //------------------------------------------------------------
 
 ExprNode *IfStmtNode::getSwitchOR(ExprNode *left, ExprNode *list, bool string)
 {
-   ExprNode *nextExpr = (ExprNode *) list->getNext();
-   ExprNode *test;
-   if(string)
-      test = StreqExprNode::alloc(left, list, true);
-   else
-      test = IntBinaryExprNode::alloc(opEQ, left, list);
-   if(!nextExpr)
-      return test;
-   return IntBinaryExprNode::alloc(opOR, test, getSwitchOR(left, nextExpr, string));
+    ExprNode *nextExpr = (ExprNode *) list->getNext();
+    ExprNode *test;
+    if(string)
+        test = StreqExprNode::alloc( left->dbgLineNumber, left, list, true );
+    else
+        test = IntBinaryExprNode::alloc( left->dbgLineNumber, opEQ, left, list );
+    if(!nextExpr)
+        return test;
+    return IntBinaryExprNode::alloc( test->dbgLineNumber, opOR, test, getSwitchOR( left, nextExpr, string ) );
 }
 
 void IfStmtNode::propagateSwitchExpr(ExprNode *left, bool string)
 {
-   testExpr = getSwitchOR(left, testExpr, string);
-   if(propagate && elseBlock)
-      ((IfStmtNode *) elseBlock)->propagateSwitchExpr(left, string);
+    testExpr = getSwitchOR(left, testExpr, string);
+    if(propagate && elseBlock)
+        ((IfStmtNode *) elseBlock)->propagateSwitchExpr(left, string);
 }
 
-U32 IfStmtNode::precompileStmt(U32 loopCount)
+U32 IfStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   U32 exprSize;
-   addBreakCount();
-
-   if(testExpr->getPreferredType() == TypeReqUInt)
-   {
-      exprSize = testExpr->precompile(TypeReqUInt);
-      integer = true;
-   }
-   else
-   {
-      exprSize = testExpr->precompile(TypeReqFloat);
-      integer = false;
-   }
-   // next is the JMPIFNOT or JMPIFFNOT - size of 2
-   U32 ifSize = precompileBlock(ifBlock, loopCount);
-   if(!elseBlock)
-      endifOffset = ifSize + 2 + exprSize;
-   else
-   {
-      elseOffset = exprSize + 2 + ifSize + 2;
-      U32 elseSize = precompileBlock(elseBlock, loopCount);
-      endifOffset = elseOffset + elseSize;
-   }
-   return endifOffset;
-}
-
-U32 IfStmtNode::compileStmt(U32 *codeStream, U32 ip, U32 continuePoint, U32 breakPoint)
-{
-   U32 start = ip;
-   addBreakLine(ip);
-
-   ip = testExpr->compile(codeStream, ip, integer ? TypeReqUInt : TypeReqFloat);
-   codeStream[ip++] = integer ? OP_JMPIFNOT : OP_JMPIFFNOT;
-
-   if(elseBlock)
-   {
-      codeStream[ip++] = start + elseOffset;
-      ip = compileBlock(ifBlock, codeStream, ip, continuePoint, breakPoint);
-      codeStream[ip++] = OP_JMP;
-      codeStream[ip++] = start + endifOffset;
-      ip = compileBlock(elseBlock, codeStream, ip, continuePoint, breakPoint);
-   }
-   else
-   {
-      codeStream[ip++] = start + endifOffset;
-      ip = compileBlock(ifBlock, codeStream, ip, continuePoint, breakPoint);
-   }
-   return ip;
+    U32 start = ip;
+    U32 endifIp, elseIp;
+    addBreakLine(codeStream);
+    
+    if(testExpr->getPreferredType() == TypeReqUInt)
+    {
+        integer = true;
+    }
+    else
+    {
+        integer = false;
+    }
+   
+    // jamesu - conditionals work as follows:
+    // JMP_IFEQ
+    // JMP [else]
+    // [if]
+    // Note: as with c, true is anything != 0
+   
+    // We need the test expression to emit an conditional instruction so we can position our blocks
+    ip = testExpr->compile(codeStream, ip, TypeReqConditional);
+   
+    U32 savedConstPage = codeStream.mLastKonstPage;
+    U32 elseJmpIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(0));
+   
+    if(elseBlock)
+    {
+        elseOffset = compileBlock(ifBlock, codeStream, ip);
+       
+        // Restore original page at the end of the if block
+        if (codeStream.mLastKonstPage != savedConstPage)
+        {
+           codeStream.setKonstPage(savedConstPage);
+           codeStream.emitOpcodeABx(Compiler::OP_PAGEK, 0, savedConstPage);
+           elseOffset++;
+        }
+       
+        codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(0));
+       
+        endifOffset = compileBlock(elseBlock, codeStream, ip);
+       
+       
+        // Restore original page at the end of the else block
+        if (codeStream.mLastKonstPage != savedConstPage)
+        {
+           codeStream.setKonstPage(savedConstPage);
+           codeStream.emitOpcodeABx(Compiler::OP_PAGEK, 0, savedConstPage);
+           endifOffset++;
+        }
+       
+        // Need to jump past else block at the end of if
+       U32 relOffs = TS2_OP_MAKE_sBX(endifOffset - elseOffset - 1);
+       codeStream.patch(elseOffset, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(endifOffset - elseOffset - 1)));
+       
+        codeStream.patch(elseJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX((elseOffset) - elseJmpIp)));
+    }
+    else
+    {
+        endifOffset = compileBlock(ifBlock, codeStream, ip);
+       
+        // Restore original page at the end of the if block
+        if (codeStream.mLastKonstPage != savedConstPage)
+        {
+           codeStream.setKonstPage(savedConstPage);
+           codeStream.emitOpcodeABx(Compiler::OP_PAGEK, 0, savedConstPage);
+           endifOffset++;
+        }
+       
+        codeStream.patch(elseJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(endifOffset - elseJmpIp - 1)));
+    }
+   
+    
+    return codeStream.tell();
 }
 
 //------------------------------------------------------------
 
-U32 LoopStmtNode::precompileStmt(U32 loopCount)
+U32 LoopStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   U32 initSize = 0;
-   addBreakCount();
-
-   if(initExpr)
-      initSize = initExpr->precompile(TypeReqNone);
-
-   U32 testSize;
-
-   if(testExpr->getPreferredType() == TypeReqUInt)
+    if(testExpr->getPreferredType() == TypeReqUInt)
+    {
+        integer = true;
+    }
+    else
+    {
+        integer = false;
+    }
+    
+    // if it's a for loop or a while loop it goes:
+    // initExpr
+    // testExpr
+    // OP_JMPIFNOT to break point
+    // loopStartPoint:
+    // loopBlock
+    // continuePoint:
+    // endLoopExpr
+    // testExpr
+    // OP_JMPIF loopStartPoint
+    // breakPoint:
+    
+    // otherwise if it's a do ... while() it goes:
+    // initExpr
+    // loopStartPoint:
+    // loopBlock
+    // continuePoint:
+    // endLoopExpr
+    // testExpr
+    // OP_JMPIF loopStartPoint
+    // breakPoint:
+    
+    // loopBlockStart == start of loop block
+    // continue == skip to end
+    // break == exit loop
+    
+    
+    addBreakLine(codeStream);
+    codeStream.pushFixScope(true);
+    
+    U32 start = ip;
+    if(initExpr)
+        ip = initExpr->compile(codeStream, ip, TypeReqNone);
+   
+    // Konst page to restore at end of loop
+    U32 originalKonstVersion = codeStream.mKonstPageVersion;
+   
+    if(!isDoLoop)
+    {
+        ip = testExpr->compile(codeStream, ip, TypeReqConditional);
+        codeStream.emitFix(CodeStream::FIXTYPE_BREAK);
+    }
+    
+    // Compile internals of loop.
+    loopBlockStartOffset = codeStream.tell();
+    Compiler:CodeStream::CodeData* startLoopData = codeStream.allocCodeData();
+    continueOffset = compileBlock(loopBlock, codeStream, ip);
+    
+    if(endLoopExpr)
+        ip = endLoopExpr->compile(codeStream, ip, TypeReqNone);
+    
+    ip = testExpr->compile(codeStream, ip, TypeReqFalseConditional);
+    codeStream.emitFix(CodeStream::FIXTYPE_LOOPBLOCKSTART);
+   
+   // Reset constant page if required for wrapping around the loop
+   if (codeStream.mKonstPageVersion != originalKonstVersion)
    {
-      integer = true;
-      testSize = testExpr->precompile(TypeReqUInt);
+      // We need to emit code to reset the initial constant page at the start of the loop
+      codeStream.setKonstPage(-1);
+      U8* data = (U8*)dMalloc(4);
+      *data = TS2_OP_ENC_A_Bx(Compiler::OP_LOADK, 0, originalKonstVersion);
+      startLoopData->data = data;
+      startLoopData->size = 4;
    }
    else
    {
-      integer = false;
-      testSize = testExpr->precompile(TypeReqFloat);
+      startLoopData->size = 0;
    }
-
-   U32 blockSize = precompileBlock(loopBlock, loopCount + 1);
-
-   U32 endLoopSize = 0;
-   if(endLoopExpr)
-      endLoopSize = endLoopExpr->precompile(TypeReqNone);
-
-   // if it's a for loop or a while loop it goes:
-   // initExpr
-   // testExpr
-   // OP_JMPIFNOT to break point
-   // loopStartPoint:
-   // loopBlock
-   // continuePoint:
-   // endLoopExpr
-   // testExpr
-   // OP_JMPIF loopStartPoint
-   // breakPoint:
-
-   // otherwise if it's a do ... while() it goes:
-   // initExpr
-   // loopStartPoint:
-   // loopBlock
-   // continuePoint:
-   // endLoopExpr
-   // testExpr
-   // OP_JMPIF loopStartPoint
-   // breakPoint:
-
-   if(!isDoLoop)
-   {
-      loopBlockStartOffset = initSize + testSize + 2;
-      continueOffset       = loopBlockStartOffset + blockSize;
-      breakOffset          = continueOffset + endLoopSize + testSize + 2;
-   }
-   else
-   {
-      loopBlockStartOffset = initSize;
-      continueOffset       = initSize + blockSize;
-      breakOffset          = continueOffset + endLoopSize + testSize + 2;
-   }
-   return breakOffset;
+   
+    breakOffset = codeStream.tell(); // exit loop
+    
+    codeStream.fixLoop(
+                       loopBlockStartOffset,
+                       breakOffset,
+                       continueOffset
+                       );
+    codeStream.popFixScope();
+    
+    return codeStream.tell();
 }
 
-U32 LoopStmtNode::compileStmt(U32 *codeStream, U32 ip, U32, U32)
+//------------------------------------------------------------
+
+U32 IterStmtNode::compileStmt( CodeStream &codeStream, U32 ip )
 {
-   addBreakLine(ip);
+    // Instruction sequence:
+    //
+    //   containerExpr
+    //   OP_ITER_BEGIN varName .fail
+    // .continue:
+    //   OP_ITER .break
+    //   body
+    //   OP_JMP .continue
+    // .break:
+    //   OP_ITER_END
+    // .fail:
+    
+    addBreakLine(codeStream);
+   
+   codeStream.pushFixScope(true);
+   
    U32 start = ip;
-   if(initExpr)
-      ip = initExpr->compile(codeStream, ip, TypeReqNone);
-
-   if(!isDoLoop)
-   {
-      ip = testExpr->compile(codeStream, ip, integer ? TypeReqUInt : TypeReqFloat);
-      codeStream[ip++] = integer ? OP_JMPIFNOT : OP_JMPIFFNOT;
-      codeStream[ip++] = start + breakOffset;
-   }
-
+   // init expr
+   
+   Compiler::CompilerConstantRef nullConst = codeStream.getConstantsTable()->addNull();
+   CodeStream::RegisterTarget iteratorValueTarget = CodeStream::RegisterTarget(codeStream.getLocalVariable(varName));
+   CodeStream::RegisterTarget iteratorTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+   
+   AssertFatal(iteratorValueTarget.regNum != -1, "Cant find iterator var");
+   
+   // Init iterator
+   codeStream.emitOpcodeABx(Compiler::OP_LOADK, iteratorTarget.regNum, codeStream.emitKonstRef(nullConst));
+   
+   // Konst page to restore at end of loop
+   U32 originalKonstVersion = codeStream.mKonstPageVersion;
+   
+   containerExpr->compile(codeStream, ip, TypeReqVar);
+   CodeStream::RegisterTarget containerTarget = codeStream.topTarget();
+   
    // Compile internals of loop.
-   ip = compileBlock(loopBlock, codeStream, ip, start + continueOffset, start + breakOffset);
-
-   if(endLoopExpr)
-      ip = endLoopExpr->compile(codeStream, ip, TypeReqNone);
-
-   ip = testExpr->compile(codeStream, ip, integer ? TypeReqUInt : TypeReqFloat);
-
-   codeStream[ip++] = integer ? OP_JMPIF : OP_JMPIFF;
-   codeStream[ip++] = start + loopBlockStartOffset;
-
-   return ip;
+   U32 loopBlockStartOffset = codeStream.tell();
+   
+   codeStream.emitOpcodeABCRef(isStringIter ? Compiler::OP_ITR_SGET : Compiler::OP_ITR_GET, iteratorValueTarget.regNum, containerTarget, iteratorTarget);
+   codeStream.emitFix(CodeStream::FIXTYPE_BREAK);
+   
+   Compiler:CodeStream::CodeData* startLoopData = codeStream.allocCodeData();
+   U32 continueOffset = compileBlock(body, codeStream, ip);
+   
+   // Back to start of loop
+   codeStream.emitFix(CodeStream::FIXTYPE_LOOPBLOCKSTART);
+   
+   // Reset constant page if required for wrapping around the loop
+   if (codeStream.mKonstPageVersion != originalKonstVersion)
+   {
+      // We need to emit code to reset the initial constant page at the start of the loop
+      codeStream.setKonstPage(-1);
+      U8* data = (U8*)dMalloc(4);
+      *data = TS2_OP_ENC_A_Bx(Compiler::OP_LOADK, 0, originalKonstVersion);
+      startLoopData->data = data;
+      startLoopData->size = 4;
+   }
+   else
+   {
+      startLoopData->size = 0;
+   }
+   
+   codeStream.popTarget(); // containerExpr
+   codeStream.popTarget(); // iteratorTarget
+   //codeStream.popTarget(); // iteratorValueTarget // jamesu - not actually pushed to stack
+   
+   U32 breakOffset = codeStream.tell(); // exit loop
+   
+   codeStream.fixLoop(
+                      loopBlockStartOffset,
+                      breakOffset,
+                      continueOffset
+                      );
+   codeStream.popFixScope();
+   
+   return codeStream.tell();
 }
 
 //------------------------------------------------------------
 
-U32 ConditionalExprNode::precompile(TypeReq type)
+U32 ConditionalExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
    // code is testExpr
    // JMPIFNOT falseStart
    // trueExpr
    // JMP end
    // falseExpr
-   U32 exprSize;
-
+   
+   AssertFatal(type != TypeReqFalseConditional, "Not tested");
+   
+   int cmpValue = 0;
+   
+   if (type == TypeReqFalseConditional)
+   {
+      type = TypeReqConditional;
+      cmpValue = 1;
+   }
+   
    if(testExpr->getPreferredType() == TypeReqUInt)
    {
-      exprSize = testExpr->precompile(TypeReqUInt);
       integer = true;
    }
    else
    {
-      exprSize = testExpr->precompile(TypeReqFloat);
       integer = false;
    }
-   return exprSize + 
-      trueExpr->precompile(type) +
-      falseExpr->precompile(type) + 4;
-}
-
-U32 ConditionalExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = testExpr->compile(codeStream, ip, integer ? TypeReqUInt : TypeReqFloat);
-   codeStream[ip++] = integer ? OP_JMPIFNOT : OP_JMPIFFNOT;
-   U32 jumpElseIp = ip++;
-   ip = trueExpr->compile(codeStream, ip, type);
-   codeStream[ip++] = OP_JMP;
-   U32 jumpEndIp = ip++;
-   codeStream[jumpElseIp] = ip;
-   ip = falseExpr->compile(codeStream, ip, type);
-   codeStream[jumpEndIp] = ip;
-   return ip;
+   
+   CodeStream::RegisterTarget targetRegister;
+   
+   TypeReq regId = TypeReqTargetRegister;
+   TypeReq varId = TypeReqVar;
+   
+   if (type == TypeReqVar)
+   {
+      
+   }
+   else if (type == TypeReqTargetRegister)
+   {
+      targetRegister = codeStream.topTarget();
+   }
+   else if (type == TypeReqConditional)
+   {
+      
+   }
+   
+   bool firstBranchDirty = false;
+   bool secondBranchDirty = false;
+   
+   ip = testExpr->compile(codeStream, ip, TypeReqConditional);
+   U32 elseJmpIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(0));
+   
+   U32 savedConstPage = codeStream.mLastKonstPage;
+   
+   // If we are assigning a target register we need to
+   // emit it for each branch, otherwise store the result in our own temp target.
+   
+   targetRegister = codeStream.pushTargetReference(targetRegister); // temp clone
+   // TOFIX should this push for varnode?
+   
+   codeStream.pushTargetReference(targetRegister);
+   ip = trueExpr->compile(codeStream, ip, TypeReqTargetRegister);
+   
+   // Restore konst page
+   if (codeStream.mLastKonstPage != savedConstPage)
+   {
+      codeStream.setKonstPage(savedConstPage);
+      firstBranchDirty = true;
+   }
+   
+   U32 endBlockJmpIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(0));
+   codeStream.patch(elseJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(ip - elseJmpIp)));
+   
+   // Need to push the target again
+   codeStream.pushTargetReference(targetRegister);
+   ip = falseExpr->compile(codeStream, ip, TypeReqTargetRegister);
+   
+   // Restore konst page
+   if (codeStream.mLastKonstPage != savedConstPage)
+   {
+      codeStream.setKonstPage(savedConstPage);
+      secondBranchDirty = true;
+   }
+   
+   codeStream.patch(endBlockJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(ip - endBlockJmpIp - 1)));
+   
+   // Correct konst here
+   if (firstBranchDirty && secondBranchDirty)
+   {
+      codeStream.setKonstPage(-1);
+   }
+   
+   // Final push for result
+   if (type == TypeReqConditional)
+   {
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, targetRegister, CodeStream::RegisterTarget(trueConst));
+   }
+   else if (type == TypeReqTargetRegister)
+   {
+      codeStream.popTarget(); // our temp target clone
+      codeStream.popTarget(); // top
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq ConditionalExprNode::getPreferredType()
 {
-   return trueExpr->getPreferredType();
+    return trueExpr->getPreferredType();
 }
 
 //------------------------------------------------------------
 
-U32 FloatBinaryExprNode::precompile(TypeReq type)
+U32 FloatBinaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   U32 addSize = left->precompile(TypeReqFloat) + right->precompile(TypeReqFloat) + 1;
-   if(type != TypeReqFloat)
-      addSize++;
-
-   return addSize;
-}
-
-U32 FloatBinaryExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = right->compile(codeStream, ip, TypeReqFloat);
-   ip = left->compile(codeStream, ip, TypeReqFloat);
-   U32 operand = OP_INVALID;
-   switch(op)
-   {
-   case '+':
-      operand = OP_ADD;
-      break;
-   case '-':
-      operand = OP_SUB;
-      break;
-   case '/':
-      operand = OP_DIV;
-      break;
-   case '*':
-      operand = OP_MUL;
-      break;
-   }
-   codeStream[ip++] = operand;
-   if(type != TypeReqFloat)
-      codeStream[ip++] =conversionOp(TypeReqFloat, type);
-   return ip;
+#ifdef DEBUG_COMPILER
+    Con::printf("FloatBinaryExprNode [%s]", type == TypeReqTargetRegister ? "direct" : "temp");
+#endif
+   
+    CodeStream::RegisterTarget targetRegister;
+    if (type == TypeReqTargetRegister)
+    {
+       targetRegister = codeStream.popTarget();
+    }
+    
+    ip = right->compile(codeStream, ip, TypeReqFloat);
+    ip = left->compile(codeStream, ip, TypeReqFloat);
+    
+    CodeStream::RegisterTarget leftReg = codeStream.popTarget();
+    CodeStream::RegisterTarget rightReg = codeStream.popTarget();
+    if (targetRegister.regNum < 0)
+    {
+       targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
+    }
+   
+#ifdef DEBUG_COMPILER
+    Con::printf("FloatBinaryExprNode::Add %s + %s -> %s", leftReg.toString(), rightReg.toString(), targetRegister.toString());
+#endif
+   
+    switch(op)
+    {
+        case '+':
+          codeStream.emitOpcodeABCRef(Compiler::OP_ADD, targetRegister.regNum, (leftReg), (rightReg));
+            break;
+       case '-':
+          codeStream.emitOpcodeABCRef(Compiler::OP_SUB, targetRegister.regNum, (leftReg), (rightReg));
+            break;
+       case '/':
+          codeStream.emitOpcodeABCRef(Compiler::OP_DIV, targetRegister.regNum, (leftReg), (rightReg));
+            break;
+       case '*':
+          codeStream.emitOpcodeABCRef(Compiler::OP_MUL, targetRegister.regNum, (leftReg), (rightReg));
+            break;
+       default:
+          Con::errorf("Unknown operand %c", op);
+          break;
+    }
+   
+    return codeStream.tell();
 }
 
 TypeReq FloatBinaryExprNode::getPreferredType()
 {
-   return TypeReqFloat;
+    return TypeReqFloat;
 }
 
 //------------------------------------------------------------
 
 void IntBinaryExprNode::getSubTypeOperand()
 {
-   subType = TypeReqUInt;
-   switch(op)
-   {
-   case '^':
-      operand = OP_XOR;
-      break;
-   case '%':
-      operand = OP_MOD;
-      break;
-   case '&':
-      operand = OP_BITAND;
-      break;
-   case '|':
-      operand = OP_BITOR;
-      break;
-   case '<':
-      operand = OP_CMPLT;
-      subType = TypeReqFloat;
-      break;
-   case '>':
-      operand = OP_CMPGR;
-      subType = TypeReqFloat;
-      break;
-   case opGE:
-      operand = OP_CMPGE;
-      subType = TypeReqFloat;
-      break;
-   case opLE:
-      operand = OP_CMPLE;
-      subType = TypeReqFloat;
-      break;
-   case opEQ:
-      operand = OP_CMPEQ;
-      subType = TypeReqFloat;
-      break;
-   case opNE:
-      operand = OP_CMPNE;
-      subType = TypeReqFloat;
-      break;
-   case opOR:
-      operand = OP_OR;
-      break;
-   case opAND:
-      operand = OP_AND;
-      break;
-   case opSHR:
-      operand = OP_SHR;
-      break;
-   case opSHL:
-      operand = OP_SHL;
-      break;
-   }
+    subType = TypeReqUInt;
+    conditionalValue = 0;
+    operand = 0;
+    cmpValue = 0;
+    switch(op)
+    {
+        case '^':
+          operand = Compiler::OP_XOR;
+            break;
+        case '%':
+            operand = Compiler::OP_MOD;
+            break;
+        case '&':
+            operand = Compiler::OP_BITAND;
+            break;
+        case '|':
+            operand = Compiler::OP_BITOR;
+            break;
+        case '<':
+            conditionalValue = Compiler::OP_LT;
+            subType = TypeReqFloat;
+            break;
+        case '>':
+            conditionalValue = Compiler::OP_LE;
+            cmpValue = 1;
+            break;
+        case opGE:
+           conditionalValue = Compiler::OP_LT;
+            cmpValue = 1;
+            break;
+       case opLE:
+            conditionalValue = Compiler::OP_LE;
+            subType = TypeReqFloat;
+            break;
+       case opEQ:
+          conditionalValue = Compiler::OP_EQ;
+            subType = TypeReqFloat;
+            break;
+       case opNE:
+          conditionalValue = Compiler::OP_EQ;
+          subType = TypeReqFloat;
+          cmpValue = 1;
+            break;
+        case opOR:
+          operand = Compiler::COND_OR;
+            break;
+        case opAND:
+          operand = Compiler::COND_AND;
+            break;
+        case opSHR:
+          operand = Compiler::OP_SHR;
+            break;
+       case opSHL:
+          operand = Compiler::OP_SHL;
+            break;
+    }
 }
 
-U32 IntBinaryExprNode::precompile(TypeReq type)
+U32 IntBinaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
    getSubTypeOperand();
-   U32 addSize = left->precompile(subType) + right->precompile(subType) + 1;
-   if(operand == OP_OR || operand == OP_AND)
-      addSize++;
-
-   if(type != TypeReqUInt)
-      addSize++;
-
-   return addSize;
-}
-
-U32 IntBinaryExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   if(operand == OP_OR || operand == OP_AND)
+   
+   if (type == TypeReqFalseConditional)
    {
-      ip = left->compile(codeStream, ip, subType);
-      codeStream[ip++] = operand == OP_OR ? OP_JMPIF_NP : OP_JMPIFNOT_NP;
-      U32 jmpIp = ip++;
-      ip = right->compile(codeStream, ip, subType);
-      codeStream[jmpIp] = ip;
+      type = TypeReqConditional;
+      cmpValue = cmpValue == 1 ? 0 : 1;
+   }
+   
+   if (type == TypeReqConditional)
+   {
+      CodeStream::RegisterTarget leftReg;// = codeStream.popTarget();
+      CodeStream::RegisterTarget rightReg;// = codeStream.popTarget();
+      
+      if(operand == Compiler::COND_OR || operand == Compiler::COND_AND)
+      {
+         // For this type of conditional,
+         // left == right != false AND
+         // left != false, right != false OR
+         
+         Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
+         Compiler::CompilerConstantRef falseValue = codeStream.getConstantsTable()->addInt(0);
+         
+         if (operand == Compiler::COND_AND)
+         {
+            ip = left->compile(codeStream, ip, TypeReqFalseConditional);
+            //leftReg = codeStream.popTarget();
+            
+            U32 fixIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2)); // false path
+            
+            // Following true path here
+            ip = right->compile(codeStream, ip, TypeReqFalseConditional);
+            //rightReg = codeStream.popTarget();
+            
+            codeStream.patch(fixIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(codeStream.tell() - fixIp - 1)));
+            
+            // <conditional JMP for false>
+            // <true branch>
+         }
+         else if (operand == Compiler::COND_OR)
+         {
+            ip = left->compile(codeStream, ip, TypeReqConditional);
+            //leftReg = codeStream.popTarget();
+            
+            U32 fixIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2)); // true path
+            
+            // Following false path here
+            ip = right->compile(codeStream, ip, TypeReqFalseConditional);
+            //rightReg = codeStream.popTarget();
+            
+            // NOTE: true path needs to go to the instruction AFTER the false JMP
+            codeStream.patch(fixIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(codeStream.tell()+1 - fixIp - 1)));
+            
+            // <conditional JMP for false>
+            // <true branch>
+         }
+      }
+      else if (conditionalValue != 0)
+      {
+         ip = right->compile(codeStream, ip, subType);
+         ip = left->compile(codeStream, ip, subType);
+         
+         leftReg = codeStream.popTarget();
+         rightReg = codeStream.popTarget();
+         
+         // We can just emit a conditional op
+         codeStream.emitOpcodeABCRef(conditionalValue, cmpValue, (leftReg), (rightReg));
+      }
+      else
+      {
+         ip = right->compile(codeStream, ip, subType);
+         ip = left->compile(codeStream, ip, subType);
+         
+         leftReg = codeStream.popTarget();
+         rightReg = codeStream.popTarget();
+         
+         // We need a temp target
+         CodeStream::RegisterTarget tempTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+         
+         codeStream.emitOpcodeABCRef(operand, tempTarget.regNum, (leftReg), (rightReg));
+         
+         Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
+         
+         codeStream.emitOpcodeABCRef(Compiler::OP_EQ, 0, tempTarget, (CodeStream::RegisterTarget(trueValue)));
+         
+         codeStream.popTarget();
+      }
    }
    else
    {
-      ip = right->compile(codeStream, ip, subType);
-      ip = left->compile(codeStream, ip, subType);
-      codeStream[ip++] = operand;
+      CodeStream::RegisterTarget targetRegister;
+      if (type == TypeReqTargetRegister)
+      {
+         targetRegister = codeStream.popTarget();
+      }
+      
+      CodeStream::RegisterTarget leftReg;
+      CodeStream::RegisterTarget rightReg;
+      
+      if (targetRegister.regNum < 0)
+      {
+         targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
+      }
+      
+      if(operand == Compiler::COND_OR || operand == Compiler::COND_AND)
+      {
+         // For this type of conditional,
+         // left == right != false AND
+         // left != false, right != false OR
+         
+         Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
+         Compiler::CompilerConstantRef falseValue = codeStream.getConstantsTable()->addInt(0);
+         
+         if (operand == Compiler::COND_AND)
+         {
+            ip = left->compile(codeStream, ip, TypeReqFalseConditional);
+            //leftReg = codeStream.popTarget();
+            
+            U32 fixIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2)); // false path
+            
+            // Following true path here
+            ip = right->compile(codeStream, ip, TypeReqFalseConditional);
+            //rightReg = codeStream.popTarget();
+            
+            codeStream.patch(fixIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(codeStream.tell() - fixIp - 1)));
+            
+            // <conditional JMP for false>
+            // <true branch>
+         }
+         else if (operand == Compiler::COND_OR)
+         {
+            ip = left->compile(codeStream, ip, TypeReqConditional);
+            //leftReg = codeStream.popTarget();
+            
+            U32 fixIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2)); // true path
+            
+            // Following false path here
+            ip = right->compile(codeStream, ip, TypeReqFalseConditional);
+            //rightReg = codeStream.popTarget();
+            
+            // NOTE: true path needs to go to the instruction AFTER the false JMP
+            codeStream.patch(fixIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(codeStream.tell()+1 - fixIp - 1)));
+            
+            // <conditional JMP for flase>
+            // <true branch>
+         }
+         
+         // <conditional JMP for false>
+         // <true branch>
+         
+         codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2));
+         codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(trueValue));
+         codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(1));
+         codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(falseValue));
+      }
+      else if (conditionalValue != 0)
+      {
+         ip = right->compile(codeStream, ip, subType);
+         ip = left->compile(codeStream, ip, subType);
+         
+         leftReg = codeStream.popTarget();
+         rightReg = codeStream.popTarget();
+         
+         // Gotta convert the conditional
+         codeStream.emitOpcodeABCRef(conditionalValue, cmpValue, (leftReg), (rightReg));
+         
+         // jamesu - conditionals work as follows:
+         // JMP_IFEQ
+         // JMP [else]
+         // [if]
+         // Note: as with c, true is anything != 0
+         
+         Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
+         Compiler::CompilerConstantRef falseValue = codeStream.getConstantsTable()->addInt(0);
+         
+         codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2));
+         codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(trueValue));
+         codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(1));
+         codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(falseValue));
+      }
+      else
+      {
+         ip = right->compile(codeStream, ip, subType);
+         ip = left->compile(codeStream, ip, subType);
+         
+         leftReg = codeStream.popTarget();
+         rightReg = codeStream.popTarget();
+         
+         codeStream.emitOpcodeABCRef(operand, targetRegister.regNum, (leftReg), (rightReg));
+      }
    }
-   if(type != TypeReqUInt)
-      codeStream[ip++] =conversionOp(TypeReqUInt, type);
-   return ip;
+   return codeStream.tell();
 }
 
 TypeReq IntBinaryExprNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
 //------------------------------------------------------------
 
-U32 StreqExprNode::precompile(TypeReq type)
+U32 StreqExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // eval str left
-   // OP_ADVANCE_STR_NUL
-   // eval str right
-   // OP_COMPARE_STR
-   // optional conversion
-   U32 addSize = left->precompile(TypeReqString) + right->precompile(TypeReqString) + 2;
-   if(!eq)
-      addSize ++;
-   if(type != TypeReqUInt)
-      addSize ++;
-   return addSize;
-}
-
-U32 StreqExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = left->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_ADVANCE_STR_NUL;
-   ip = right->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_COMPARE_STR;
-   if(!eq)
-      codeStream[ip++] = OP_NOT;
-   if(type != TypeReqUInt)
-      codeStream[ip++] = conversionOp(TypeReqUInt, type);
-   return ip;
+   CodeStream::RegisterTarget leftReg;
+   CodeStream::RegisterTarget rightReg;
+   CodeStream::RegisterTarget targetRegister;
+   
+   if (type == TypeReqTargetRegister)
+   {
+      targetRegister = codeStream.topTarget();
+   }
+   else
+   {
+      targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(targetRegister));
+   }
+   
+   ip = right->compile(codeStream, ip, TypeReqVar);
+   ip = left->compile(codeStream, ip, TypeReqVar);
+   
+   leftReg = codeStream.popTarget();
+   rightReg = codeStream.popTarget();
+   
+   codeStream.emitOpcodeABCRef(Compiler::OP_EQ_STR, eq ? 0 : 1, leftReg, rightReg);
+   
+   if (type != TypeReqConditional)
+   {
+      // Need this as a number
+      Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
+      Compiler::CompilerConstantRef falseValue = codeStream.getConstantsTable()->addInt(0);
+      
+      codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(2));
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(trueValue));
+      codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(1));
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(falseValue));
+      
+      if (type != TypeReqTargetRegister)
+      {
+         codeStream.popTarget();
+      }
+   }
+   else
+   {
+      codeStream.popTarget();
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq StreqExprNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
 //------------------------------------------------------------
 
-U32 StrcatExprNode::precompile(TypeReq type)
+U32 StrcatExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   U32 addSize = left->precompile(TypeReqString) + right->precompile(TypeReqString) + 2;
-   if(appendChar)
-      addSize++;
-
-   if(type != TypeReqString)
-      addSize ++;
-   return addSize;
-}
-
-U32 StrcatExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
+   // Destination override (otherwise we use startReg)
+   CodeStream::RegisterTarget destRegister;
+   if (type == TypeReqTargetRegister)
+   {
+      destRegister = codeStream.popTarget();
+   }
+   
+   CodeStream::RegisterTarget startReg = codeStream.pushTarget(CodeStream::RegisterTarget());
+   CodeStream::RegisterTarget charReg;
+   CodeStream::RegisterTarget endReg;
+   
+   if (type != TypeReqTargetRegister)
+   {
+      destRegister = startReg;
+   }
+ 
+   if (appendChar)
+   {
+      charReg = codeStream.pushTarget(CodeStream::RegisterTarget());
+   }
+   
+   endReg = codeStream.pushTarget(CodeStream::RegisterTarget());
+   
+   ip = right->compile(codeStream, ip, TypeReqString);
    ip = left->compile(codeStream, ip, TypeReqString);
-   if(!appendChar)
-      codeStream[ip++] = OP_ADVANCE_STR;
+   
+    // OP_CONCAT
+   // A := B...C
+   
+   CodeStream::RegisterTarget leftReg = codeStream.popTarget();
+   CodeStream::RegisterTarget rightReg = codeStream.popTarget();
+   
+   if (leftReg.constRef.idx >= 0)
+   {
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, startReg.regNum, codeStream.emitKonstRef(leftReg.constRef));
+   }
    else
    {
-      codeStream[ip++] = OP_ADVANCE_STR_APPENDCHAR;
-      codeStream[ip++] = appendChar;
+      codeStream.emitOpcodeABC(Compiler::OP_MOVE, startReg.regNum, leftReg.regNum, 0);
    }
-   ip = right->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_REWIND_STR;
-   if(type == TypeReqUInt)
-      codeStream[ip++] = OP_STR_TO_UINT;
-   else if(type == TypeReqFloat)
-      codeStream[ip++] = OP_STR_TO_FLT;
-   return ip;
+   
+   char str[2];
+   str[0] = appendChar;
+   str[1] = '\0';
+   Compiler::CompilerConstantRef charConst = codeStream.getConstantsTable()->addString(str);
+   
+   if (appendChar)
+   {
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, charReg.regNum, codeStream.emitKonstRef(charConst));
+   }
+   
+   
+   if (rightReg.constRef.idx >= 0)
+   {
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, endReg.regNum, codeStream.emitKonstRef(rightReg.constRef));
+   }
+   else
+   {
+      codeStream.emitOpcodeABC(Compiler::OP_MOVE, endReg.regNum, rightReg.regNum, 0);
+   }
+   
+   
+   // Concat from left to right
+   codeStream.emitOpcodeABC(Compiler::OP_CONCAT, destRegister.regNum, startReg.regNum, endReg.regNum);
+   
+   codeStream.popTarget();
+   if (appendChar) codeStream.popTarget();
+   
+   if (type == TypeReqTargetRegister)
+   {
+      codeStream.popTarget(); // startReg
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq StrcatExprNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
 }
 
 //------------------------------------------------------------
 
-U32 CommaCatExprNode::precompile(TypeReq type)
-{
-   U32 addSize = left->precompile(TypeReqString) + right->precompile(TypeReqString) + 2;
-   if(type != TypeReqString)
-      addSize ++;
-   return addSize;
-}
-
-U32 CommaCatExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = left->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_ADVANCE_STR_COMMA;
-   ip = right->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_REWIND_STR;
-
-   // At this point the stack has the concatenated string.
-
-   // But we're paranoid, so accept (but whine) if we get an oddity...
-   if(type == TypeReqUInt || type == TypeReqFloat)
-      Con::warnf(ConsoleLogEntry::General, "%s (%d): converting comma string to a number... probably wrong.", dbgFileName, dbgLineNumber);
-   if(type == TypeReqUInt)
-      codeStream[ip++] = OP_STR_TO_UINT;
-   else if(type == TypeReqFloat)
-      codeStream[ip++] = OP_STR_TO_FLT;
-   return ip;
+U32 CommaCatExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
+{/* TODO FIX
+    ip = left->compile(codeStream, ip, TypeReqString);
+    codeStream.emit(OP_ADVANCE_STR_COMMA);
+    ip = right->compile(codeStream, ip, TypeReqString);
+    codeStream.emit(OP_REWIND_STR);
+    
+    // At this point the stack has the concatenated string.
+    
+    // But we're paranoid, so accept (but whine) if we get an oddity...
+    if(type == TypeReqUInt || type == TypeReqFloat)
+        Con::warnf(ConsoleLogEntry::General, "%s (%d): converting comma string to a number... probably wrong.", dbgFileName, dbgLineNumber);
+    if(type == TypeReqUInt)
+        codeStream.emit(OP_STR_TO_UINT);
+    else if(type == TypeReqFloat)
+        codeStream.emit(OP_STR_TO_FLT);*/
+    return codeStream.tell();
 }
 
 TypeReq CommaCatExprNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
 }
 
 //------------------------------------------------------------
 
-U32 IntUnaryExprNode::precompile(TypeReq type)
+U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   integer = true;
-   TypeReq prefType = expr->getPreferredType();
-   if(op == '!' && (prefType == TypeReqFloat || prefType == TypeReqString))
-      integer = false;
-
-   U32 exprSize = expr->precompile(integer ? TypeReqUInt : TypeReqFloat);
-   if(type != TypeReqUInt)
-      return exprSize + 2;
+    integer = true;
+   
+   CodeStream::RegisterTarget targetRegister;
+   if (type == TypeReqTargetRegister)
+   {
+      targetRegister = codeStream.topTarget();
+   }
    else
-      return exprSize + 1;
-}
-
-U32 IntUnaryExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = expr->compile(codeStream, ip, integer ? TypeReqUInt : TypeReqFloat);
+   {
+      targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(targetRegister));
+   }
+   
+   ip = expr->compile(codeStream, ip, TypeReqTargetRegister);
    if(op == '!')
-      codeStream[ip++] = integer ? OP_NOT : OP_NOTF;
+      codeStream.emitOpcodeABCRef(Compiler::OP_NOT, targetRegister.regNum, targetRegister, CodeStream::RegisterTarget());
    else if(op == '~')
-      codeStream[ip++] = OP_ONESCOMPLEMENT;
-   if(type != TypeReqUInt)
-      codeStream[ip++] =conversionOp(TypeReqUInt, type);
-   return ip;
+      codeStream.emitOpcodeABCRef(Compiler::OP_ONESCOMPLEMENT, targetRegister.regNum, targetRegister, CodeStream::RegisterTarget());
+   
+   if (type == TypeReqTargetRegister)
+   {
+      codeStream.popTarget();
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq IntUnaryExprNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
 //------------------------------------------------------------
 
-U32 FloatUnaryExprNode::precompile(TypeReq type)
+U32 FloatUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   U32 exprSize = expr->precompile(TypeReqFloat);
-   if(type != TypeReqFloat)
-      return exprSize + 2;
+   CodeStream::RegisterTarget targetRegister;
+   Compiler::CompilerConstantRef numRef = codeStream.getConstantsTable()->addInt(1);
+   
+   if (type == TypeReqTargetRegister)
+   {
+      targetRegister = codeStream.topTarget();
+   }
    else
-      return exprSize + 1;
-}
-
-U32 FloatUnaryExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = expr->compile(codeStream, ip, TypeReqFloat);
-   codeStream[ip++] = OP_NEG;
-   if(type != TypeReqFloat)
-      codeStream[ip++] =conversionOp(TypeReqFloat, type);
-   return ip;
+   {
+      targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(targetRegister));
+   }
+   
+   codeStream.emitOpcodeABCRef(Compiler::OP_MUL, targetRegister.regNum, targetRegister, numRef);
+   
+   if (type == TypeReqTargetRegister)
+   {
+      codeStream.popTarget();
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq FloatUnaryExprNode::getPreferredType()
 {
-   return TypeReqFloat;
+    return TypeReqFloat;
 }
 
 //------------------------------------------------------------
 
-U32 VarNode::precompile(TypeReq type)
+U32 VarNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // if this has an arrayIndex...
-   // OP_LOADIMMED_IDENT
-   // varName
-   // OP_ADVANCE_STR
-   // evaluate arrayIndex TypeReqString
-   // OP_REWIND_STR
-   // OP_SETCURVAR_ARRAY
-   // OP_LOADVAR (type)
+    if(type == TypeReqNone)
+        return codeStream.tell();
 
-   // else
-   // OP_SETCURVAR
-   // varName
-   // OP_LOADVAR (type)
-   if(type == TypeReqNone)
-      return 0;
-
-   precompileIdent(varName);
-   if(arrayIndex)
-      return arrayIndex->precompile(TypeReqString) + 7;
-   else
-      return 4;
-}
-
-U32 VarNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   if(type == TypeReqNone)
-      return ip;
-
-   codeStream[ip++] = arrayIndex ? OP_LOADIMMED_IDENT : OP_SETCURVAR;
-   STEtoCode(varName, ip, codeStream);
-   ip += 2;
-   if(arrayIndex)
+   S32 targetRegister = -1;
+ 
+    if (varName[0] != '$')
+    {
+       targetRegister = codeStream.getLocalVariable(varName);
+       
+       if (targetRegister == -1)
+       {
+          AssertFatal(false, "Local variable not registered");
+       }
+    }
+   
+    CodeStream::RegisterTarget target;
+    if (type == TypeReqTargetRegister)
+    {
+       target = codeStream.topTarget();
+    }
+    else
+    {
+       target = codeStream.pushTarget(CodeStream::RegisterTarget(targetRegister));
+    }
+   
+    if (varName[0] == '$')
+    {
+       Compiler::CompilerConstantRef varNameIdx = codeStream.getConstantsTable()->addString(varName);
+       codeStream.emitOpcodeABCRef(Compiler::OP_LOADVAR, target.regNum, (CodeStream::RegisterTarget(varNameIdx)), 0);
+    }
+    else
+     {
+       codeStream.emitOpcodeABC(Compiler::OP_MOVE, target.regNum, targetRegister, 0);
+    }
+   
+#ifdef DEBUG_COMPILER
+    Con::printf("VarNode target register = %s = %i -> %i", varName, targetRegister, target.regNum);
+#endif
+   
+   // Handle array indexing
+   if (arrayIndex)
    {
-      codeStream[ip++] = OP_ADVANCE_STR;
-      ip = arrayIndex->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_REWIND_STR;
-      codeStream[ip++] = OP_SETCURVAR_ARRAY;
+      // Use OP_GETFIELDA
+      // a := object(b).slot(c).array(b+1)
+      
+      // Since we need to use b+1 for the array, we need to check if we have a free register next to target.
+      // otherwise use two new slots and move it back to target.
+      
+      CodeStream::RegisterTarget arrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      Compiler::CompilerConstantRef nullRef = codeStream.getConstantsTable()->addNull();
+      
+      if (arrayTarget.regNum == target.regNum+1)
+      {
+         // Simple case, load arrayIndex
+         ip = arrayIndex->compile(codeStream, ip, TypeReqTargetRegister);
+          codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELDA, target.regNum, target, nullRef);
+      }
+      else
+      {
+         // Add another target then move var reference to that
+         CodeStream::RegisterTarget array2Target = codeStream.pushTarget(CodeStream::RegisterTarget());
+         ip = arrayIndex->compile(codeStream, ip, TypeReqTargetRegister);
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, arrayTarget.regNum, target.regNum, 0);
+         codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELDA, target.regNum, arrayTarget, nullRef);
+         codeStream.popTarget(); // arrayTarget
+      }
    }
-   switch(type)
-   {
-   case TypeReqUInt:
-      codeStream[ip++] = OP_LOADVAR_UINT;
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_LOADVAR_FLT;
-      break;
-   case TypeReqString:
-      codeStream[ip++] = OP_LOADVAR_STR;
-      break;
-       default:
-           break;
-   }
-   return ip;
+   return codeStream.tell();
 }
 
 TypeReq VarNode::getPreferredType()
 {
-   return TypeReqNone; // no preferred type
+    return TypeReqNone; // no preferred type
 }
 
 //------------------------------------------------------------
 
-U32 IntNode::precompile(TypeReq type)
+U32 IntNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   if(type == TypeReqNone)
-      return 0;
-   if(type == TypeReqString)
-      index = getCurrentStringTable()->addIntString(value);
-   else if(type == TypeReqFloat)
-      index = getCurrentFloatTable()->add(value);
-   return 2;
-}
-
-U32 IntNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   switch(type)
+   Compiler::CompilerConstantRef ref = codeStream.getConstantsTable()->addInt(value);
+   
+   U32 cmpValue = 0;
+   if (type == TypeReqFalseConditional)
    {
-   case TypeReqUInt:
-      codeStream[ip++] = OP_LOADIMMED_UINT;
-      codeStream[ip++] = value;
-      break;
-   case TypeReqString:
-      codeStream[ip++] = OP_LOADIMMED_STR;
-      codeStream[ip++] = index;
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_LOADIMMED_FLT;
-      codeStream[ip++] = index;
-      break;
-    default:
-        break;
+      type = TypeReqConditional;
+      cmpValue = 1;
    }
-   return ip;
+   
+    if (type == TypeReqConditional)
+    {
+       // Compare to true
+       Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+       codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, (CodeStream::RegisterTarget(ref)), (CodeStream::RegisterTarget(trueConst)));
+#ifdef DEBUG_COMPILER
+       Con::printf("IntNode conditional check [TODO: should be optimized out]");
+#endif
+    }
+    else if (type == TypeReqTargetRegister)
+    {
+       CodeStream::RegisterTarget targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+       Con::printf("IntNode target == %s [direct]", targetRegister.toString());
+#endif
+       codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(ref));
+    }
+    else
+    {
+       CodeStream::RegisterTarget targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(ref));
+#ifdef DEBUG_COMPILER
+       Con::printf("IntNode target == %s", targetRegister.toString());
+#endif
+    }
+   
+    return codeStream.tell();
 }
 
 TypeReq IntNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
 //------------------------------------------------------------
 
-U32 FloatNode::precompile(TypeReq type)
+U32 FloatNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   if(type == TypeReqNone)
-      return 0;
-   if(type == TypeReqString)
-      index = getCurrentStringTable()->addFloatString(value);
-   else if(type == TypeReqFloat)
-      index = getCurrentFloatTable()->add(value);
-   return 2;
-}
-
-U32 FloatNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   switch(type)
+   Compiler::CompilerConstantRef ref = codeStream.getConstantsTable()->addFloat(value);
+   
+   U32 cmpValue = 0;
+   if (type == TypeReqFalseConditional)
    {
-   case TypeReqUInt:
-      codeStream[ip++] = OP_LOADIMMED_UINT;
-      codeStream[ip++] = U32(value);
-      break;
-   case TypeReqString:
-      codeStream[ip++] = OP_LOADIMMED_STR;
-      codeStream[ip++] = index;
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_LOADIMMED_FLT;
-      codeStream[ip++] = index;
-      break;
-    default:
-        break;
+      type = TypeReqConditional;
+      cmpValue = 1;
    }
-   return ip;
+   
+   if (type == TypeReqConditional)
+   {
+      // Compare to true
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, (CodeStream::RegisterTarget(ref)), (CodeStream::RegisterTarget(trueConst)));
+#ifdef DEBUG_COMPILER
+      Con::printf("FloatNode conditional check [TODO: should be optimized out]");
+#endif
+   }
+   else if (type == TypeReqTargetRegister)
+   {
+      CodeStream::RegisterTarget targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+      Con::printf("FloatNode target == %s [direct]", targetRegister.toString());
+#endif
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(ref));
+   }
+   else
+   {
+      CodeStream::RegisterTarget targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(ref));
+#ifdef DEBUG_COMPILER
+      Con::printf("FloatNode target == %s", targetRegister.toString());
+#endif
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq FloatNode::getPreferredType()
 {
-   return TypeReqFloat;
+    return TypeReqFloat;
 }
 
 //------------------------------------------------------------
 
-U32 StrConstNode::precompile(TypeReq type)
+U32 StrConstNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // Early out for documentation block.
-   if( doc )
+   CompilerConstantRef ref = codeStream.getConstantsTable()->addString(str);
+   
+   U32 cmpValue = 0;
+   if (type == TypeReqFalseConditional)
    {
-      index = getCurrentStringTable()->add(str, true, tag);
-      return 2;
+      type = TypeReqConditional;
+      cmpValue = 1;
    }
-
-   if(type == TypeReqString)
+   
+   if (type == TypeReqConditional)
    {
-      index = getCurrentStringTable()->add(str, true, tag);
-      return 2;
+      // Compare to true
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, (CodeStream::RegisterTarget(ref)), (CodeStream::RegisterTarget(trueConst)));
+#ifdef DEBUG_COMPILER
+      Con::printf("StrConstNode conditional check [TODO: should be optimized out]");
+#endif
    }
-   else if(type == TypeReqNone)
+   else if (type == TypeReqTargetRegister)
    {
-      return 0;
+      CodeStream::RegisterTarget targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+      Con::printf("StrConstNode target == %s [direct]", targetRegister.toString());
+#endif
+      codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(ref));
    }
-
-   fVal = consoleStringToNumber(str, dbgFileName, dbgLineNumber);
-   if(type == TypeReqFloat)
-      index = getCurrentFloatTable()->add(fVal);
-   return 2;
-}
-
-U32 StrConstNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   // If this is a DOCBLOCK, then process w/ appropriate op...
-   if( doc )
+   else
    {
-      codeStream[ip++] = OP_DOCBLOCK_STR;
-      codeStream[ip++] = index;
-      return ip;
+      CodeStream::RegisterTarget targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(ref));
+#ifdef DEBUG_COMPILER
+      Con::printf("StrConstNode target == %s", targetRegister.toString());
+#endif
    }
-
-   // Otherwise, deal with it normally as a string literal case.
-   switch(type)
-   {
-   case TypeReqString:
-      codeStream[ip++] = tag ? OP_TAG_TO_STR : OP_LOADIMMED_STR;
-      codeStream[ip++] = index;
-      break;
-   case TypeReqUInt:
-      codeStream[ip++] = OP_LOADIMMED_UINT;
-      codeStream[ip++] = U32(fVal);
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_LOADIMMED_FLT;
-      codeStream[ip++] = index;
-      break;      
-    default:
-       break;
-   }
-   return ip;
+   
+   
+   return codeStream.tell();
+   
+   // TODO: handle doc (OP_DOCBLOCK_STR)
 }
 
 TypeReq StrConstNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
 }
 
 //------------------------------------------------------------
 
-U32 ConstantNode::precompile(TypeReq type)
+U32 ConstantNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   if(type == TypeReqString)
-   {
-      precompileIdent(value);
-      return 3;
-   }
-   else if(type == TypeReqNone)
-      return 0;
-
-   fVal = consoleStringToNumber(value, dbgFileName, dbgLineNumber);
-   if(type == TypeReqFloat)
-      index = getCurrentFloatTable()->add(fVal);
-   return 2;
-}
-
-U32 ConstantNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   switch(type)
-   {
-   case TypeReqString:
-      codeStream[ip++] = OP_LOADIMMED_IDENT;
-      STEtoCode(value, ip, codeStream);
-      ip += 2;
-      break;
-   case TypeReqUInt:
-      codeStream[ip++] = OP_LOADIMMED_UINT;
-      codeStream[ip++] = U32(fVal);
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_LOADIMMED_FLT;
-      codeStream[ip++] = index;
-      break;
-       default:
-           break;
-   }
-   return ip;
+   Compiler::CompilerConstantRef ref;
+   ref = codeStream.getConstantsTable()->addString(value);
+   
+    if (type == TypeReqTargetRegister)
+    {
+       CodeStream::RegisterTarget targetRegister = codeStream.popTarget();
+       codeStream.emitOpcodeABx(Compiler::OP_LOADK, targetRegister.regNum, codeStream.emitKonstRef(ref));
+    }
+    else
+    {
+       codeStream.pushTarget(CodeStream::RegisterTarget(ref));
+    }
+    return codeStream.tell();
 }
 
 TypeReq ConstantNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
 }
 
 //------------------------------------------------------------
 
-U32 AssignExprNode::precompile(TypeReq type)
+U32 AssignExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
+   S32 variableRegister = -1;
    subType = expr->getPreferredType();
    if(subType == TypeReqNone)
       subType = type;
    if(subType == TypeReqNone)
-      subType = TypeReqString;
-   // if it's an array expr, the formula is:
-   // eval expr
-   // (push and pop if it's TypeReqString) OP_ADVANCE_STR
-   // OP_LOADIMMED_IDENT
-   // varName
-   // OP_ADVANCE_STR
-   // eval array
-   // OP_REWIND_STR
-   // OP_SETCURVAR_ARRAY_CREATE
-   // OP_TERMINATE_REWIND_STR
-   // OP_SAVEVAR
-
-   //else
-   // eval expr
-   // OP_SETCURVAR_CREATE
-   // varname
-   // OP_SAVEVAR
-   U32 addSize = 0;
-   if(type != subType)
-      addSize = 1;
-
-   U32 retSize = expr->precompile(subType);
-   precompileIdent(varName);
-   if(arrayIndex)
    {
-      if(subType == TypeReqString)
-         return arrayIndex->precompile(TypeReqString) + retSize + addSize + 9;
+      subType = TypeReqVar;
+   }
+   
+   CodeStream::RegisterTarget outRegister;
+ 
+   if (varName[0] != '$')
+   {
+      variableRegister = codeStream.getLocalVariable(varName);
+      
+      if (variableRegister == -1)
+      {
+         AssertFatal(false, "Local variable not registered");
+      }
+   }
+   
+   // We either store to a target or emit it.
+   if (type == TypeReqTargetRegister)
+   {
+      outRegister = codeStream.topTarget();
+   }
+   
+   // Handle array indexing
+   if (arrayIndex)
+   {
+      // For an array we need to do the following:
+      // - If it's a global variable, grab it to a temp register, setting it as an array
+      // - If it's a local variable, create a temp register
+      // - Evaluate expression into temp register
+      // - Use OP_SETFIELDA on the temp register
+      // object(a).slot(b).array(c+1)=value(c)
+      
+      Compiler::CompilerConstantRef nullRef = codeStream.getConstantsTable()->addNull();
+      CodeStream::RegisterTarget getTarget;
+      CodeStream::RegisterTarget valueTarget;
+      CodeStream::RegisterTarget getArrayTarget; // actually used
+      
+      valueTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(valueTarget);
+      ip = expr->compile(codeStream, ip, TypeReqTargetRegister); // everything goes into valueTarget
+      getArrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(getArrayTarget);
+      ip = arrayIndex->compile(codeStream, ip, TypeReqTargetRegister);
+      
+      if (variableRegister == -1)
+      {
+         // global var
+         getTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+         Compiler::CompilerConstantRef varNameIdx = codeStream.getConstantsTable()->addString(varName);
+         codeStream.emitOpcodeABCRef(Compiler::OP_LOADVAR, getTarget.regNum, varNameIdx, CodeStream::RegisterTarget(0));
+      }
       else
-         return arrayIndex->precompile(TypeReqString) + retSize + addSize + 7;
+      {
+         getTarget = CodeStream::RegisterTarget(variableRegister);
+      }
+      
+      // Now we can get the field, either in the designated register or reuse the getTarget register
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELDA, getTarget.regNum, nullRef, valueTarget);
+      
+      codeStream.popTarget(); // getArrayTarget
+      
+      if (type == TypeReqNone)
+      {
+         // Don't need valueTarget anymore
+         codeStream.popTarget();
+      }
+      else if (type == TypeReqTargetRegister)
+      {
+         // Need to move to right register
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, outRegister.regNum, valueTarget.regNum, 0);
+         codeStream.popTarget();
+      }
+      // else we return a value
    }
    else
-      return retSize + addSize + 4;
-}
-
-U32 AssignExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = expr->compile(codeStream, ip, subType);
-   if(arrayIndex)
    {
-      if(subType == TypeReqString)
-         codeStream[ip++] = OP_ADVANCE_STR;
-
-      codeStream[ip++] = OP_LOADIMMED_IDENT;
-      STEtoCode(varName, ip, codeStream);
-      ip += 2;
-      codeStream[ip++] = OP_ADVANCE_STR;
-      ip = arrayIndex->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_REWIND_STR;
-      codeStream[ip++] = OP_SETCURVAR_ARRAY_CREATE;
-      if(subType == TypeReqString)
-         codeStream[ip++] = OP_TERMINATE_REWIND_STR;
+      // Normal handler
+      // We either store to the target register or the variable register
+      CodeStream::RegisterTarget registerTarget = (type == TypeReqTargetRegister) ? outRegister : codeStream.pushTarget(variableRegister);
+      codeStream.pushTargetReference(registerTarget);
+      ip = expr->compile(codeStream, ip, TypeReqTargetRegister); // everything goes into target
+      
+      // Assign global
+      if (variableRegister == -1)
+      {
+         // global var
+         Compiler::CompilerConstantRef varNameIdx = codeStream.getConstantsTable()->addString(varName);
+         codeStream.emitOpcodeABCRef(Compiler::OP_SETVAR, 0, varNameIdx, registerTarget);
+      }
+      
+      if (type == TypeReqNone || type == TypeReqTargetRegister)
+      {
+         // Don't need outRegister anymore
+         codeStream.popTarget();
+      }
    }
-   else
-   {
-      codeStream[ip++] = OP_SETCURVAR_CREATE;
-      STEtoCode(varName, ip, codeStream);
-      ip += 2;
-   }
-   switch(subType)
-   {
-   case TypeReqString:
-      codeStream[ip++] = OP_SAVEVAR_STR;
-      break;
-   case TypeReqUInt:
-      codeStream[ip++] = OP_SAVEVAR_UINT;
-      break;
-   case TypeReqFloat:
-      codeStream[ip++] = OP_SAVEVAR_FLT;
-      break;
-    default:
-       break;
-   }
-   if(type != subType)
-      codeStream[ip++] = conversionOp(subType, type);
-   return ip;
+   
+   return codeStream.tell();
 }
 
 TypeReq AssignExprNode::getPreferredType()
 {
-   return expr->getPreferredType();
+    return expr->getPreferredType();
 }
 
 //------------------------------------------------------------
 
 static void getAssignOpTypeOp(S32 op, TypeReq &type, U32 &operand)
 {
-   switch(op)
-   {
-   case '+':
-      type = TypeReqFloat;
-      operand = OP_ADD;
-      break;
-   case '-':
-      type = TypeReqFloat;
-      operand = OP_SUB;
-      break;
-   case '*':
-      type = TypeReqFloat;
-      operand = OP_MUL;
-      break;
-   case '/':
-      type = TypeReqFloat;
-      operand = OP_DIV;
-      break;
-   case '%':
-      type = TypeReqUInt;
-      operand = OP_MOD;
-      break;
-   case '&':
-      type = TypeReqUInt;
-      operand = OP_BITAND;
-      break;
-   case '^':
-      type = TypeReqUInt;
-      operand = OP_XOR;
-      break;
-   case '|':
-      type = TypeReqUInt;
-      operand = OP_BITOR;
-      break;
-   case opSHL:
-      type = TypeReqUInt;
-      operand = OP_SHL;
-      break;
-   case opSHR:
-      type = TypeReqUInt;
-      operand = OP_SHR;
-      break;
-   }   
+    switch(op)
+    {
+        case '+':
+            type = TypeReqFloat;
+            operand = Compiler::OP_ADD;
+            break;
+        case '-':
+            type = TypeReqFloat;
+            operand = Compiler::OP_SUB;
+            break;
+        case '*':
+            type = TypeReqFloat;
+            operand = Compiler::OP_MUL;
+            break;
+        case '/':
+            type = TypeReqFloat;
+            operand = Compiler::OP_DIV;
+            break;
+        case '%':
+            type = TypeReqUInt;
+            operand = Compiler::OP_MOD;
+            break;
+        case '&':
+            type = TypeReqUInt;
+            operand = Compiler::OP_BITAND;
+            break;
+        case '^':
+            type = TypeReqUInt;
+            operand = Compiler::OP_XOR;
+            break;
+        case '|':
+            type = TypeReqUInt;
+            operand = Compiler::OP_BITOR;
+            break;
+        case opSHL:
+            type = TypeReqUInt;
+            operand = Compiler::OP_SHL;
+            break;
+        case opSHR:
+            type = TypeReqUInt;
+            operand = Compiler::OP_SHR;
+            break;
+    }
 }
-
-U32 AssignOpExprNode::precompile(TypeReq type)
+U32 AssignOpExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // goes like this...
-   // eval expr as float or int
-   // if there's an arrayIndex
-
-   // OP_LOADIMMED_IDENT
-   // varName
-   // OP_ADVANCE_STR
-   // eval arrayIndex stringwise
-   // OP_REWIND_STR
-   // OP_SETCURVAR_ARRAY_CREATE
-
-   // else
-   // OP_SETCURVAR_CREATE
-   // varName
-
-   // OP_LOADVAR_FLT or UINT
-   // operand
-   // OP_SAVEVAR_FLT or UINT
-
-   // conversion OP if necessary.
    getAssignOpTypeOp(op, subType, operand);
-   precompileIdent(varName);
-   U32 size = expr->precompile(subType);
-   if(type != subType)
-      size++;
-   if(!arrayIndex)
-      return size + 6;
+   
+   S32 variableRegister = -1;
+   subType = expr->getPreferredType();
+   if(subType == TypeReqNone)
+      subType = type;
+   if(subType == TypeReqNone)
+   {
+      subType = TypeReqVar;
+   }
+   
+   CodeStream::RegisterTarget outRegister;
+ 
+   if (varName[0] != '$')
+   {
+      variableRegister = codeStream.getLocalVariable(varName);
+      
+      if (variableRegister == -1)
+      {
+         AssertFatal(false, "Local variable not registered");
+      }
+   }
+   
+   // We either store to a target or emit it.
+   if (type == TypeReqTargetRegister)
+   {
+      outRegister = codeStream.topTarget();
+   }
+   
+   // Handle array indexing
+   if (arrayIndex)
+   {
+      // For an array we need to do the following:
+      // - If it's a global variable, grab it to a temp register, setting it as an array
+      // - If it's a local variable, create a temp register
+      // - Evaluate expression into temp register
+      // - Use OP_SETFIELDA on the temp register
+      // object(a).slot(b).array(c+1)=value(c)
+      
+      Compiler::CompilerConstantRef nullRef = codeStream.getConstantsTable()->addNull();
+      CodeStream::RegisterTarget getTarget;
+      CodeStream::RegisterTarget valueTarget;
+      CodeStream::RegisterTarget getArrayTarget; // actually used
+      
+      valueTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      getTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      getArrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(getArrayTarget);
+      ip = arrayIndex->compile(codeStream, ip, TypeReqTargetRegister);
+      
+      if (variableRegister == -1)
+      {
+         // global var
+         Compiler::CompilerConstantRef varNameIdx = codeStream.getConstantsTable()->addString(varName);
+         codeStream.emitOpcodeABCRef(Compiler::OP_LOADVAR, getTarget.regNum, varNameIdx, CodeStream::RegisterTarget(0));
+      }
+      else
+      {
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, getTarget.regNum, variableRegister, 0);
+      }
+      
+      // Stack should now be (value) TARGET ARRAY_INDEX, so grab field
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELDA, valueTarget.regNum, getTarget, nullRef);
+      
+      // Grab the field value. We'll perform a temp calc on the end
+      ip = expr->compile(codeStream, ip, TypeReqVar);
+      CodeStream::RegisterTarget tmpCalc = codeStream.popTarget();
+      codeStream.emitOpcodeABCRef(operand, valueTarget.regNum, valueTarget, tmpCalc);
+      
+      // Move stack so we're like VALUE ARRAY_INDEX
+      tmpCalc = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.emitOpcodeABC(Compiler::OP_MOVE, tmpCalc.regNum, getTarget.regNum, 0); // 13 = tmp
+      codeStream.emitOpcodeABC(Compiler::OP_MOVE, getTarget.regNum, getArrayTarget.regNum, 0); // 11 = getarray(12)
+      
+      // Store result back in field. We'll
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELDA, tmpCalc.regNum, nullRef, valueTarget.regNum);
+      
+      codeStream.popTarget(); // tmpCalc
+      codeStream.popTarget(); // getArrayTarget
+      codeStream.popTarget(); // getTarget
+      
+      if (type == TypeReqNone)
+      {
+         // Don't need valueTarget anymore
+         codeStream.popTarget();
+      }
+      else if (type == TypeReqTargetRegister)
+      {
+         // Need to move to right register
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, outRegister.regNum, valueTarget.regNum, 0);
+         codeStream.popTarget();
+      }
+      // else we return a value
+   }
    else
    {
-      size += arrayIndex->precompile(TypeReqString);
-      return size + 9;
+      // Normal handler
+      CodeStream::RegisterTarget getTarget;
+      CodeStream::RegisterTarget setTarget;
+      Compiler::CompilerConstantRef varNameIdx;
+      
+      if (variableRegister == -1)
+      {
+         // global var
+         if (type == TypeReqTargetRegister)
+         {
+            getTarget = setTarget = outRegister;
+         }
+         else
+         {
+            getTarget = setTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+         }
+         varNameIdx = codeStream.getConstantsTable()->addString(varName);
+         codeStream.emitOpcodeABCRef(Compiler::OP_LOADVAR, getTarget.regNum, varNameIdx, CodeStream::RegisterTarget(0));
+      }
+      else
+      {
+         getTarget = setTarget = CodeStream::RegisterTarget(variableRegister);
+      }
+      
+      // Perform calc
+      ip = expr->compile(codeStream, ip, TypeReqVar);
+      CodeStream::RegisterTarget tmpCalc = codeStream.popTarget();
+      codeStream.emitOpcodeABCRef(operand, setTarget.regNum, getTarget, tmpCalc);
+      
+      // Assign global
+      if (variableRegister == -1)
+      {
+         // global var
+         codeStream.emitOpcodeABCRef(Compiler::OP_SETVAR, 0, varNameIdx, setTarget);
+         
+         if (type == TypeReqNone)
+         {
+            codeStream.popTarget(); // temp reg no longer needed
+         }
+      }
+      else
+      {
+         if (type == TypeReqTargetRegister)
+         {
+            // Need to copy to the target
+            codeStream.emitOpcodeABC(Compiler::OP_MOVE, outRegister.regNum, setTarget.regNum, 0);
+         }
+      }
    }
-}
-
-U32 AssignOpExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = expr->compile(codeStream, ip, subType);
-   if(!arrayIndex)
-   {
-      codeStream[ip++] = OP_SETCURVAR_CREATE;
-      STEtoCode(varName, ip, codeStream);
-      ip += 2;
-   }
-   else
-   {
-      codeStream[ip++] = OP_LOADIMMED_IDENT;
-      STEtoCode(varName, ip, codeStream);
-      ip += 2;
-      codeStream[ip++] = OP_ADVANCE_STR;
-      ip = arrayIndex->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_REWIND_STR;
-      codeStream[ip++] = OP_SETCURVAR_ARRAY_CREATE;
-   }
-   codeStream[ip++] = (subType == TypeReqFloat) ? OP_LOADVAR_FLT : OP_LOADVAR_UINT;
-   codeStream[ip++] = operand;
-   codeStream[ip++] = (subType == TypeReqFloat) ? OP_SAVEVAR_FLT : OP_SAVEVAR_UINT;
-   if(subType != type)
-      codeStream[ip++] = conversionOp(subType, type);
-   return ip;
+   
+   return codeStream.tell();
 }
 
 TypeReq AssignOpExprNode::getPreferredType()
 {
-   getAssignOpTypeOp(op, subType, operand);
-   return subType;
+    getAssignOpTypeOp(op, subType, operand);
+    return subType;
 }
 
 //------------------------------------------------------------
 
-U32 TTagSetStmtNode::precompileStmt(U32 loopCount)
+U32 FuncCallExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   return 0;
-}
-
-U32 TTagSetStmtNode::compileStmt(U32*, U32 ip, U32, U32)
-{
-   return ip;
-}
-
-//------------------------------------------------------------
-
-U32 TTagDerefNode::precompile(TypeReq)
-{
-   return 0;
-}
-
-U32 TTagDerefNode::compile(U32*, U32 ip, TypeReq)
-{
-   return ip;
-}
-
-TypeReq TTagDerefNode::getPreferredType()
-{
-   return TypeReqNone;
-}
-
-//------------------------------------------------------------
-
-U32 TTagExprNode::precompile(TypeReq)
-{
-   return 0;
-}
-
-U32 TTagExprNode::compile(U32*, U32 ip, TypeReq)
-{
-   return ip;
-}
-
-TypeReq TTagExprNode::getPreferredType()
-{
-   return TypeReqNone;
-}
-
-//------------------------------------------------------------
-
-U32 FuncCallExprNode::precompile(TypeReq type)
-{
-   // OP_PUSH_FRAME
-   // arg OP_PUSH arg OP_PUSH arg OP_PUSH
-   // eval all the args, then call the function.
-
-   // OP_CALLFUNC
-   // function
-   // namespace
-   // isDot
-
-   U32 size = 0;
-   if(type != TypeReqString)
-      size++;
-   precompileIdent(funcName);
-   precompileIdent(nameSpace);
-   for(ExprNode *walk = args; walk; walk = (ExprNode *) walk->getNext())
-      size += walk->precompile(TypeReqString) + 1;
-   return size + 7;
-}
-
-U32 FuncCallExprNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   codeStream[ip++] = OP_PUSH_FRAME;
-   for(ExprNode *walk = args; walk; walk = (ExprNode *) walk->getNext())
+    // How this works:
+    // - lookup function with OP_GETFUNC
+    // - OP_CALL(funcStart, params) -> sets returnStart to result
+   
+   
+   // [abc] [a := a(a[...b params])[...c return params]]
+   
+#ifdef DEBUG_COMPILER
+   Con::printf("func[%s]", funcName);
+#endif
+   
+   CodeStream::RegisterTarget targetRegister;
+   if (type == TypeReqTargetRegister)
    {
-      ip = walk->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_PUSH;
+      targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+      Con::printf("FuncCallExprNode direct target == %s", targetRegister.toString());
+#endif
    }
-   if(callType == MethodCall || callType == ParentCall)
-      codeStream[ip++] = OP_CALLFUNC;
-   else
-      codeStream[ip++] = OP_CALLFUNC_RESOLVE;
-
-   STEtoCode(funcName, ip, codeStream);
-   ip += 2;
-   STEtoCode(nameSpace, ip, codeStream);
-   ip += 2;
-   codeStream[ip++] = callType;
-   if(type != TypeReqString)
-      codeStream[ip++] = conversionOp(TypeReqString, type);
-   return ip;
+   
+   ExprNode *funcArgs = args;
+   
+   // First get function
+   {
+      CodeStream::RegisterTarget nsRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
+      CodeStream::RegisterTarget namespaceTarget;
+      Compiler::CompilerConstantRef funcIdx = codeStream.getConstantsTable()->addString(funcName);
+      
+      if (callType == ParentCall)
+      {
+         namespaceTarget = codeStream.getConstantsTable()->addString("$parent");
+      }
+      else if (callType == MethodCall)
+      {
+         ip = args->compile(codeStream, ip, TypeReqVar);
+         namespaceTarget = codeStream.popTarget();
+         funcArgs = static_cast<ExprNode*>(args);
+      }
+      else
+      {
+         namespaceTarget = nameSpace == NULL ? codeStream.getConstantsTable()->addNamespace(StringTable->EmptyString) : codeStream.getConstantsTable()->addNamespace(nameSpace);
+      }
+      
+      // Grab first param: ns entry
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFUNC, nsRegister.regNum, namespaceTarget, funcIdx);
+      
+      // Add on extra params
+      
+      U32 numArgs = 0;
+      for(ExprNode *walk = funcArgs; walk; walk = (ExprNode *) walk->getNext())
+      {
+         ip = walk->compile(codeStream, ip, TypeReqVar);
+         
+         CodeStream::RegisterTarget funcArg = codeStream.popTarget();
+         
+         if (funcArg.constRef.idx >= 0)
+         {
+            // Need to move const -> reg
+            CodeStream::RegisterTarget regArg = codeStream.pushTarget(CodeStream::RegisterTarget());
+            codeStream.emitOpcodeABx(Compiler::OP_LOADK, regArg.regNum, codeStream.emitKonstRef(funcArg.constRef));
+         }
+         else if (funcArg.regNum >= 0)
+         {
+            // We need to move the register to the preallocated register
+            CodeStream::RegisterTarget regArg = codeStream.pushTarget(CodeStream::RegisterTarget());
+            if (funcArg.regNum != regArg.regNum)
+            {
+               codeStream.emitOpcodeABC(Compiler::OP_MOVE, regArg.regNum, funcArg.regNum, 0);
+               
+            }
+         }
+         
+         numArgs++;
+      }
+      
+      // Reset target stack
+      for(ExprNode *walk = funcArgs; walk; walk = (ExprNode *) walk->getNext())
+      {
+         codeStream.popTarget();
+      }
+      
+      codeStream.emitOpcodeABC(Compiler::OP_CALL, nsRegister.regNum, numArgs, type == TypeReqNone ? 0 : 1);
+      
+      if (type == TypeReqNone)
+      {
+         codeStream.popTarget();
+      }
+      else if (type == TypeReqTargetRegister)
+      {
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, targetRegister.regNum, nsRegister.regNum, 0);
+         codeStream.popTarget();
+      }
+   }
+    return codeStream.tell();
 }
 
 TypeReq FuncCallExprNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
+}
+
+
+//------------------------------------------------------------
+
+U32 AssertCallExprNode::compile( CodeStream &codeStream, U32 ip, TypeReq type )
+{
+    CompilerConstantRef messageConstant = codeStream.getConstantsTable()->addString( message, true, false );
+    
+    ip = testExpr->compile( codeStream, ip, TypeReqUInt );
+    CodeStream::RegisterTarget targetExpr = codeStream.popTarget();
+   
+    codeStream.emitOpcodeABCRef(Compiler::OP_ASSERT, targetExpr.regNum, messageConstant, messageConstant);
+    
+    return codeStream.tell();
+}
+
+TypeReq AssertCallExprNode::getPreferredType()
+{
+    return TypeReqNone;
 }
 
 //------------------------------------------------------------
 
-U32 SlotAccessNode::precompile(TypeReq type)
+U32 SlotAccessNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   if(type == TypeReqNone)
-      return 0;
-   U32 size = 0;
-   precompileIdent(slotName);
-   if(arrayExpr)
-   {
-      // eval array
-      // OP_ADVANCE_STR
-      // evaluate object expression sub (OP_SETCURFIELD)
-      // OP_TERMINATE_REWIND_STR
-      // OP_SETCURFIELDARRAY
-      // total add of 4 + array precomp
-      size += 3 + arrayExpr->precompile(TypeReqString);
-   }
-   // eval object expression sub + 3 (op_setCurField + OP_SETCUROBJECT)
-   size += objectExpr->precompile(TypeReqString) + 4;
-
-   // get field in desired type:
-   return size + 1;
-}
-
-U32 SlotAccessNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   if(type == TypeReqNone)
-      return ip;
-
-   if(arrayExpr)
-   {
-      ip = arrayExpr->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_ADVANCE_STR;
-   }
-   ip = objectExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_SETCUROBJECT;
+    if(type == TypeReqNone)
+        return ip;
    
-   codeStream[ip++] = OP_SETCURFIELD;
+   CodeStream::RegisterTarget objectTarget;
+   CodeStream::RegisterTarget arrayTarget;
+   CodeStream::RegisterTarget targetRegister;
    
-   STEtoCode(slotName, ip, codeStream);
-   ip += 2;
-
-   if(arrayExpr)
+   if (type == TypeReqTargetRegister)
    {
-      codeStream[ip++] = OP_TERMINATE_REWIND_STR;
-      codeStream[ip++] = OP_SETCURFIELD_ARRAY;
+      targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+      Con::printf("SlotAcessNode direct target == %s", targetRegister.toString());
+#endif
+   }
+   else
+   {
+      targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
    }
    
-   switch(type)
-   {
-      case TypeReqUInt:
-         codeStream[ip++] = OP_LOADFIELD_UINT;
-         break;
-      case TypeReqFloat:
-         codeStream[ip++] = OP_LOADFIELD_FLT;
-         break;
-      case TypeReqString:
-         codeStream[ip++] = OP_LOADFIELD_STR;
-         break;
-    default:
-       break;
+   /*
+    OBJ_GETFIELD
+    a = object(b).slot(c)
+    OBJ_SETFIELDA
+    a = object(b).slot(c).array(b+1)
+    */
+   
+   objectTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+   codeStream.pushTargetReference(objectTarget);
+   ip = objectExpr->compile(codeStream, ip, TypeReqTargetRegister);
+   if (arrayExpr) {
+      arrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(arrayTarget);
+      ip = arrayExpr->compile(codeStream, ip, TypeReqTargetRegister);
    }
-   return ip;
+   
+   // Grab results from registers
+   objectTarget = codeStream.popTarget();
+   if (arrayExpr) arrayTarget = codeStream.popTarget();
+   CompilerConstantRef slotNameConst = codeStream.getConstantsTable()->addString(slotName);
+   
+   if (arrayExpr)
+   {
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELDA, targetRegister.regNum, objectTarget, slotNameConst);
+   }
+   else
+   {
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELD, targetRegister.regNum, objectTarget, slotNameConst);
+   }
+   
+   int cmpValue = 0;
+   if (type == TypeReqFalseConditional)
+   {
+      cmpValue = 1;
+      type = TypeReqConditional;
+   }
+   
+   if (type == TypeReqConditional)
+   {
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, targetRegister, CodeStream::RegisterTarget(trueConst));
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq SlotAccessNode::getPreferredType()
 {
-   return TypeReqNone;
+    return TypeReqNone;
 }
 
-//////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
 
-U32 InternalSlotAccessNode::precompile(TypeReq type)
+U32 InternalSlotAccessNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   if(type == TypeReqNone)
-      return 0;
-
-   U32 size = 3;
+    if(type == TypeReqNone)
+       return ip;
    
-   // eval object expression sub + 3 (op_setCurField + OP_SETCUROBJECT)
-   size += objectExpr->precompile(TypeReqString);
-   size += slotExpr->precompile(TypeReqString);
-   if(type != TypeReqUInt)
-      size++;
-
-   // get field in desired type:
-   return size;
-}
-
-U32 InternalSlotAccessNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   if(type == TypeReqNone)
-      return ip;
-
-   ip = objectExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_SETCUROBJECT;
-
-   ip = slotExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_SETCUROBJECT_INTERNAL;
-   codeStream[ip++] = recurse;
-
-   if(type != TypeReqUInt)
-      codeStream[ip++] = conversionOp(TypeReqUInt, type);
-   return ip;
+   AssertFatal(type != TypeReqConditional && type != TypeReqFalseConditional, "Unsupported conditional types");
+   
+    CodeStream::RegisterTarget objectTarget;
+    CodeStream::RegisterTarget slotTarget;
+   
+   CodeStream::RegisterTarget targetRegister;
+   if (type == TypeReqTargetRegister)
+   {
+      targetRegister = codeStream.popTarget();
+#ifdef DEBUG_COMPILER
+      Con::printf("InternalSlotAccessNode direct target == %s", targetRegister.toString());
+#endif
+   }
+   else
+   {
+      targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
+   }
+   
+    // grabs slotExpr from objectExpr
+    ip = objectExpr->compile(codeStream, ip, TypeReqString);
+    ip = slotExpr->compile(codeStream, ip, TypeReqString);
+   
+    slotTarget = codeStream.popTarget();
+    objectTarget = codeStream.popTarget();
+   
+    codeStream.emitOpcodeABCRef(recurse ? Compiler::OP_GETINTERNAL_N : Compiler::OP_GETINTERNAL, targetRegister.regNum, objectTarget, slotTarget);
+   
+   return codeStream.tell();
 }
 
 TypeReq InternalSlotAccessNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
-//////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
 
-//------------------------------------------------------------
-
-U32 SlotAssignNode::precompile(TypeReq type)
+U32 SlotAssignNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // first eval the expression TypeReqString
-
-   // if it's an array:
-
-   // if OP_ADVANCE_STR 1
-   // eval array
-
-   // OP_ADVANCE_STR 1
-   // evaluate object expr
-   // OP_SETCUROBJECT 1
-   // OP_SETCURFIELD 1
-   // fieldName 1
-   // OP_TERMINATE_REWIND_STR 1
-
-   // OP_SETCURFIELDARRAY 1
-   // OP_TERMINATE_REWIND_STR 1
-
-   // else
-   // OP_ADVANCE_STR
-   // evaluate object expr
-   // OP_SETCUROBJECT
-   // OP_SETCURFIELD
-   // fieldName
-   // OP_TERMINATE_REWIND_STR
-
-   // OP_SAVEFIELD
-   // convert to return type if necessary.
-
-   U32 size = 0;
-   if(type != TypeReqString)
-      size++;
-
-   precompileIdent(slotName);
-
-   size += valueExpr->precompile(TypeReqString);
-
-   if(objectExpr)
-      size += objectExpr->precompile(TypeReqString) + 6;
-   else
-      size += 6;
-
-   if(arrayExpr)
-      size += arrayExpr->precompile(TypeReqString) + 3;
-   return size + 1;
-}
-
-U32 SlotAssignNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = valueExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_ADVANCE_STR;
-   if(arrayExpr)
+   CodeStream::RegisterTarget objectTarget;
+   CodeStream::RegisterTarget arrayTarget;
+   CodeStream::RegisterTarget valueTarget;
+   CodeStream::RegisterTarget targetRegister;
+   
+   //
+   if (type != TypeReqTargetRegister)
    {
-      ip = arrayExpr->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_ADVANCE_STR;
-   }
-   if(objectExpr)
-   {
-      ip = objectExpr->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_SETCUROBJECT;
+      AssertFatal(objectExpr != NULL, "No object specified for target");
    }
    else
-      codeStream[ip++] = OP_SETCUROBJECT_NEW;
-   codeStream[ip++] = OP_SETCURFIELD;
-   STEtoCode(slotName, ip, codeStream);
-   ip += 2;
-   if(arrayExpr)
    {
-      codeStream[ip++] = OP_TERMINATE_REWIND_STR;
-      codeStream[ip++] = OP_SETCURFIELD_ARRAY;
+      targetRegister = codeStream.topTarget();
    }
-   codeStream[ip++] = OP_TERMINATE_REWIND_STR;
-   codeStream[ip++] = OP_SAVEFIELD_STR;
-   if(type != TypeReqString)
-      codeStream[ip++] = conversionOp(TypeReqString, type);
-   return ip;
+   
+   if (objectExpr == NULL) objectTarget = codeStream.topTarget(); // if objectExpr is NULL
+   
+   /*
+    
+    OBJ_SETFIELD
+    object(a).slot(b) = value(c)
+    OBJ_SETFIELDA
+    object(a).slot(b).array(c+1)=value(c)
+    
+    */
+   CompilerConstantRef slotNameConst = codeStream.getConstantsTable()->addString(slotName);
+   
+   if (objectExpr)
+   {
+      ip = objectExpr->compile(codeStream, ip, TypeReqVar); // obj prefix
+      objectTarget = codeStream.popTarget(); // will usually be input register if objectExpr is null
+   }
+   
+   ip = valueExpr->compile(codeStream, ip, TypeReqVar); // slot value
+   valueTarget = codeStream.topTarget();
+   
+   if (arrayExpr)
+   {
+      ip = arrayExpr->compile(codeStream, ip, TypeReqVar); // []
+      arrayTarget = codeStream.popTarget();
+      
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELDA, objectTarget.regNum, slotNameConst, valueTarget);
+   }
+   else
+   {
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELD, objectTarget.regNum, slotNameConst, valueTarget);
+   }
+   
+   if (objectExpr)
+   {
+      if (type == TypeReqNone)
+      {
+         codeStream.popTarget();
+      }
+      else if (type == TypeReqTargetRegister)
+      {
+         // Need to move to right register
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, targetRegister.regNum, valueTarget.regNum, 0);
+         codeStream.popTarget(); // value
+         codeStream.popTarget(); // object
+      }
+      // else we'll return a value
+   }
+   else
+   {
+      AssertFatal(type == TypeReqTargetRegister, "Invalid state");
+      codeStream.popTarget(); // value
+      codeStream.popTarget(); // object
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq SlotAssignNode::getPreferredType()
 {
-   return TypeReqString;
+    return TypeReqString;
 }
 
 //------------------------------------------------------------
 
-U32 SlotAssignOpNode::precompile(TypeReq type)
+U32 SlotAssignOpNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   // first eval the expression as its type
-
-   // if it's an array:
-   // eval array
-   // OP_ADVANCE_STR
-   // evaluate object expr
-   // OP_SETCUROBJECT
-   // OP_SETCURFIELD
-   // fieldName
-   // OP_TERMINATE_REWIND_STR
-   // OP_SETCURFIELDARRAY
-
-   // else
-   // evaluate object expr
-   // OP_SETCUROBJECT
-   // OP_SETCURFIELD
-   // fieldName
-
-   // OP_LOADFIELD of appropriate type
-   // operand
-   // OP_SAVEFIELD of appropriate type
-   // convert to return type if necessary.
-
-   getAssignOpTypeOp(op, subType, operand);
-   precompileIdent(slotName);
-   U32 size = valueExpr->precompile(subType);
-   if(type != subType)
-      size++;
-   if(arrayExpr)
-      return size + 10 + arrayExpr->precompile(TypeReqString) + objectExpr->precompile(TypeReqString);
-   else
-      return size + 7 + objectExpr->precompile(TypeReqString);
-}
-
-U32 SlotAssignOpNode::compile(U32 *codeStream, U32 ip, TypeReq type)
-{
-   ip = valueExpr->compile(codeStream, ip, subType);
-   if(arrayExpr)
-   {
-      ip = arrayExpr->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_ADVANCE_STR;
-   }
-   ip = objectExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_SETCUROBJECT;
-   codeStream[ip++] = OP_SETCURFIELD;
-   STEtoCode(slotName, ip, codeStream);
-   ip += 2;
-   if(arrayExpr)
-   {
-      codeStream[ip++] = OP_TERMINATE_REWIND_STR;
-      codeStream[ip++] = OP_SETCURFIELD_ARRAY;
-   }
-   codeStream[ip++] = (subType == TypeReqFloat) ? OP_LOADFIELD_FLT : OP_LOADFIELD_UINT;
-   codeStream[ip++] = operand;
-   codeStream[ip++] = (subType == TypeReqFloat) ? OP_SAVEFIELD_FLT : OP_SAVEFIELD_UINT;
-   if(subType != type)
-      codeStream[ip++] = conversionOp(subType, type);
-   return ip;
+    // first eval the expression as its type
+    
+    // if it's an array:
+    // eval array
+    // OP_ADVANCE_STR
+    // evaluate object expr
+    // OP_SETCUROBJECT
+    // OP_SETCURFIELD
+    // fieldName
+    // OP_TERMINATE_REWIND_STR
+    // OP_SETCURFIELDARRAY
+    
+    // else
+    // evaluate object expr
+    // OP_SETCUROBJECT
+    // OP_SETCURFIELD
+    // fieldName
+    
+    // OP_LOADFIELD of appropriate type
+    // operand
+    // OP_SAVEFIELD of appropriate type
+    // convert to return type if necessary.
+    
+    getAssignOpTypeOp(op, subType, operand);
+    /* TODO FIX
+    ip = valueExpr->compile(codeStream, ip, subType);
+    if(arrayExpr)
+    {
+        ip = arrayExpr->compile(codeStream, ip, TypeReqString);
+        codeStream.emit(OP_ADVANCE_STR);
+    }
+    ip = objectExpr->compile(codeStream, ip, TypeReqString);
+    codeStream.emit(OP_SETCUROBJECT);
+    codeStream.emit(OP_SETCURFIELD);
+    codeStream.emitSTE(slotName);
+    
+    if(arrayExpr)
+    {
+        codeStream.emit(OP_TERMINATE_REWIND_STR);
+        codeStream.emit(OP_SETCURFIELD_ARRAY);
+    }
+    codeStream.emit((subType == TypeReqFloat) ? OP_LOADFIELD_FLT : OP_LOADFIELD_UINT);
+    codeStream.emit(operand);
+    codeStream.emit((subType == TypeReqFloat) ? OP_SAVEFIELD_FLT : OP_SAVEFIELD_UINT);
+    if(subType != type)
+        codeStream.emit(conversionOp(subType, type));*/
+   
+    return codeStream.tell();
 }
 
 TypeReq SlotAssignOpNode::getPreferredType()
 {
-   getAssignOpTypeOp(op, subType, operand);
-   return subType;
+    getAssignOpTypeOp(op, subType, operand);
+    return subType;
 }
 
 //------------------------------------------------------------
 
-U32 ObjectDeclNode::precompileSubObject(bool)
+U32 ObjectDeclNode::compileSubObject(CodeStream &codeStream, U32 ip, U32 targetRegisterId, S32 parentObjectId)
 {
-   // goes
-
-   // OP_PUSHFRAME 1
-   // name expr
-   // OP_PUSH 1
-   // args... PUSH
-   // OP_CREATE_OBJECT 1
-   // className 1
-   // datablock? 1
-   // fail point 1
-
-   // for each field, eval
-   // OP_ADD_OBJECT (to UINT[0]) 1
-   // root? 1
-
-   // add all the sub objects.
-   // OP_END_OBJECT 1
-   // root? 1
-
-   U32 argSize = 0;
-   precompileIdent(parentObject);
-   for(ExprNode *exprWalk = argList; exprWalk; exprWalk = (ExprNode *) exprWalk->getNext())
-      argSize += exprWalk->precompile(TypeReqString) + 1;
-   argSize += classNameExpr->precompile(TypeReqString) + 1;
-
-   U32 nameSize = objectNameExpr->precompile(TypeReqString) + 3; // 2
-
-   U32 slotSize = 0;
-   for(SlotAssignNode *slotWalk = slotDecls; slotWalk; slotWalk = (SlotAssignNode *) slotWalk->getNext())
-      slotSize += slotWalk->precompile(TypeReqNone);
-
-   // OP_ADD_OBJECT
-   U32 subObjSize = 0;
-   for(ObjectDeclNode *objectWalk = subObjects; objectWalk; objectWalk = (ObjectDeclNode *) objectWalk->getNext())
-      subObjSize += objectWalk->precompileSubObject(false);
-
-   failOffset = 10 + nameSize + argSize + slotSize + subObjSize;
-   return failOffset;
-}
-
-U32 ObjectDeclNode::precompile(TypeReq type)
-{
-   // root object decl does:
-
-   // push 0 onto the UINT stack OP_LOADIMMED_UINT
-   // precompiles the subObject(true)
-   // UINT stack now has object id
-   // type conv to type
-
-   U32 ret = 2 + precompileSubObject(true);
-   if(type != TypeReqUInt)
-      return ret + 1;
-   return ret;
-}
-
-U32 ObjectDeclNode::compileSubObject(U32 *codeStream, U32 ip, bool root)
-{
-   U32 start = ip;
-   codeStream[ip++] = OP_PUSH_FRAME;
-   ip = classNameExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_PUSH;
-
-   ip = objectNameExpr->compile(codeStream, ip, TypeReqString);
-   codeStream[ip++] = OP_PUSH;
+   SET_VERIFY_TARGET_REG_SIZE()
+   
+   // target is either the destination object or the destination register
+   CodeStream::RegisterTarget targetRegister = CodeStream::RegisterTarget(targetRegisterId);
+   CodeStream::RegisterTarget parentRegister = CodeStream::RegisterTarget(parentObjectId);
+   
+   if (parentObjectId < 0)
+   {
+      parentRegister = codeStream.getConstantsTable()->addNull();
+   }
+   
+   // Get constructor args
+   CodeStream::RegisterTarget classNameTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+   CodeStream::RegisterTarget objectNameTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+   U32 argCount = 0;
+   
+   codeStream.pushTargetReference(classNameTarget);
+   classNameExpr->compile(codeStream, ip, TypeReqTargetRegister);
+   
+   codeStream.pushTargetReference(objectNameTarget);
+   objectNameExpr->compile(codeStream, ip, TypeReqTargetRegister);
+   
    for(ExprNode *exprWalk = argList; exprWalk; exprWalk = (ExprNode *) exprWalk->getNext())
    {
-      ip = exprWalk->compile(codeStream, ip, TypeReqString);
-      codeStream[ip++] = OP_PUSH;
+      CodeStream::RegisterTarget arg = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(arg);
+      ip = exprWalk->compile(codeStream, ip, TypeReqTargetRegister);
+      argCount++;
    }
-   codeStream[ip++] = OP_CREATE_OBJECT;
-   STEtoCode(parentObject, ip, codeStream);
-   ip += 2;
-   codeStream[ip++] = structDecl;
-   codeStream[ip++] = isClassNameInternal;
-   codeStream[ip++] = isMessage;
-   codeStream[ip++] = start + failOffset;
+   
+   U32 failJmpIp;
+   U32 flags = 0;
+   if (isSingleton) flags |= Compiler::CREATEOBJECT_ISSINGLETON;
+   if (isDatablock) flags |= Compiler::CREATEOBJECT_ISDATABLOCK;
+   if (isClassNameInternal) flags |= Compiler::CREATEOBJECT_ISINTERNAL;
+   U32 flagArgs = argCount | (flags << 8);
+   
+   codeStream.emitOpcodeABC(Compiler::OP_CREATE_OBJECT, targetRegister.regNum, classNameTarget.regNum, flagArgs);
+   failJmpIp = codeStream.emitOpcodeABx(Compiler::OP_JMP, 0, 0);
+   
+   // pop constructor args so we can reuse registers
+   for (U32 i=0; i<argCount; i++)
+   {
+      codeStream.popTarget();
+   }
+   codeStream.popTarget(); // object name
+   codeStream.popTarget(); // class name
+   
+   // Copy parent fields
+   if (parentObject && parentObject != StringTable->EmptyString)
+   {
+      CompilerConstantRef parentRefKonst = codeStream.getConstantsTable()->addString(parentObject);
+      codeStream.emitOpcodeABC(Compiler::OP_COPYFIELDS, targetRegister.regNum, codeStream.emitKonstRef(parentRefKonst), 0);
+   }
+   
+   // Now emit all the slot assignments
    for(SlotAssignNode *slotWalk = slotDecls; slotWalk; slotWalk = (SlotAssignNode *) slotWalk->getNext())
-      ip = slotWalk->compile(codeStream, ip, TypeReqNone);
-   codeStream[ip++] = OP_ADD_OBJECT;
-   codeStream[ip++] = root;
+   {
+      codeStream.pushTargetReference(targetRegister);
+      ip = slotWalk->compile(codeStream, ip, TypeReqTargetRegister);
+   }
+   
+   // Now we can register the object and add it to the right location
+   // registerObject(A), B.addObject(A), [flags(c)]
+   codeStream.emitOpcodeABC(Compiler::OP_FINISH_OBJECT, targetRegister.regNum, codeStream.emitTargetRef(parentRegister), 0);
+   
+   // Emit sub objects
    for(ObjectDeclNode *objectWalk = subObjects; objectWalk; objectWalk = (ObjectDeclNode *) objectWalk->getNext())
-      ip = objectWalk->compileSubObject(codeStream, ip, false);
-   codeStream[ip++] = OP_END_OBJECT;
-   codeStream[ip++] = root || structDecl;
-   return ip;
+   {
+      CodeStream::RegisterTarget subObjectRegister = codeStream.pushTarget(CodeStream::RegisterTarget());
+      ip = objectWalk->compileSubObject(codeStream, ip, subObjectRegister.regNum, targetRegisterId);
+      codeStream.popTarget();
+   }
+   
+   // Patch fail point
+   codeStream.patch(failJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(codeStream.tell() - failJmpIp - 1)));
+   
+   VERIFY_TARGET_REG_SIZE(0)
+   
+   // At the end we should just have a new object reference
+   return codeStream.tell();
 }
 
-U32 ObjectDeclNode::compile(U32 *codeStream, U32 ip, TypeReq type)
+U32 ObjectDeclNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-   codeStream[ip++] = OP_LOADIMMED_UINT;
-   codeStream[ip++] = 0;
-   ip = compileSubObject(codeStream, ip, true);
-   if(type != TypeReqUInt)
-      codeStream[ip++] = conversionOp(TypeReqUInt, type);
-   return ip;
-}   
+    AssertFatal(type != TypeReqConditional && type != TypeReqFalseConditional, "Unsupported conditional types");
+   
+    CodeStream::RegisterTarget objectTarget;
+    if (type != TypeReqTargetRegister)
+    {
+       objectTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+    }
+    else
+    {
+       objectTarget = codeStream.topTarget();
+    }
+   
+    ip = compileSubObject(codeStream, ip, objectTarget.regNum, -1);
+   
+    if (type == TypeReqTargetRegister || type == TypeReqNone)
+    {
+       codeStream.popTarget();
+    }
+    return codeStream.tell();
+}
+
 TypeReq ObjectDeclNode::getPreferredType()
 {
-   return TypeReqUInt;
+    return TypeReqUInt;
 }
 
 //------------------------------------------------------------
 
-U32 FunctionDeclStmtNode::precompileStmt(U32)
+U32 FunctionDeclStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
 {
-   // OP_FUNC_DECL
-   // func name
-   // namespace
-   // package
-   // func end ip
-   // argc
-   // ident array[argc]
-   // code
-   // OP_RETURN
-   setCurrentStringTable(&getFunctionStringTable());
-   setCurrentFloatTable(&getFunctionFloatTable());
-
-   argc = 0;
-   for(VarNode *walk = args; walk; walk = (VarNode *)((StmtNode*)walk)->getNext())
-      argc++;
+    // OP_FUNC_DECL
+    // func name
+    // namespace
+    // package
+    // hasBody?
+    // func end ip
+    // argc
+    // ident array[argc]
+    // code
+    // OP_RETURN_VOID
    
-   CodeBlock::smInFunction = true;
+    // Defined with
+    // OP_BINDNSFUNC <ns> <pkg> <name> <entry idx>
    
-   precompileIdent(fnName);
-   precompileIdent(nameSpace);
-   precompileIdent(package);
+   if (!CodeBlock::smFunctionListHead)
+   {
+      CodeBlock::smFunctionListHead = this;
+   }
    
-   U32 subSize = precompileBlock(stmts, 0);
+   if (CodeBlock::smCurrentFunctionList)
+   {
+      FunctionDeclStmtNode* head = CodeBlock::smCurrentFunctionList;
+      head->nextFunction = this;
+   }
    
-   #ifdef TORQUE_EXTRA_BREAKLINES      
-      addBreakCount();   
-   #endif
-
-   CodeBlock::smInFunction = false;
-
-   setCurrentStringTable(&getGlobalStringTable());
-   setCurrentFloatTable(&getGlobalFloatTable());
-
-   endOffset = (argc*2) + subSize + 11;
-   return endOffset;
+   CodeBlock::smCurrentFunctionList = this;
+   nextFunction = NULL;
+   
+   CodeBlockFunction* func = new CodeBlockFunction;
+   func->name = fnName;
+   CodeBlock::smCurrentCodeBlock->functions.push_back(func);
+   func->stmt = this;
+   
+   // Add a declare instruction so things are linked in at the right time
+   
+   // Emit code to assign the function to the namespace
+   
+   Compiler::CompilerConstantRef nsIdx = nameSpace == NULL ? codeStream.getConstantsTable()->addNull() : codeStream.getConstantsTable()->addString(nameSpace);
+   Compiler::CompilerConstantRef pkgIdx = package == NULL ? codeStream.getConstantsTable()->addNull() : codeStream.getConstantsTable()->addString(package);
+   Compiler::CompilerConstantRef funcIdx = codeStream.getConstantsTable()->addString(fnName);
+   
+   CodeStream::RegisterTarget r1 = codeStream.pushTarget(CodeStream::RegisterTarget());
+   CodeStream::RegisterTarget r2 = codeStream.pushTarget(CodeStream::RegisterTarget());
+   CodeStream::RegisterTarget r3 = codeStream.pushTarget(CodeStream::RegisterTarget());
+   
+   codeStream.emitOpcodeABx(Compiler::OP_LOADK, r1.regNum, codeStream.emitKonstRef(pkgIdx));
+   codeStream.emitOpcodeABx(Compiler::OP_LOADK, r2.regNum, codeStream.emitKonstRef(nsIdx));
+   codeStream.emitOpcodeABx(Compiler::OP_LOADK, r3.regNum, codeStream.emitKonstRef(funcIdx));
+   
+   codeStream.emitOpcodeABC(Compiler::OP_BINDNSFUNC, r1.regNum, CodeBlock::smCurrentCodeBlock->functions.size()-1, 0);
+   
+    return ip;
 }
 
-U32 FunctionDeclStmtNode::compileStmt(U32 *codeStream, U32 ip, U32, U32)
+U32 FunctionDeclStmtNode::compileFunction(CodeStream& codeStream, U32 ip)
 {
-   U32 start = ip;
-   codeStream[ip++] = OP_FUNC_DECL;
-   STEtoCode(fnName, ip, codeStream);
-   ip += 2;
-   STEtoCode(nameSpace, ip, codeStream);
-   ip += 2;
-   STEtoCode(package, ip, codeStream);
-   ip += 2;
-   codeStream[ip++] = bool(stmts != NULL);
-   codeStream[ip++] = start + endOffset;
-   codeStream[ip++] = argc;
+   // Begin code
+   codeStream.pushFunctionState();
+   
+   U32 i=0;
+   CodeBlock::smCurrentFunction->numArgs = 0;
+   
+   // Count args
    for(VarNode *walk = args; walk; walk = (VarNode *)((StmtNode*)walk)->getNext())
    {
-      STEtoCode(walk->varName, ip, codeStream);
-      ip += 2;
+      CodeBlock::smCurrentFunction->numArgs++;
    }
+   
+   // Add actual local variables
+   Vector<StringTableEntry> walkVarList;
+   for (ReferencedVariableNode* walk = localVars; walk; walk = walk->next)
+   {
+      walkVarList.push_back(walk->varName);
+      //codeStream.addLocalVariable(walk->varName);
+   }
+   
+   for (S32 i=walkVarList.size()-1; i>=0; i--)
+   {
+      codeStream.addLocalVariable(walkVarList[i]);
+      
+   }
+   
    CodeBlock::smInFunction = true;
-   ip = compileBlock(stmts, codeStream, ip, 0, 0);
-
-   #ifdef TORQUE_EXTRA_BREAKLINES      
-      addBreakLine(ip);   
-   #endif
-
+   ip = compileBlock(stmts, codeStream, ip);
+   
+   // Add break so breakpoint can be set at closing brace or
+   // in empty function.
+   addBreakLine(codeStream);
+   
    CodeBlock::smInFunction = false;
-   codeStream[ip++] = OP_RETURN;
-   return ip;
+   codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
+   
+   CodeBlock::smCurrentFunction->maxStack = codeStream.getMaxStack();
+   
+   for (U32 i=codeStream.mCurrentFunctionState.startVar; i<codeStream.mVarInfo.size(); i++)
+   {
+      CodeBlockFunction::Symbol sym;
+      sym.registerIdx = codeStream.mVarInfo[i].index;
+      if (codeStream.mVarInfo[i].name)
+      {
+         sym.varName = codeStream.mVarInfo[i].name;
+      }
+      else
+      {
+         sym.varName = NULL;
+         continue;
+      }
+      CodeBlock::smCurrentFunction->vars.push_back(sym);
+   }
+   
+   CodeBlock::smCurrentFunction = CodeBlock::smCurrentCodeblockFunction;
+   codeStream.popFunctionState();
+   
+   return codeStream.tell();
 }
+
+void FunctionDeclStmtNode::referenceLocalVariable(StringTableEntry name)
+{
+   // Don't use locals for global vars
+   if (name && name[0] == '$')
+      return;
+   
+   //Con::printf("  referenceLocalVariable(%s)", name);
+   
+   // Check if it already exists
+   for (ReferencedVariableNode* walk = gCurrentLocalVariables; walk; walk = walk->next)
+   {
+      if (walk->varName == name)
+         return;
+   }
+   
+   ReferencedVariableNode* node = (ReferencedVariableNode*)consoleAlloc(sizeof(ReferencedVariableNode));
+   node->next = NULL;
+   node->varName = name;
+   
+   if (!gCurrentLocalVariables)
+   {
+      gCurrentLocalVariables = node;
+   }
+   else
+   {
+      node->next = gCurrentLocalVariables;
+      gCurrentLocalVariables = node;
+   }
+}
+
+void FunctionDeclStmtNode::pushVariableScope()
+{
+#ifdef DEBUG_COMPILER
+   Con::printf("pushVariableScope");
+#endif
+   
+   if (gLocalVariableStackIdx >= 15)
+   {
+      Con::errorf("Too many nested local variable scopes!");
+      gLocalVariableStackIdx = 14;
+   }
+   gLocalVariableStack[gLocalVariableStackIdx++] = gCurrentLocalVariables;
+   gCurrentLocalVariables = NULL;
+}
+
+void FunctionDeclStmtNode::popVariableScope()
+{
+#ifdef DEBUG_COMPILER
+   Con::printf("popVariableScope");
+#endif
+   if (gLocalVariableStackIdx == 0)
+   {
+      Con::errorf("Local variable scope stack underflow");
+      gLocalVariableStackIdx = 0;
+   }
+   else
+   {
+      gLocalVariableStackIdx--;
+   }
+   gCurrentLocalVariables = gLocalVariableStack[gLocalVariableStackIdx];
+}
+

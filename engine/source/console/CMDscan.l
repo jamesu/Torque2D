@@ -1,11 +1,36 @@
 %{
+
+// flex --nounput -o CMDscan.cpp -P CMD CMDscan.l
+
 #define YYLMAX 4096
+#define YY_NO_UNISTD_H
 
 #include <stdio.h>
 #include "platform/platform.h"
-#include "core/stringTable.h"
+#include "string/stringTable.h"
 #include "console/console.h"
 #include "console/compiler.h"
+#include "console/consoleTypes.h"
+#include "platform/platformString.h"
+
+template< typename T >
+struct Token
+{
+   T value;
+   S32 lineNumber;
+};
+
+// Can't have ctors in structs used in unions, so we have this.
+template< typename T >
+inline Token< T > MakeToken( T value, U32 lineNumber )
+{
+   Token< T > result;
+   result.value = value;
+   result.lineNumber = lineNumber;
+   return result;
+}
+
+#include "console/cmdgram.h"
 
 using namespace Compiler;
 
@@ -17,6 +42,7 @@ static int Sc_ScanString(int ret);
 static int Sc_ScanNum();
 static int Sc_ScanVar();
 static int Sc_ScanHex();
+static int Sc_ScanIdent();
 
 // Deal with debuggability of FLEX.
 #ifdef TORQUE_DEBUG
@@ -45,7 +71,7 @@ inline int isatty(int) { return 0; }
          buf[n++] = (char) c; \
       result = n; \
    }
-
+   
 // General helper stuff.
 static int lineIndex;
 
@@ -63,7 +89,7 @@ void CMDrestart(FILE *in);
 
 DIGIT    [0-9]
 INTEGER  {DIGIT}+
-FLOAT    ({INTEGER}\.{INTEGER})|({INTEGER}(\.{INTEGER})?[eE][+-]?{INTEGER})
+FLOAT    ({INTEGER}?\.{INTEGER})|({INTEGER}(\.{INTEGER})?[eE][+-]?{INTEGER})
 LETTER   [A-Za-z_]
 FILECHAR [A-Za-z_\.]
 VARMID   [:A-Za-z0-9_]
@@ -79,43 +105,43 @@ HEXDIGIT [a-fA-F0-9]
 %%
          ;
 {SPACE}+ { }
-("///"[^/][^\n\r]*[\n\r]*)+ { return(Sc_ScanDocBlock()); }
+("///"([^/\n\r][^\n\r]*)?[\n\r]+)+ { return(Sc_ScanDocBlock()); }
 "//"[^\n\r]*   ;
 [\r]        ;
 [\n]        {lineIndex++;}
 \"(\\.|[^\\"\n\r])*\"      { return(Sc_ScanString(STRATOM)); }
 \'(\\.|[^\\'\n\r])*\'      { return(Sc_ScanString(TAGATOM)); }
-"=="        return(CMDlval.i = opEQ);
-"!="        return(CMDlval.i = opNE);
-">="        return(CMDlval.i = opGE);
-"<="        return(CMDlval.i = opLE);
-"&&"        return(CMDlval.i = opAND);
-"||"        return(CMDlval.i = opOR);
-"::"        return(CMDlval.i = opCOLONCOLON);
-"--"        return(CMDlval.i = opMINUSMINUS);
-"++"        return(CMDlval.i = opPLUSPLUS);
-"$="        return(CMDlval.i = opSTREQ);
-"!$="       return(CMDlval.i = opSTRNE);
-"<<"        return(CMDlval.i = opSHL);
-">>"        return(CMDlval.i = opSHR);
-"+="        return(CMDlval.i = opPLASN);
-"-="        return(CMDlval.i = opMIASN);
-"*="        return(CMDlval.i = opMLASN);
-"/="        return(CMDlval.i = opDVASN);
-"%="        return(CMDlval.i = opMODASN);
-"&="        return(CMDlval.i = opANDASN);
-"^="        return(CMDlval.i = opXORASN);
-"|="        return(CMDlval.i = opORASN);
-"<<="       return(CMDlval.i = opSLASN);
-">>="       return(CMDlval.i = opSRASN);
-"->"		return(CMDlval.i = opINTNAME);
-"-->"		return(CMDlval.i = opINTNAMER);
-"NL"        {CMDlval.i = '\n'; return '@'; }
-"TAB"       {CMDlval.i = '\t'; return '@'; }
-"SPC"       {CMDlval.i = ' '; return '@'; }
-"@"         {CMDlval.i = 0; return '@'; }
-"/*" {
-         int c = 0, l;
+"=="        { CMDlval.i = MakeToken< int >( opEQ, lineIndex ); return opEQ; }
+"!="        { CMDlval.i = MakeToken< int >( opNE, lineIndex ); return opNE; }
+">="        { CMDlval.i = MakeToken< int >( opGE, lineIndex ); return opGE; }
+"<="        { CMDlval.i = MakeToken< int >( opLE, lineIndex ); return opLE; }
+"&&"        { CMDlval.i = MakeToken< int >( opAND, lineIndex ); return opAND; }
+"||"        { CMDlval.i = MakeToken< int >( opOR, lineIndex ); return opOR; }
+"::"        { CMDlval.i = MakeToken< int >( opCOLONCOLON, lineIndex ); return opCOLONCOLON; }
+"--"        { CMDlval.i = MakeToken< int >( opMINUSMINUS, lineIndex ); return opMINUSMINUS; }
+"++"        { CMDlval.i = MakeToken< int >( opPLUSPLUS, lineIndex ); return opPLUSPLUS; }
+"$="        { CMDlval.i = MakeToken< int >( opSTREQ, lineIndex ); return opSTREQ; }
+"!$="       { CMDlval.i = MakeToken< int >( opSTRNE, lineIndex ); return opSTRNE; }
+"<<"        { CMDlval.i = MakeToken< int >( opSHL, lineIndex ); return opSHL; }
+">>"        { CMDlval.i = MakeToken< int >( opSHR, lineIndex ); return opSHR; }
+"+="        { CMDlval.i = MakeToken< int >( opPLASN, lineIndex ); return opPLASN; }
+"-="        { CMDlval.i = MakeToken< int >( opMIASN, lineIndex ); return opMIASN; }
+"*="        { CMDlval.i = MakeToken< int >( opMLASN, lineIndex ); return opMLASN; }
+"/="        { CMDlval.i = MakeToken< int >( opDVASN, lineIndex ); return opDVASN; }
+"%="        { CMDlval.i = MakeToken< int >( opMODASN, lineIndex ); return opMODASN; }
+"&="        { CMDlval.i = MakeToken< int >( opANDASN, lineIndex ); return opANDASN; }
+"^="        { CMDlval.i = MakeToken< int >( opXORASN, lineIndex ); return opXORASN; }
+"|="        { CMDlval.i = MakeToken< int >( opORASN, lineIndex ); return opORASN; }
+"<<="       { CMDlval.i = MakeToken< int >( opSLASN, lineIndex ); return opSLASN; }
+">>="       { CMDlval.i = MakeToken< int >( opSRASN, lineIndex ); return opSRASN; }
+"->"        { CMDlval.i = MakeToken< int >( opINTNAME, lineIndex ); return opINTNAME; }
+"-->"       { CMDlval.i = MakeToken< int >( opINTNAMER, lineIndex ); return opINTNAMER; }
+"NL"        { CMDlval.i = MakeToken< int >( '\n', lineIndex ); return '@'; }
+"TAB"       { CMDlval.i = MakeToken< int >( '\t', lineIndex ); return '@'; }
+"SPC"       { CMDlval.i = MakeToken< int >( ' ', lineIndex ); return '@'; }
+"@"         { CMDlval.i = MakeToken< int >( 0, lineIndex ); return '@'; }
+"/*" { /* this comment stops syntax highlighting from getting messed up when editing the lexer in TextPad */
+         register int c = 0, l;
          for ( ; ; )
          {
             l = c;
@@ -140,52 +166,56 @@ HEXDIGIT [a-fA-F0-9]
 "?" |
 "[" |
 "]" |
-"(" | 
-")" | 
-"+" | 
-"-" | 
-"*" | 
+"(" |
+")" |
+"+" |
+"-" |
+"*" |
 "/" |
-"<" | 
-">" | 
-"|" | 
-"." | 
+"<" |
+">" |
+"|" |
+"." |
 "!" |
-":" | 
+":" |
 ";" |
-"{" | 
-"}" | 
+"{" |
+"}" |
 "," |
 "&" |
 "%" |
 "^" |
 "~" |
-"=" {       return(CMDlval.i = CMDtext[0]); }
-"or"        { CMDlval.i = lineIndex; return(rwCASEOR); }
-"break"     { CMDlval.i = lineIndex; return(rwBREAK); }
-"return"    { CMDlval.i = lineIndex; return(rwRETURN); }
-"else"      { CMDlval.i = lineIndex; return(rwELSE); }
-"while"     { CMDlval.i = lineIndex; return(rwWHILE); }
-"do"        { CMDlval.i = lineIndex; return(rwDO); }
-"if"        { CMDlval.i = lineIndex; return(rwIF); }
-"for"       { CMDlval.i = lineIndex; return(rwFOR); }
-"continue"  { CMDlval.i = lineIndex; return(rwCONTINUE); }
-"function"  { CMDlval.i = lineIndex; return(rwDEFINE); }
-"new"       { CMDlval.i = lineIndex; return(rwDECLARE); }
-"datablock" { CMDlval.i = lineIndex; return(rwDATABLOCK); }
-"newmsg"	{ CMDlval.i = lineIndex; return(rwMESSAGE); }
-"case"      { CMDlval.i = lineIndex; return(rwCASE); }
-"switch$"   { CMDlval.i = lineIndex; return(rwSWITCHSTR); }
-"switch"    { CMDlval.i = lineIndex; return(rwSWITCH); }
-"default"   { CMDlval.i = lineIndex; return(rwDEFAULT); }
-"package"   { CMDlval.i = lineIndex; return(rwPACKAGE); }
-"namespace" { CMDlval.i = lineIndex; return(rwNAMESPACE); }
-"true"      { CMDlval.i = 1; return INTCONST; }
-"false"     { CMDlval.i = 0; return INTCONST; }
-{VAR}       return(Sc_ScanVar());
-{ID}        { CMDtext[CMDleng] = 0; CMDlval.s = StringTable->insert(CMDtext); return(IDENT); }
+"="         { CMDlval.i = MakeToken< int >( CMDtext[ 0 ], lineIndex ); return CMDtext[ 0 ]; }
+"in"        { CMDlval.i = MakeToken< int >( rwIN, lineIndex ); return(rwIN); }
+"or"        { CMDlval.i = MakeToken< int >( rwCASEOR, lineIndex ); return(rwCASEOR); }
+"break"     { CMDlval.i = MakeToken< int >( rwBREAK, lineIndex ); return(rwBREAK); }
+"return"    { CMDlval.i = MakeToken< int >( rwRETURN, lineIndex ); return(rwRETURN); }
+"else"      { CMDlval.i = MakeToken< int >( rwELSE, lineIndex ); return(rwELSE); }
+"assert"    { CMDlval.i = MakeToken< int >( rwASSERT, lineIndex ); return(rwASSERT); }
+"while"     { CMDlval.i = MakeToken< int >( rwWHILE, lineIndex ); return(rwWHILE); }
+"do"        { CMDlval.i = MakeToken< int >( rwDO, lineIndex ); return(rwDO); }
+"if"        { CMDlval.i = MakeToken< int >( rwIF, lineIndex ); return(rwIF); }
+"foreach$"  { CMDlval.i = MakeToken< int >( rwFOREACHSTR, lineIndex ); return(rwFOREACHSTR); }
+"foreach"   { CMDlval.i = MakeToken< int >( rwFOREACH, lineIndex ); return(rwFOREACH); }
+"for"       { CMDlval.i = MakeToken< int >( rwFOR, lineIndex ); return(rwFOR); }
+"continue"  { CMDlval.i = MakeToken< int >( rwCONTINUE, lineIndex ); return(rwCONTINUE); }
+"function"  { CMDlval.i = MakeToken< int >( rwDEFINE, lineIndex ); return(rwDEFINE); }
+"new"       { CMDlval.i = MakeToken< int >( rwDECLARE, lineIndex ); return(rwDECLARE); }
+"singleton" { CMDlval.i = MakeToken< int >( rwDECLARESINGLETON, lineIndex ); return(rwDECLARESINGLETON); }
+"datablock" { CMDlval.i = MakeToken< int >( rwDATABLOCK, lineIndex ); return(rwDATABLOCK); }
+"case"      { CMDlval.i = MakeToken< int >( rwCASE, lineIndex ); return(rwCASE); }
+"switch$"   { CMDlval.i = MakeToken< int >( rwSWITCHSTR, lineIndex ); return(rwSWITCHSTR); }
+"switch"    { CMDlval.i = MakeToken< int >( rwSWITCH, lineIndex ); return(rwSWITCH); }
+"default"   { CMDlval.i = MakeToken< int >( rwDEFAULT, lineIndex ); return(rwDEFAULT); }
+"package"   { CMDlval.i = MakeToken< int >( rwPACKAGE, lineIndex ); return(rwPACKAGE); }
+"namespace" { CMDlval.i = MakeToken< int >( rwNAMESPACE, lineIndex ); return(rwNAMESPACE); }
+"true"      { CMDlval.i = MakeToken< int >( 1, lineIndex ); return INTCONST; }
+"false"     { CMDlval.i = MakeToken< int >( 0, lineIndex ); return INTCONST; }
+{VAR}       { return(Sc_ScanVar()); }
+{ID}        { return Sc_ScanIdent(); }
 0[xX]{HEXDIGIT}+ return(Sc_ScanHex());
-{INTEGER}   { CMDtext[CMDleng] = 0; CMDlval.i = dAtoi(CMDtext); return INTCONST; }
+{INTEGER}   { CMDtext[CMDleng] = 0; CMDlval.i = MakeToken< int >( dAtoi(CMDtext), lineIndex ); return INTCONST; }
 {FLOAT}     return Sc_ScanNum();
 {ILID}      return(ILLEGAL_TOKEN);
 .           return(ILLEGAL_TOKEN);
@@ -194,7 +224,7 @@ HEXDIGIT [a-fA-F0-9]
 static const char *scanBuffer;
 static const char *fileName;
 static int scanIndex;
- 
+
 const char * CMDGetCurrentFile()
 {
    return fileName;
@@ -213,13 +243,14 @@ void CMDerror(char *format, ...)
 
    const int BUFMAX = 1024;
    char tempBuf[BUFMAX];
-   va_list args;   
-   va_start( args, format );   
-#ifdef TORQUE_OS_WIN32
+   va_list args;
+   va_start( args, format );
+#ifdef TORQUE_OS_WIN
    _vsnprintf( tempBuf, BUFMAX, format, args );
 #else
    vsnprintf( tempBuf, BUFMAX, format, args );
 #endif
+    va_end(args);
 
    if(fileName)
    {
@@ -274,8 +305,8 @@ void CMDerror(char *format, ...)
 #endif
 
       // Update the script-visible error buffer.
-      const char *prevStr = Con::getVariable("$ScriptError");
-      if (prevStr[0])
+      ConsoleStringValuePtr prevStr = Con::getVariable("$ScriptError");
+      if (prevStr.c_str()[0])
          dSprintf(tempBuf, sizeof(tempBuf), "%s\n%s Line: %d - Syntax error.", prevStr, fileName, lineIndex);
       else
          dSprintf(tempBuf, sizeof(tempBuf), "%s Line: %d - Syntax error.", fileName, lineIndex);
@@ -316,9 +347,9 @@ static int Sc_ScanVar()
 {
    // Truncate the temp buffer...
    CMDtext[CMDleng] = 0;
-   
+
    // Make it a stringtable string!
-   CMDlval.s = StringTable->insert(CMDtext);
+   CMDlval.s = MakeToken< StringTableEntry >( StringTable->insert(CMDtext), lineIndex );
    return(VAR);
 }
 
@@ -350,27 +381,28 @@ static int getHexDigit(char c)
 
 static int Sc_ScanDocBlock()
 {
-	S32 len = dStrlen(CMDtext);
-	char* text = (char *) consoleAlloc(len + 1);
-	
-	for( S32 i = 0, j = 0; j <= len; j++ )
-	{
-	   if( ( j <= (len - 2) ) && ( CMDtext[j] == '/' ) && ( CMDtext[j + 1] == '/' ) && ( CMDtext[j + 2] == '/' ) )
-	   {
-	      j += 2;
-	      continue;
-	   }
-	      
-	   if( CMDtext[j] == '\r' )
-	      continue;
-	      
-      if( CMDtext[j] == '\n' ) 
-         lineIndex++;
-	      
-	   text[i++] = CMDtext[j];
-	}
+   S32 len = dStrlen(CMDtext);
+   char* text = (char *) consoleAlloc(len + 1);
+   S32 line = lineIndex;
 
-   CMDlval.str = text;
+   for( S32 i = 0, j = 0; j <= len; j++ )
+   {
+      if( ( j <= (len - 2) ) && ( CMDtext[j] == '/' ) && ( CMDtext[j + 1] == '/' ) && ( CMDtext[j + 2] == '/' ) )
+      {
+         j += 2;
+         continue;
+      }
+
+      if( CMDtext[j] == '\r' )
+         continue;
+
+      if( CMDtext[j] == '\n' )
+         lineIndex++;
+
+      text[i++] = CMDtext[j];
+   }
+
+   CMDlval.str = MakeToken< char* >( text, line );
    return(DOCBLOCK);
 }
 
@@ -379,9 +411,30 @@ static int Sc_ScanString(int ret)
    CMDtext[CMDleng - 1] = 0;
    if(!collapseEscape(CMDtext+1))
       return -1;
-   CMDlval.str = (char *) consoleAlloc(dStrlen(CMDtext));
-   dStrcpy(CMDlval.str, CMDtext + 1);
-   return(ret);
+      
+   char* buffer = ( char* ) consoleAlloc( dStrlen( CMDtext ) );
+   dStrcpy( buffer, CMDtext + 1 );
+   
+   CMDlval.str = MakeToken< char* >( buffer, lineIndex );
+   return ret;
+}
+
+static int Sc_ScanIdent()
+{
+   ConsoleBaseType *type;
+
+   CMDtext[CMDleng] = 0;
+
+   if((type = ConsoleBaseType::getTypeByName(CMDtext)) != NULL)
+   {
+      /* It's a type */
+      CMDlval.i = MakeToken< int >( type->getTypeID(), lineIndex );
+      return TYPEIDENT;
+   }
+
+   /* It's an identifier */
+   CMDlval.s = MakeToken< StringTableEntry >( StringTable->insert(CMDtext), lineIndex );
+   return IDENT;
 }
 
 void expandEscape(char *dest, const char *src)
@@ -448,7 +501,7 @@ void expandEscape(char *dest, const char *src)
             *dest++ = 'p';
          else if(c == 17)
             *dest++ = 'o';
-         else 
+         else
             *dest++ = expandRemap[c] + '0';
       }
       else if(c < 32)
@@ -472,7 +525,7 @@ void expandEscape(char *dest, const char *src)
          *dest++ = c;
    }
    *dest = '\0';
-}   
+}
 
 bool collapseEscape(char *buf)
 {
@@ -508,7 +561,7 @@ bool collapseEscape(char *buf)
                                               0xb,
                                               0xc,
                                               0xe };
-                                            
+
             if(buf[i+2] == 'r')
                 buf[i] = 15;
             else if(buf[i+2] == 'p')
@@ -535,7 +588,7 @@ bool collapseEscape(char *buf)
                dMemmove(buf + i + 1, buf + i + 3, len - i - 2);
                len -= 2;
             }
-            i++;         
+            i++;
          }
          else
          {
@@ -554,7 +607,7 @@ bool collapseEscape(char *buf)
 static int Sc_ScanNum()
 {
    CMDtext[CMDleng] = 0;
-   CMDlval.f = dAtof(CMDtext);
+   CMDlval.f = MakeToken< double >( dAtof(CMDtext), lineIndex );
    return(FLTCONST);
 }
 
@@ -562,7 +615,7 @@ static int Sc_ScanHex()
 {
    S32 val = 0;
    dSscanf(CMDtext, "%x", &val);
-   CMDlval.i = val;
+   CMDlval.i = MakeToken< int >( val, lineIndex );
    return INTCONST;
 }
 

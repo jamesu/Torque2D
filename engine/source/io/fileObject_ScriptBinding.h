@@ -87,7 +87,7 @@ ConsoleMethodWithDocs( FileObject, peekLine, ConsoleString, 2, 2, ())
 */
 ConsoleMethodWithDocs( FileObject, writeLine, ConsoleVoid, 3, 3, ( text ))
 {
-   object->writeLine((const U8 *) argv[2]);
+   object->writeLine((const U8 *) argv[2].getTempStringValue());
 }
 
 /*! Use the close method to close the current file handle. If the file was opened for writing, this flushes the contents of the last write to disk.
@@ -110,9 +110,9 @@ ConsoleMethodWithDocs( FileObject, writeObject, ConsoleVoid, 3, 4, (SimObject, o
       return;
    }
 
-   char *objName = NULL;
+   const char *objName = NULL;
    if( argc == 4 )
-      objName = (char*)argv[3];
+      objName = argv[3];
 
    object->writeObject( obj, (const U8*)objName );
 }

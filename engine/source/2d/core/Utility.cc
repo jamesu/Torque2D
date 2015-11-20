@@ -33,11 +33,12 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( b2AABB, Typeb2AABB, sizeof(b2AABB), "" )
+ConsoleUseDefaultReferenceType( Typeb2AABB, b2AABB )
 
-ConsoleGetType( Typeb2AABB )
+ConsoleTypeToString( Typeb2AABB )
 {
     // Fetch AABB.
-    const b2AABB* pAABB = (b2AABB*)dptr;
+    const b2AABB* pAABB = (b2AABB*)dataPtr;
 
     // Format AABB.
     char* pBuffer = Con::getReturnBuffer(64);
@@ -45,32 +46,67 @@ ConsoleGetType( Typeb2AABB )
     return pBuffer;
 }
 
-ConsoleSetType( Typeb2AABB )
+ConsoleTypeFromConsoleValue( Typeb2AABB )
 {
-    // Fetch AABB.
-    b2AABB* pAABB = (b2AABB*)dptr;
-
-    // "lowerX lowerY upperX upperY".
-    if( argc == 1 )
-    {
-        if ( dSscanf(argv[0], "%g %g %g %g", &(pAABB->lowerBound.x), &(pAABB->lowerBound.y), &(pAABB->upperBound.x), &(pAABB->upperBound.y) ) == 4 )
-            return;
-    }
-    
-    // "lowerX,lowerY,upperX,upperY".
-    else if( argc == 4 )
-    {
-        pAABB->lowerBound.Set( dAtof(argv[0]), dAtof(argv[1] ) );
-        pAABB->upperBound.Set( dAtof(argv[2]), dAtof(argv[3] ) );
-        return;
-    }
-
-    // Reset the AABB.
-    pAABB->lowerBound.SetZero();
-    pAABB->upperBound.SetZero();
-
-    // Warn.
-    Con::printf("Typeb2AABB must be set as { lowerX, lowerY, upperX, upperY } or \"lowerX lowerY upperX upperY\"");
+   // Fetch AABB.
+   b2AABB* pAABB = (b2AABB*)dataPtr;
+   
+   if (ConsoleValue::isRefType(value.type))
+   {
+      // We have three possibilities:
+      // 1) it's a string
+      // 2) it's a list
+      // 3) it's some sort of hashtable
+      
+      ConsoleValue arr;
+      arr.type = ConsoleValue::TypeInternalInt;
+      arr.value.ival = 0;
+      
+      ConsoleValuePtr lowxValue;
+      ConsoleValuePtr lowyValue;
+      ConsoleValuePtr upperxValue;
+      ConsoleValuePtr upperyValue;
+      
+      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+      ConsoleReferenceCountedType* refValue = value.value.refValue;
+      if (refValue->getDataField(stGetIndex, arr, lowxValue))
+      {
+         arr.value.ival = 1;
+         refValue->getDataField(stGetIndex, arr, lowyValue);
+         arr.value.ival = 2;
+         refValue->getDataField(stGetIndex, arr, upperxValue);
+         arr.value.ival = 3;
+         refValue->getDataField(stGetIndex, arr, upperyValue);
+      }
+      else
+      {
+         static StringTableEntry lowxName = StringTable->insert("lowerX");
+         static StringTableEntry lowyName = StringTable->insert("lowerY");
+         static StringTableEntry upperxName = StringTable->insert("upperX");
+         static StringTableEntry upperyName = StringTable->insert("upperY");
+         
+         arr.type = ConsoleValue::TypeInternalNull;
+         if (refValue->getDataField(lowxName, arr, lowxValue))
+         {
+            refValue->getDataField(lowyName, arr, lowyValue);
+            refValue->getDataField(upperxName, arr, upperxValue);
+            refValue->getDataField(upperyName, arr, upperyValue);
+         }
+         else
+         {
+            Con::errorf("Typeb2AABB must be set as { lowerX, lowerY, upperX, upperY } or \"lowerX lowerY upperX upperY\"");
+         }
+      }
+      
+      pAABB->lowerBound.Set( lowxValue.getFloatValue(), lowyValue.getFloatValue() );
+      pAABB->upperBound.Set( upperxValue.getFloatValue(), upperxValue.getFloatValue() );
+   }
+   else
+   {
+      pAABB->lowerBound.Set(0, 0);
+      pAABB->upperBound.Set(0, 0);
+      dSscanf(value.getTempStringValue(), "%g %g %g %g", &(pAABB->lowerBound.x), &(pAABB->lowerBound.y), &(pAABB->upperBound.x), &(pAABB->upperBound.y) );
+   }
 }
 
 //-----------------------------------------------------------------------------

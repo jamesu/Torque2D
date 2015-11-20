@@ -36,7 +36,7 @@ ConsoleMethodWithDocs( RemoteDebugger1, getCodeFiles, ConsoleString, 2, 2, ())
     {
         // Warn.
         Con::warnf( "Fetching code files resulted in a buffer overflow." );
-        return NULL;
+        return "";
     }
 
     return pBuffer;

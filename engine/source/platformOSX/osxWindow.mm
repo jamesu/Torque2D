@@ -28,7 +28,7 @@
 // Get the video settings from the prefs.
 static void osxGetInitialResolution(U32 &width, U32 &height, U32 &bpp, bool &fullScreen)
 {
-    const char* resString;
+    ConsoleStringValuePtr resString;
     char *tempBuf;
     
     osxPlatState * platState = [osxPlatState sharedPlatState];
@@ -38,15 +38,15 @@ static void osxGetInitialResolution(U32 &width, U32 &height, U32 &bpp, bool &ful
     
     // load pref variables, properly choose windowed / fullscreen
     fullScreen = Con::getBoolVariable("$pref::Video::fullScreen");
-    
+	
     if (fullScreen)
         resString = Con::getVariable("$pref::Video::resolution");
     else
         resString = Con::getVariable("$pref::Video::windowedRes");
     
     // dStrtok is destructive, work on a copy...
-    tempBuf = new char[dStrlen(resString) + 1];
-    dStrcpy(tempBuf, resString);
+    tempBuf = new char[dStrlen(resString.c_str()) + 1];
+    dStrcpy(tempBuf, resString.c_str());
     
     // set window size
     //DAW: Added min size checks for windowSize

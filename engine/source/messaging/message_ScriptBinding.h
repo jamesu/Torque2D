@@ -25,7 +25,7 @@ ConsoleMethodGroupBeginWithDocs(Message, SimObject)
 /*! Get message type (script class name or C++ class name if no script defined class)
     @return The type as a string
 */
-ConsoleMethodWithDocs(Message, getType, const char *, 2, 2, ())
+ConsoleMethodWithDocs(Message, getType, ConsoleString, 2, 2, ())
 {
    return object->getType();
 }

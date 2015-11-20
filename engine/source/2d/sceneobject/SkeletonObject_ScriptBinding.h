@@ -303,7 +303,7 @@ ConsoleMethodWithDocs(SkeletonObject, getAnimationDuration, ConsoleFloat, 2, 2, 
 */
 ConsoleMethodWithDocs(SkeletonObject, setMix, ConsoleBool, 5, 5, (fromAnimation, toAnimation, time))
 {
-    Con::printf("Mixing %s with %s at %f", argv[2], argv[3], dAtof(argv[4]));
+    Con::printf("Mixing %s with %s at %f", argv[2].getTempStringValue(), argv[3].getTempStringValue(), dAtof(argv[4]));
     
     return object->setMix(argv[2], argv[3], dAtof(argv[4]));
 }

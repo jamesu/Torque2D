@@ -255,7 +255,7 @@ void NetConnection::chunkReceived(U8 *chunkData, U32 chunkLen)
    }
    else
    {
-      Con::executef(4, "onFileChunkReceived", mMissingFileList[0], Con::getIntArg(mCurrentFileBufferOffset), Con::getIntArg(mCurrentFileBufferSize));
+      Con::executef("onFileChunkReceived", mMissingFileList[0], mCurrentFileBufferOffset, mCurrentFileBufferSize);
    }
 }
 

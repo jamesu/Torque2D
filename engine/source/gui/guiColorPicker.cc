@@ -812,7 +812,7 @@ void GuiColorPickerCtrl::onMouseDown(const GuiEvent &event)
    
    mMouseDown = true;
 
-   Con::executef(this, 1, "onMouseDown");
+   Con::executef(this, "onMouseDown");
 }
 
 //--------------------------------------------------------------------------
@@ -828,7 +828,7 @@ void GuiColorPickerCtrl::onMouseDragged(const GuiEvent &event)
    if (!mActionOnMove && mAltConsoleCommand[0] )
       Con::evaluate( mAltConsoleCommand, false );
 
-   Con::executef(this, 1, "onMouseDragged");
+   Con::executef(this, "onMouseDragged");
 }
 
 //--------------------------------------------------------------------------
@@ -838,7 +838,7 @@ void GuiColorPickerCtrl::onMouseMove(const GuiEvent &event)
    if (mActive && (mDisplayMode == pDropperBackground))
       setSelectorPos(globalToLocalCoord(event.mousePoint));
 
-   Con::executef(this, 1, "onMouseMove");
+   Con::executef(this, "onMouseMove");
 }
 
 //--------------------------------------------------------------------------
@@ -846,7 +846,7 @@ void GuiColorPickerCtrl::onMouseEnter(const GuiEvent &event)
 {
    mMouseOver = true;
 
-   Con::executef(this, 1, "onMouseEnter");
+   Con::executef(this, "onMouseEnter");
 }
 
 //--------------------------------------------------------------------------
@@ -855,7 +855,7 @@ void GuiColorPickerCtrl::onMouseLeave(const GuiEvent &)
    // Reset state
    mMouseOver = false;
 
-   Con::executef(this, 1, "onMouseLeave");
+   Con::executef(this, "onMouseLeave");
 }
 
 //--------------------------------------------------------------------------
@@ -876,7 +876,7 @@ void GuiColorPickerCtrl::onMouseUp(const GuiEvent &)
    
    mouseUnlock();
 
-   Con::executef(this, 1, "onMouseUp");
+   Con::executef(this, "onMouseUp");
 }
 
 //--------------------------------------------------------------------------
@@ -896,7 +896,7 @@ void GuiColorPickerCtrl::setScriptValue(const char *value)
    setValue(newValue);
 }
 
-ConsoleMethod(GuiColorPickerCtrl, getSelectorPos, const char*, 2, 2, "() Gets the current position of the selector\n"
+ConsoleMethod(GuiColorPickerCtrl, getSelectorPos, ConsoleString, 2, 2, "() Gets the current position of the selector\n"
               "@return Returns the position of the selector as space-separted x,y coordinates.")
 {
    char *temp = Con::getReturnBuffer(256);
@@ -906,7 +906,7 @@ ConsoleMethod(GuiColorPickerCtrl, getSelectorPos, const char*, 2, 2, "() Gets th
    return temp;
 }
 
-ConsoleMethod(GuiColorPickerCtrl, getSelectorPos2, const char*, 2, 2, "() Gets the current position of the selector\n"
+ConsoleMethod(GuiColorPickerCtrl, getSelectorPos2, ConsoleString, 2, 2, "() Gets the current position of the selector\n"
               "@return Returns the position of the selector as space-separted x,y coordinates.")
 {
    char *temp = Con::getReturnBuffer(256);
@@ -916,7 +916,7 @@ ConsoleMethod(GuiColorPickerCtrl, getSelectorPos2, const char*, 2, 2, "() Gets t
    return temp;
 }
 
-ConsoleMethod(GuiColorPickerCtrl, getSelectorPosForColor, const char*, 3, 6, "(float red, float green, float blue, [float alpha = 1.0]) - Gets the selector position for the specified color."
+ConsoleMethod(GuiColorPickerCtrl, getSelectorPosForColor, ConsoleString, 3, 6, "(float red, float green, float blue, [float alpha = 1.0]) - Gets the selector position for the specified color."
                                                           "The display mode must be pHorizColorRange, pVertColorRange, or pBlendColorRange.\n"
                                                           "@param red The red value.\n"
                                                           "@param green The green value.\n"

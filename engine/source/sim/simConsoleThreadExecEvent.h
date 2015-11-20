@@ -33,13 +33,13 @@
 struct SimConsoleThreadExecCallback
 {
    void *sem;
-   const char *retVal;
+   ConsoleValuePtr retVal;
 
    SimConsoleThreadExecCallback();
    ~SimConsoleThreadExecCallback();
 
-   void handleCallback(const char *ret);
-   const char *waitForResult();
+   void handleCallback(ConsoleValuePtr ret);
+   ConsoleValuePtr waitForResult();
 };
 
 class SimConsoleThreadExecEvent : public SimConsoleEvent
@@ -47,9 +47,10 @@ class SimConsoleThreadExecEvent : public SimConsoleEvent
    SimConsoleThreadExecCallback *cb;
 
 public:
-   SimConsoleThreadExecEvent(S32 argc, const char **argv, bool onObject, SimConsoleThreadExecCallback *callback);
+   SimConsoleThreadExecEvent(S32 argc, ConsoleValuePtr argv[], bool onObject, SimConsoleThreadExecCallback *callback);
 
    virtual void process(SimObject *object);
+	inline SimConsoleThreadExecCallback &getCB() { return *cb; }
 };
 
 #endif // _SIM_CONSOLE_THREAD_EXEC_EVENT_H_

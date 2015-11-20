@@ -133,7 +133,7 @@ public:
          char *temp = mArgv[1];
          mArgv[1] = mBuf;
 
-         Con::execute(mArgc, (const char **) mArgv+1);
+         Con::executeS(mArgc, (const char **) mArgv+1);
          mArgv[1] = temp;
       }
       else
@@ -146,7 +146,7 @@ public:
          mArgv[0] = mBuf;
          mArgv[1] = idBuf;
 
-         Con::execute(mArgc+1, (const char **) mArgv);
+         Con::executeS(mArgc+1, (const char **) mArgv);
          mArgv[1] = temp;
       }
    }

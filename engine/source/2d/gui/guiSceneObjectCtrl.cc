@@ -159,7 +159,7 @@ void GuiSceneObjectCtrl::setSceneObject( const char* name )
    setUpdate();
 }
 
-ConsoleMethod( GuiSceneObjectCtrl, getSceneObject, const char*, 2,2, "() \n@return Returns displaying sceneobject id")
+ConsoleMethod( GuiSceneObjectCtrl, getSceneObject, ConsoleString, 2, 2, "() \n@return Returns displaying sceneobject id")
 {
    SceneObject *sceneObject = object->getSceneObject();
    if( !sceneObject )
@@ -188,28 +188,28 @@ void GuiSceneObjectCtrl::setCaption( const char* caption )
 void GuiSceneObjectCtrl::onMouseUp(const GuiEvent &event)
 {
    if( mDepressed && ( event.mouseClickCount % 2 ) == 0 )
-         Con::executef( this, 2, "onDoubleClick" );    
+         Con::executef( this, "onDoubleClick" );    
 
    Parent::onMouseUp( event );
 }
 
 void GuiSceneObjectCtrl::onMouseLeave( const GuiEvent &event )
 {
-   Con::executef( this, 2, "onMouseLeave" );
+   Con::executef( this, "onMouseLeave" );
 
    Parent::onMouseLeave( event );
 }
 
 void GuiSceneObjectCtrl::onMouseEnter( const GuiEvent &event )
 {
-   Con::executef( this, 2, "onMouseEnter" );
+   Con::executef( this, "onMouseEnter" );
 
    Parent::onMouseEnter( event );
 }
 
 void GuiSceneObjectCtrl::onMouseDragged( const GuiEvent &event )
 {
-   Con::executef( this, 2, "onMouseDragged" );
+   Con::executef( this, "onMouseDragged" );
 
    Parent::onMouseDragged( event );
 }

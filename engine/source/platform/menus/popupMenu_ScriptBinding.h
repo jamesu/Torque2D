@@ -30,7 +30,7 @@ ConsoleMethodGroupBeginWithDocs(PopupMenu, SimObject)
 */
 ConsoleMethodWithDocs(PopupMenu, insertItem, ConsoleInt, 3, 5, (pos, [title]?, [accelerator]?))
 {
-   return object->insertItem(dAtoi(argv[2]), argc < 4 ? NULL : argv[3], argc < 5 ? "" : argv[4]);
+   return object->insertItem(dAtoi(argv[2]), argc < 4 ? NULL : argv[3].getTempStringValue(), argc < 5 ? "" : argv[4].getTempStringValue());
 }
 
 /*! Removes the menu item at the given position

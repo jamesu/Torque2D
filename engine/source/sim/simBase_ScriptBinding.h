@@ -47,6 +47,36 @@ ConsoleFunctionWithDocs( getSimTime, ConsoleInt, 1, 1, () )
    return Sim::getCurrentTime();
 }
 
+ConsoleFunction(debugTimer, void, 2, 2, "")
+{
+	static U32 gDebugTimerTime = 0;
+	
+	if (dAtob(argv[1]))
+	{
+		Con::printf("DiffMS == %i", Platform::getRealMilliseconds() - gDebugTimerTime);
+	}
+	else
+	{
+		gDebugTimerTime = Platform::getRealMilliseconds();
+	}
+}
+
+ConsoleFunction(simpleCounter, void, 2, 2, "")
+{
+	static U32 gCounter = 0;
+	
+	if (dAtob(argv[1]))
+	{
+		Con::printf("Counter == %i", gCounter);
+		gCounter = 0;
+	}
+	else
+	{
+		gCounter++;
+	}
+	
+}
+
 /*! cancel a previously scheduled event
 
 	@param eventID The numeric ID of a previously scheduled event.
@@ -166,7 +196,7 @@ ConsoleFunctionWithDocs(schedule, ConsoleInt, 4, 0, ( t , objID || 0 , functionN
    S32 ret = Sim::postEvent(refObject, evt, Sim::getCurrentTime() + timeDelta);
 // #ifdef DEBUG
 //    Con::printf("ref %s schedule(%s) = %d", argv[2], argv[3], ret);
-//    Con::executef(1, "backtrace");
+//    Con::executef("backtrace");
 // #endif
    return ret;
 }

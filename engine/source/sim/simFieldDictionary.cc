@@ -20,6 +20,9 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
+#include "console/consoleObject.h"
+#include "sim/simBase.h"
 #include "sim/simFieldDictionary.h"
 #include "memory/dataChunker.h"
 #include "console/consoleInternal.h"

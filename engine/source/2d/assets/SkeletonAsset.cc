@@ -55,43 +55,47 @@ IMPLEMENT_CONOBJECT(SkeletonAsset);
 
 ConsoleType( skeletonAssetPtr, TypeSkeletonAssetPtr, sizeof(AssetPtr<SkeletonAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeSkeletonAssetPtr, AssetPtr<SkeletonAsset> )
+
+
 //-----------------------------------------------------------------------------
 
-ConsoleGetType( TypeSkeletonAssetPtr )
+ConsoleTypeToString( TypeSkeletonAssetPtr )
 {
     // Fetch asset Id.
-    return (*((AssetPtr<SkeletonAsset>*)dptr)).getAssetId();
+    return (*((AssetPtr<SkeletonAsset>*)dataPtr)).getAssetId();
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleSetType( TypeSkeletonAssetPtr )
+ConsoleTypeFromConsoleValue( TypeSkeletonAssetPtr )
 {
-    // Was a single argument specified?
-    if( argc == 1 )
-    {
-        // Yes, so fetch field value.
-        const char* pFieldValue = argv[0];
-
-        // Fetch asset pointer.
-        AssetPtr<SkeletonAsset>* pAssetPtr = dynamic_cast<AssetPtr<SkeletonAsset>*>((AssetPtrBase*)(dptr));
-
-        // Is the asset pointer the correct type?
-        if (pAssetPtr == NULL )
-        {
-            // No, so fail.
-            Con::warnf( "(TypeSkeletonAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
-            return;
-        }
-
-        // Set asset.
-        pAssetPtr->setAssetId( pFieldValue );
-
-        return;
-   }
-
-    // Warn.
-    Con::warnf( "(TypeSkeletonAssetPtr) - Cannot set multiple args to a single asset." );
+	// Check we have the right sort of value here
+	if (ConsoleValue::isRefType(value.type))
+	{
+		if (value.value.refValue->isEnumerable())
+		{
+			Con::warnf( "(TypeSkeletonAssetPtr) - Cannot set multiple args to a single asset." );
+			return;
+		}
+	}
+	
+	// Yes, so fetch field value.
+	const char* pFieldValue = value.getTempStringValue();
+	
+	// Fetch asset pointer.
+	AssetPtr<SkeletonAsset>* pAssetPtr = dynamic_cast<AssetPtr<SkeletonAsset>*>((AssetPtrBase*)(dataPtr));
+	
+	// Is the asset pointer the correct type?
+	if ( pAssetPtr == NULL )
+	{
+		// No, so fail.
+		Con::warnf( "(TypeSkeletonAssetPtr) - Failed to set asset Id '%d'.", pFieldValue );
+		return;
+	}
+	
+	// Set asset.
+	pAssetPtr->setAssetId( pFieldValue );
 }
 
 

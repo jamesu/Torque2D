@@ -79,7 +79,7 @@ ConsoleMethodWithDocs( EventManager, subscribe, ConsoleBool, 4, 5, ( SimObject l
       return false;
    }
 
-   return object->subscribe( cbObj, argv[3], argc > 4 ? argv[4] : NULL );
+   return object->subscribe( cbObj, argv[3].getTempStringValue(), argc > 4 ? argv[4].getTempStringValue() : NULL );
 }
 
 /*! 

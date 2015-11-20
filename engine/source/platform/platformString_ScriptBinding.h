@@ -71,11 +71,14 @@ ConsoleFunctionWithDocs(strstr, ConsoleInt, 3, 3, ( sourceString , searchString 
    TORQUE_UNUSED( argc );
    // returns the start of the sub string argv[2] in argv[1]
    // or -1 if not found.
+   
+   const char *sourceString = argv[1];
+   const char *searchString = argv[2];
 
-   const char *retpos = dStrstr(argv[1], argv[2]);
+   const char *retpos = dStrstr(sourceString, searchString);
    if(!retpos)
       return -1;
-   return (S32)(retpos - argv[1]);
+   return (S32)(retpos - sourceString);
 }
 
 /*! Use the strPos function to locate the first instance of searchString in sourceString, starting at character 0, or at an optional offset.
@@ -90,14 +93,18 @@ ConsoleFunctionWithDocs(strpos, ConsoleInt, 3, 4, ( sourceString , searchString,
    S32 start = 0;
    if(argc == 4)
       start = dAtoi(argv[3]);
-   U32 sublen = dStrlen(argv[2]);
-   U32 strlen = dStrlen(argv[1]);
+   
+   const char *sourceString = argv[1].getTempStringValue();
+   const char *searchString = argv[2].getTempStringValue();
+   
+   U32 sublen = dStrlen(searchString);
+   U32 strlen = dStrlen(sourceString);
    if(start < 0)
       return -1;
    if(sublen + start > strlen)
       return -1;
    for(; start + sublen <= strlen; start++)
-      if(!dStrncmp(argv[1] + start, argv[2], sublen))
+      if(!dStrncmp(sourceString + start, searchString, sublen))
          return start;
    return -1;
 }
@@ -263,10 +270,13 @@ ConsoleFunctionWithDocs(strreplace, ConsoleString, 4, 4, ( sourceString , from ,
    TORQUE_UNUSED( argc );
    S32 fromLen = dStrlen(argv[2]);
    if(!fromLen)
-      return argv[1];
-
-   S32 toLen = dStrlen(argv[3]);
+      return argv[1].getTempStringValue();
+   
+   const char *from = argv[2];
+   const char *to = argv[3];
+   S32 toLen = dStrlen(to);
    S32 count = 0;
+   const char *sourceString = argv[1];
    const char *scan = argv[1];
    while(scan)
    {
@@ -277,21 +287,21 @@ ConsoleFunctionWithDocs(strreplace, ConsoleString, 4, 4, ( sourceString , from ,
          count++;
       }
    }
-   char *ret = Con::getReturnBuffer(dStrlen(argv[1]) + 1 + (toLen - fromLen) * count);
+   char *ret = Con::getReturnBuffer(dStrlen(sourceString) + 1 + (toLen - fromLen) * count);
    U32 scanp = 0;
    U32 dstp = 0;
    for(;;)
    {
-      const char *scan = dStrstr(argv[1] + scanp, argv[2]);
+      const char *scan = dStrstr(sourceString + scanp, from);
       if(!scan)
       {
-         dStrcpy(ret + dstp, argv[1] + scanp);
+         dStrcpy(ret + dstp, sourceString + scanp);
          return ret;
       }
-      U32 len = (U32)(scan - (argv[1] + scanp));
-      dStrncpy(ret + dstp, argv[1] + scanp, len);
+      U32 len = (U32)(scan - (sourceString + scanp));
+      dStrncpy(ret + dstp, sourceString + scanp, len);
       dstp += len;
-      dStrcpy(ret + dstp, argv[3]);
+      dStrcpy(ret + dstp, to);
       dstp += toLen;
       scanp += len + fromLen;
    }
@@ -321,7 +331,8 @@ ConsoleFunctionWithDocs(getSubStr, ConsoleString, 4, 4, ( sourceString , start ,
       return "";
    }
 
-   S32 baseLen = dStrlen(argv[1]);
+   const char *sourceString = argv[1];
+   S32 baseLen = dStrlen(sourceString);
    if (baseLen < startPos)
       return "";
 
@@ -330,7 +341,7 @@ ConsoleFunctionWithDocs(getSubStr, ConsoleString, 4, 4, ( sourceString , start ,
       actualLen = baseLen - startPos;
 
    char *ret = Con::getReturnBuffer(actualLen + 1);
-   dStrncpy(ret, argv[1] + startPos, actualLen);
+   dStrncpy(ret, sourceString + startPos, actualLen);
    ret[actualLen] = '\0';
 
    return ret;
@@ -355,11 +366,11 @@ ConsoleFunctionWithDocs( stripTrailingSpaces, ConsoleString, 2, 2, ( string ))
          char* returnString = Con::getReturnBuffer( temp + 1 );
          dStrncpy( returnString, argv[1], U32(temp) );
          returnString[temp] = '\0';
-         return( returnString );			
+         return( returnString );
       }
    }
 
-   return( "" );	
+   return( "" );
 }
 
 /*! @} */ // group StringFunctions

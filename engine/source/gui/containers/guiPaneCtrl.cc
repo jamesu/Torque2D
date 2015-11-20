@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "gui/containers/guiPaneCtrl.h"
 
 IMPLEMENT_CONOBJECT(GuiPaneControl);

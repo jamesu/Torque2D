@@ -50,7 +50,7 @@ SimXMLDocument::~SimXMLDocument()
 // -----------------------------------------------------------------------------
 // Included for completeness.
 // -----------------------------------------------------------------------------
-bool SimXMLDocument::processArguments(S32 argc, const char** argv)
+bool SimXMLDocument::processArguments(S32 argc, ConsoleValuePtr argv[])
 {
    if(0 == argc)
    {
@@ -541,22 +541,19 @@ void SimXMLDocument::setObjectAttributes(const char* objectID)
             // get the value of the field as a string.
             ConsoleBaseType *cbt = ConsoleBaseType::getType(itr->type);
 
-            const char *val = Con::getData(itr->type, (void *) (((const char *)pObject) + itr->offset), 0, itr->table, itr->flag);
+            ConsoleStringValuePtr val = Con::getData(itr->type, (void *) (((const char *)pObject) + itr->offset), 0, itr->table);
 
             // Make a copy for the field check.
-            if (!val)
+            if (!val.c_str())
                continue;
 
-            FrameTemp<char> valCopy( dStrlen( val ) + 1 );
-            dStrcpy( (char *)valCopy, val );
+            FrameTemp<char> valCopy( dStrlen( val.c_str() ) + 1 );
+            dStrcpy( (char *)valCopy, val.c_str() );
 
             if (!pObject->writeField(itr->pFieldname, valCopy))
                continue;
 
-            val = valCopy;
-
-
-            expandEscape(textbuf, val);
+            expandEscape(textbuf, valCopy);
 
             if( !pObject->writeField( itr->pFieldname, textbuf ) )
                continue;

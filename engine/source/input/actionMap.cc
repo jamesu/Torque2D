@@ -20,6 +20,8 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
+#include "console/consoleTypes.h"
 #include "input/actionMap.h"
 #include "platform/event.h"
 #include "console/console.h"
@@ -649,11 +651,11 @@ const char* ActionMap::getCommand( const char* device, const char* action )
                     char* returnString = Con::getReturnBuffer( bufferLen );
                     dSprintf( returnString, bufferLen, "%s\t%s",
                             ( mapNode->makeConsoleCommand ? mapNode->makeConsoleCommand : "" ),
-                            ( mapNode->breakConsoleCommand ? mapNode->breakConsoleCommand : "" ) );					
+                            ( mapNode->breakConsoleCommand ? mapNode->breakConsoleCommand : "" ) );
                     return( returnString );
-                }					
+                }
                 else
-                    return( mapNode->consoleFunction );					
+                    return( mapNode->consoleFunction );
             }
         }
     }
@@ -730,7 +732,7 @@ const char* ActionMap::getDeadZone( const char* device, const char* action )
                    return( returnString );
                 }
                 else
-                   return( "0 0" );				   		
+                   return( "0 0" );
             }
         }
     }
@@ -748,7 +750,7 @@ const char* ActionMap::buildActionString( const InputEvent* event )
     if ( !getKeyString( event->objInst, objectBuffer ) )
         return( "" );
 
-    U32 returnLen = dStrlen( modifierString ) + dStrlen( objectBuffer ) + 2;	
+    U32 returnLen = dStrlen( modifierString ) + dStrlen( objectBuffer ) + 2;
     char* returnString = Con::getReturnBuffer( returnLen );
     dSprintf( returnString, returnLen - 1, "%s%s", modifierString, objectBuffer );
     return( returnString );
@@ -823,39 +825,39 @@ bool ActionMap::getDeviceName(const U32 deviceType, const U32 deviceInstance, ch
 {
    switch (deviceType)
    {
-     case KeyboardDeviceType:
+      case KeyboardDeviceType:
       dStrcpy(buffer, "keyboard");
       break;
 
-     case MouseDeviceType:
+      case MouseDeviceType:
       dSprintf(buffer, 16, "mouse%d", deviceInstance);
       break;
 
-     case JoystickDeviceType:
+      case JoystickDeviceType:
       dSprintf(buffer, 16, "joystick%d", deviceInstance);
       break;
     
-     case AccelerometerDeviceType:
-     dStrcpy(buffer, "accelerometer");
-     break;
+      case AccelerometerDeviceType:
+      dStrcpy(buffer, "accelerometer");
+      break;
     
-     case GyroscopeDeviceType:
-     dStrcpy(buffer, "gyroscope");
-     break;
+      case GyroscopeDeviceType:
+      dStrcpy(buffer, "gyroscope");
+      break;
      
-     case ScreenTouchDeviceType:
-     dStrcpy(buffer, "touchdevice");
-     break;
+      case ScreenTouchDeviceType:
+      dStrcpy(buffer, "touchdevice");
+      break;
 
-	  case GamepadDeviceType:
+      case GamepadDeviceType:
       dSprintf(buffer, 16, "gamepad%d", deviceInstance);
       break;
 
-     case LeapMotionDeviceType:
+      case LeapMotionDeviceType:
       dStrcpy(buffer, "leapdevice");
       break;
 
-     default:
+      default:
       Con::errorf( "ActionMap::getDeviceName: unknown device type specified, %d (inst: %d)", deviceType, deviceInstance);
       return false;
    }
@@ -1042,7 +1044,7 @@ bool ActionMap::processBindCmd(const char *device, const char *action, const cha
        ( eventDescriptor.eventCode == SI_GYROZ )    ||
        ( eventDescriptor.eventCode == SI_YAW )      ||
        ( eventDescriptor.eventCode == SI_PITCH )    ||
-       ( eventDescriptor.eventCode == SI_ROLL ) )	
+       ( eventDescriptor.eventCode == SI_ROLL ) )   
    {
       Con::warnf( "ActionMap::processBindCmd - Cannot use 'bindCmd' with a move event type. Use 'bind' instead." );
       return false;
@@ -1072,14 +1074,14 @@ bool ActionMap::processBindCmd(const char *device, const char *action, const cha
 }
 
 //------------------------------------------------------------------------------
-bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object)
+bool ActionMap::processBind(const U32 argc, ConsoleValuePtr argv[], SimObject* object)
 {
    // Ok, the bind will come in the following format:
    //  [device] [key or button] <[param spec] [param] ...> [fnName]
    //
-   const char* pDeviceName = argv[0];
-   const char* pEvent      = argv[1];
-   const char* pFnName     = argv[argc - 1];
+   ConsoleStringValuePtr pDeviceName = argv[0].getStringValue();
+   ConsoleStringValuePtr pEvent      = argv[1].getStringValue();
+   ConsoleStringValuePtr pFnName     = argv[argc - 1].getStringValue();
 
    // Determine the device
    U32 deviceType;
@@ -1095,7 +1097,7 @@ bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object
    //  for the bind...
    //
    EventDescriptor eventDescriptor;
-   if (createEventDescriptor(pEvent, &eventDescriptor) == false) {
+   if (createEventDescriptor(pEvent.c_str(), &eventDescriptor) == false) {
       Con::printf("Could not create a description for binding: %s", pEvent);
       return false;
    }
@@ -1117,23 +1119,23 @@ bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object
 
       for (U32 i = 0; pSpec[i] != '\0'; i++) {
          switch (pSpec[i]) {
-           case 'r': case 'R':
+            case 'r': case 'R':
             assignedFlags |= Node::HasScale;
             break;
-           case 's': case 'S':
+            case 's': case 'S':
             assignedFlags |= Node::HasScale;
             break;
-           case 'd': case 'D':
+            case 'd': case 'D':
             assignedFlags |= Node::HasDeadZone;
             break;
-           case 'i': case 'I':
+            case 'i': case 'I':
             assignedFlags |= Node::Inverted;
             break;
-			case 'n': case 'N':
+            case 'n': case 'N':
             assignedFlags |= Node::NonLinear;
             break;
 
-           default:
+            default:
             AssertFatal(false, avar("Misunderstood specifier in bind (spec string: %s)",
                                     pSpec));
          }
@@ -1153,7 +1155,7 @@ bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object
 
       if (curArg != (argc - 1)) {
          AssertFatal(curArg == (argc - 1), "error in bind spec somewhere...");
-         Con::printf("Improperly specified bind for key: %s", argv[2]);
+         Con::printf("Improperly specified bind for key: %s", argv[2].getTempStringValue());
          return false;
       }
    }
@@ -1174,7 +1176,7 @@ bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object
    pBindNode->deadZoneEnd     = deadZoneEnd;
    pBindNode->scaleFactor     = scaleFactor;
    pBindNode->object          = object;
-   pBindNode->consoleFunction = StringTable->insert(pFnName);
+   pBindNode->consoleFunction = StringTable->insert(pFnName.c_str());
 
    return true;
 }
@@ -1183,7 +1185,7 @@ bool ActionMap::processBind(const U32 argc, const char** argv, SimObject* object
 
 bool ActionMap::processLeap(const InputEvent* pEvent)
 {
-    static const char *argv[5];
+    ConsoleValuePtr argv[5];
     char buffer[64];
 
     const Node* pNode = findNode( pEvent->deviceType, pEvent->deviceInst, pEvent->modifier, pEvent->objType );
@@ -1202,7 +1204,7 @@ bool ActionMap::processLeap(const InputEvent* pEvent)
     if ( !pNode->consoleFunction[0] )
         return( true );
 
-    argv[0] = pNode->consoleFunction;
+    argv[0].setSTE(pNode->consoleFunction);
 
     float values[3];
     values[0] = pEvent->fValues[0];
@@ -1228,15 +1230,15 @@ bool ActionMap::processLeap(const InputEvent* pEvent)
         case LM_HANDPOS:
 
             // ID
-            argv[1] = Con::getIntArg(pEvent->iValue);
+          argv[1].setValue(pEvent->iValue);
 
             // Position
             dSprintf(buffer, sizeof(buffer), "%f %f %f", values[0], values[1], values[2]);
 
-            argv[2] = buffer;
+            argv[2].setString(buffer);
 
             if (pNode->object)
-                Con::executef(pNode->object, 3, argv[0], argv[1], argv[2]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2]);
             else
                 Con::execute(3, argv);
             break;
@@ -1244,15 +1246,15 @@ bool ActionMap::processLeap(const InputEvent* pEvent)
         case LM_HANDROT:
             
             // ID
-            argv[1] = Con::getIntArg(pEvent->iValue);
+            argv[1].setValue(pEvent->iValue);
 
             // Rotation
             dSprintf(buffer, sizeof(buffer), "%f %f %f", values[0], values[1], values[2]);
 
-            argv[2] = buffer;
+            argv[2].setString(buffer);
 
             if (pNode->object)
-                Con::executef(pNode->object, 3, argv[0], argv[1], argv[2]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2]);
             else
                 Con::execute(3, argv);
             break;
@@ -1260,19 +1262,19 @@ bool ActionMap::processLeap(const InputEvent* pEvent)
         case LM_FINGERPOS:
             
             // IDs
-            argv[1] = pEvent->fingerIDs;
+            argv[1].setString(pEvent->fingerIDs);
 
             // X-coordinates
-            argv[2] = pEvent->fingersX;
+            argv[2].setString(pEvent->fingersX);
 
             // Y-coordinates
-            argv[3] = pEvent->fingersY;
+            argv[3].setString(pEvent->fingersY);
 
             // Z-coordinates
-            argv[4] = pEvent->fingersZ;
+            argv[4].setString(pEvent->fingersZ);
 
             if (pNode->object)
-                Con::executef(pNode->object, 5, argv[0], argv[1], argv[2], argv[3], argv[4]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2], argv[3], argv[4]);
             else
                 Con::execute(5, argv);
             break;
@@ -1289,7 +1291,7 @@ bool ActionMap::processLeap(const InputEvent* pEvent)
 
 bool ActionMap::processGesture(const InputEvent* pEvent)
 {
-    static const char *argv[6];
+    ConsoleValuePtr argv[6];
     char buffer[64];
 
     const Node* pNode = findNode( pEvent->deviceType, pEvent->deviceInst, pEvent->modifier, pEvent->objType );
@@ -1309,29 +1311,29 @@ bool ActionMap::processGesture(const InputEvent* pEvent)
         return( true );
 
     // Function
-    argv[0] = pNode->consoleFunction;
+    argv[0].setSTE(pNode->consoleFunction);
     
     switch(pEvent->objType)
     {
         case SI_CIRCLE_GESTURE:
 
             // ID
-            argv[1] = Con::getIntArg(pEvent->iValue);
+            argv[1].setValue(pEvent->iValue);
 
             // Progress
-            argv[2] = Con::getFloatArg(pEvent->fValues[0]);
+            argv[2].setValue(pEvent->fValues[0]);
 
             // Radius
-            argv[3] = Con::getFloatArg(pEvent->fValues[1]);
+            argv[3].setValue(pEvent->fValues[1]);
 
             // Direction (1 clockwise, 0 counter-clockwise)
-            argv[4] = Con::getFloatArg(pEvent->fValues[2]);
+            argv[4].setValue(pEvent->fValues[2]);
 
             // State
-            argv[5] = Con::getFloatArg(pEvent->fValues[3]);
+            argv[5].setValue(pEvent->fValues[3]);
 
             if (pNode->object)
-                Con::executef(pNode->object, 6, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
             else
                 Con::execute(6, argv);
             break;
@@ -1339,20 +1341,20 @@ bool ActionMap::processGesture(const InputEvent* pEvent)
         case SI_SWIPE_GESTURE:
 
             // ID
-            argv[1] = Con::getIntArg(pEvent->iValue);
+            argv[1].setValue(pEvent->iValue);
 
             // State
-            argv[2] = Con::getFloatArg(pEvent->fValues[0]);
+            argv[2].setValue(pEvent->fValues[0]);
 
             // Direction
             dSprintf(buffer, sizeof(buffer), "%f %f %f", pEvent->fValues[1], pEvent->fValues[2], pEvent->fValues[3]);
 
-            argv[3] = buffer;
+            argv[3].setString(buffer);
             // Speed
-            argv[4] = Con::getFloatArg(pEvent->fValues[4]);
+            argv[4].setValue(pEvent->fValues[4]);
 
             if (pNode->object)
-                Con::executef(pNode->object, 5, argv[0], argv[1], argv[2], argv[3], argv[4]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2], argv[3], argv[4]);
             else
                 Con::execute(5, argv);
             break;
@@ -1361,20 +1363,20 @@ bool ActionMap::processGesture(const InputEvent* pEvent)
         case SI_SCREENTAP_GESTURE:
 
             // ID
-            argv[1] = Con::getIntArg(pEvent->iValue);
+            argv[1].setValue(pEvent->iValue);
         
             // Position
             dSprintf(buffer, sizeof(buffer), "%f %f %f", pEvent->fValues[0], pEvent->fValues[1], pEvent->fValues[2]);
 
-            argv[2] = buffer;
+            argv[2].setString(buffer);
 
             // Direction
             dSprintf(buffer, sizeof(buffer), "%f %f %f", pEvent->fValues[3], pEvent->fValues[4], pEvent->fValues[5]);
 
-            argv[3] = buffer;
+            argv[3].setString(buffer);
 
             if (pNode->object)
-                Con::executef(pNode->object, 4, argv[0], argv[1], argv[2], argv[3]);
+                Con::executef(pNode->object, argv[0], argv[1], argv[2], argv[3]);
             else
                 Con::execute(5, argv);
 
@@ -1393,7 +1395,7 @@ bool ActionMap::processGesture(const InputEvent* pEvent)
 
 bool ActionMap::processTouch(const InputEvent* pEvent)
 {
-    static const char *argv[4];
+    ConsoleValuePtr argv[4];
     const Node* pNode = findNode(pEvent->deviceType, pEvent->deviceInst, pEvent->modifier, pEvent->objInst);
        
     if (pNode == NULL) 
@@ -1411,13 +1413,13 @@ bool ActionMap::processTouch(const InputEvent* pEvent)
         return( true );
        
     // Ok, we're all set up, call the function.
-    argv[0] = pNode->consoleFunction;
-    argv[1] = pEvent->fingerIDs;
-    argv[2] = pEvent->fingersX;
-    argv[3] = pEvent->fingersY;
+    argv[0].setSTE(pNode->consoleFunction);
+    argv[1].setString(pEvent->fingerIDs);
+    argv[2].setString(pEvent->fingersX);
+    argv[3].setString(pEvent->fingersY);
        
     if (pNode->object)
-        Con::executef(pNode->object, 4, argv[0], argv[1], argv[2], argv[3]);
+        Con::executef(pNode->object, argv[0], argv[1], argv[2], argv[3]);
     else
         Con::execute(4, argv);
        
@@ -1428,7 +1430,7 @@ bool ActionMap::processTouch(const InputEvent* pEvent)
 
 bool ActionMap::processButton(const InputEvent* pEvent)
 {
-    static const char *argv[2];
+    ConsoleValuePtr argv[2];
     const Node* pNode = findNode(pEvent->deviceType, pEvent->deviceInst, pEvent->modifier, pEvent->objInst);
 
     if (pNode == NULL) 
@@ -1466,7 +1468,7 @@ bool ActionMap::processButton(const InputEvent* pEvent)
     {
         if (value >= pNode->deadZoneBegin && value <= pNode->deadZoneEnd)
             value = 0.0f;
-        else			
+        else         
         {
             if( value > 0 )
                 value = ( value - pNode->deadZoneBegin ) * ( 1.f / ( 1.f - pNode->deadZoneBegin ) );
@@ -1487,11 +1489,11 @@ bool ActionMap::processButton(const InputEvent* pEvent)
     }
     else if ( pNode->consoleFunction[0] )
     {
-        argv[0] = pNode->consoleFunction;
-        argv[1] = Con::getFloatArg(value);
+        argv[0].setSTE(pNode->consoleFunction);
+        argv[1].setValue(value);
         
         if (pNode->object)
-            Con::executef(pNode->object, 2, argv[0], argv[1]);
+            Con::executef(pNode->object, argv[0], argv[1]);
         else
             Con::execute(2, argv);
     }
@@ -1519,7 +1521,7 @@ bool ActionMap::processButton(const InputEvent* pEvent)
 
 bool ActionMap::processMove(const InputEvent* pEvent)
 {
-    static const char *argv[4];
+    ConsoleValuePtr argv[4];
 
     if (pEvent->deviceType == MouseDeviceType)
     {
@@ -1551,11 +1553,11 @@ bool ActionMap::processMove(const InputEvent* pEvent)
             value *= pNode->scaleFactor;
 
         // Ok, we're all set up, call the function.
-        argv[0] = pNode->consoleFunction;
-        argv[1] = Con::getFloatArg(value);
+        argv[0].setSTE(pNode->consoleFunction);
+        argv[1].setValue(value);
           
         if (pNode->object)
-            Con::executef(pNode->object, 2, argv[0], argv[1]);
+            Con::executef(pNode->object, argv[0], argv[1]);
         else
             Con::execute(2, argv);
 
@@ -1569,29 +1571,29 @@ bool ActionMap::processMove(const InputEvent* pEvent)
             return false;
 
         // Ok, we're all set up, call the function.
-        argv[0] = pNode->consoleFunction;
+        argv[0].setSTE(pNode->consoleFunction);
         S32 argc = 1;
 
         if (pEvent->objType == XI_INT)
         {
             // Handle the integer as some sort of motion such as a
             // single component to an absolute position
-            argv[1] = Con::getIntArg( pEvent->iValue );
+            argv[1].setValue( pEvent->iValue );
             argc += 1;
         }
         else if (pEvent->objType == XI_FLOAT)
         {
             // Handle float as some sort of motion such as a
             // single component to an absolute position
-            argv[1] = Con::getFloatArg( pEvent->fValues[0] );
+            argv[1].setValue( pEvent->fValues[0] );
             argc += 1;
         }
         else if (pEvent->objType == XI_POS)
         {
             // Handle Point3F type position
-            argv[1] = Con::getFloatArg( pEvent->fValues[0] );
-            argv[2] = Con::getFloatArg( pEvent->fValues[1] );
-            argv[3] = Con::getFloatArg( pEvent->fValues[2] );
+            argv[1].setValue( pEvent->fValues[0] );
+            argv[2].setValue( pEvent->fValues[1] );
+            argv[3].setValue( pEvent->fValues[2] );
 
             argc += 3;
         }
@@ -1649,11 +1651,11 @@ bool ActionMap::processMove(const InputEvent* pEvent)
             value = ( value < 0.f ? -1.f : 1.f ) * mPow( mFabs( value ), CONST_E );
 
         // Ok, we're all set up, call the function.
-        argv[0] = pNode->consoleFunction;
-        argv[1] = Con::getFloatArg( value );
+        argv[0].setSTE(pNode->consoleFunction);
+        argv[1].setValue( value );
             
         if (pNode->object)
-            Con::executef(pNode->object, 2, argv[0], argv[1]);
+            Con::executef(pNode->object, argv[0], argv[1]);
         else
             Con::execute(2, argv);
 
@@ -1701,11 +1703,11 @@ bool ActionMap::processMove(const InputEvent* pEvent)
             value = ( value < 0.f ? -1.f : 1.f ) * mPow( mFabs( value ), CONST_E );
 
         // Ok, we're all set up, call the function.
-        argv[0] = pNode->consoleFunction;
-        argv[1] = Con::getFloatArg( value );
+        argv[0].setSTE(pNode->consoleFunction);
+        argv[1].setValue( value );
             
         if (pNode->object)
-            Con::executef(pNode->object, 2, argv[0], argv[1]);
+            Con::executef(pNode->object, argv[0], argv[1]);
         else
             Con::execute(2, argv);
 
@@ -1719,7 +1721,7 @@ bool ActionMap::processMove(const InputEvent* pEvent)
 
 bool ActionMap::processMotion(const InputEvent* pEvent)
 {
-    static const char *argv[2];
+    static ConsoleValuePtr argv[2];
 
     // iOS Accelerometer, Gyroscope and DeviceMotion processing
     // Currently, this is identical to the joystick handling.
@@ -1758,11 +1760,11 @@ bool ActionMap::processMotion(const InputEvent* pEvent)
     }
        
     // Ok, we're all set up, call the function.
-    argv[0] = pNode->consoleFunction;
-    argv[1] = Con::getFloatArg( value );
+    argv[0].setSTE(pNode->consoleFunction);
+    argv[1].setValue( value );
        
     if (pNode->object)
-        Con::executef(pNode->object, 2, argv[0], argv[1]);
+        Con::executef(pNode->object, argv[0], argv[1]);
     else
         Con::execute(2, argv);
        
@@ -1773,7 +1775,7 @@ bool ActionMap::processMotion(const InputEvent* pEvent)
 
 bool ActionMap::processXInput(const InputEvent* pEvent)
 {
-    static const char *argv[2];
+    static ConsoleValuePtr argv[2];
 
     if ((pEvent->objType == XI_FLOAT || pEvent->objType == XI_INT))
     {
@@ -1783,21 +1785,21 @@ bool ActionMap::processXInput(const InputEvent* pEvent)
             return false;
 
         // Ok, we're all set up, call the function.
-        argv[0] = pNode->consoleFunction;
+        argv[0].setSTE(pNode->consoleFunction);
         S32 argc = 1;
 
         if (pEvent->objType == XI_INT)
         {
             // Handle the integer as some sort of motion such as a
             // single component to an absolute position
-            argv[1] = Con::getIntArg( pEvent->iValue );
+            argv[1].setValue( pEvent->iValue );
             argc += 1;
         }
         else if (pEvent->objType == XI_FLOAT)
         {
             // Handle float as some sort of motion such as a
             // single component to an absolute position
-            argv[1] = Con::getFloatArg( pEvent->fValues[0] );
+            argv[1].setValue( pEvent->fValues[0] );
             argc += 1;
         }
 
@@ -1930,9 +1932,9 @@ bool ActionMap::checkBreakTable(const InputEvent* pEvent)
          {
             if ( smBreakTable[i].consoleFunction[0] )
             {
-               static const char *argv[2];
-               argv[0] = smBreakTable[i].consoleFunction;
-               argv[1] = Con::getFloatArg(value);
+               static ConsoleValuePtr argv[2];
+               argv[0].setSTE(smBreakTable[i].consoleFunction);
+               argv[1].setValue(value);
                               
                if( smBreakTable[i].object )
                {
@@ -1941,7 +1943,7 @@ bool ActionMap::checkBreakTable(const InputEvent* pEvent)
                   // to turfed memory and crash. To keep things simple we just store id as well so
                   // we can look it up to validate object ref.
                   if( smBreakTable[i].objectId > 0 && Sim::findObject( smBreakTable[i].objectId ) )
-                     Con::executef(smBreakTable[i].object, 2, argv[0], argv[1]);
+                     Con::executef(smBreakTable[i].object, argv[0], argv[1]);
                }
                else
                   Con::execute(2, argv);

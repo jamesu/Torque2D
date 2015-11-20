@@ -54,7 +54,7 @@ ConsoleMethodWithDocs(ImageAsset, setFilterMode, ConsoleVoid, 3, 3, (mode))
     if ( filterMode == ImageAsset::FILTER_INVALID )
     {
         // Warn.
-        Con::warnf("ImageAsset::setFilterMode() - Invalid Filter Mode Specified! (%s)", argv[2] );
+        Con::warnf("ImageAsset::setFilterMode() - Invalid Filter Mode Specified! (%s)", argv[2].getTempStringValue() );
         // Finish Here.
         return;
     }
@@ -347,7 +347,7 @@ ConsoleMethodWithDocs(ImageAsset, getFrameSize, ConsoleString, 3, 3, (int frame)
         // Warn.
         Con::warnf("ImageAsset::getFrameSize() - Invalid Frame; Allowed range is 0 to %d", object->getFrameCount()-1 );
         // Finish Here.
-        return NULL;
+        return "";
     }
 
     // Fetch Selected Frame Pixel Area.

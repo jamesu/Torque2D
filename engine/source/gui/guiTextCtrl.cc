@@ -41,17 +41,17 @@ GuiTextCtrl::GuiTextCtrl()
 }
 
 ConsoleMethod( GuiTextCtrl, setText, void, 3, 3, "( newText ) Use the setText method to set the content of label to newText.\n"
-																"@param newText A string representing the new value for this label.\n"
-																"@return No return value")
+                                                "@param newText A string representing the new value for this label.\n"
+                                                "@return No return value")
 {
-   object->setText( argv[2] );
+   object->setText( argv[2].getTempStringValue() );
 }
 
 ConsoleMethod( GuiTextCtrl, setTextID, void, 3, 3, "( int newTextID ) Set the textID to a new value.\n"
-			  "@param newTextID The desired new ID\n"
-			  "@return No return value.")
+           "@param newTextID The desired new ID\n"
+           "@return No return value.")
 {
-	object->setTextID( argv[2] );
+   object->setTextID( argv[2].getTempStringValue() );
 }
 void GuiTextCtrl::initPersistFields()
 {
@@ -78,7 +78,7 @@ void GuiTextCtrl::inspectPostApply()
 {
    Parent::inspectPostApply();
    if(mInitialTextID && *mInitialTextID != 0)
-	   setTextID(mInitialTextID);
+      setTextID(mInitialTextID);
    else
       setText(mInitialText);
 }
@@ -91,11 +91,12 @@ bool GuiTextCtrl::onWake()
    mFont = mProfile->mFont;
    AssertFatal(mFont, "GuiTextCtrl::onWake: invalid font in profile" );
    if(mInitialTextID && *mInitialTextID != 0)
-	   setTextID(mInitialTextID);
+      setTextID(mInitialTextID);
 
    if ( mConsoleVariable[0] )
    {
-      const char *txt = Con::getVariable( mConsoleVariable );
+      ConsoleStringValuePtr txtS = Con::getVariable( mConsoleVariable );
+      const char *txt = txtS.c_str();
       if ( txt )
       {
          if ( dStrlen( txt ) > (U32)mMaxStrLen )
@@ -147,15 +148,15 @@ void GuiTextCtrl::setText(const char *txt)
    mProfile->incRefCount();
    mFont = mProfile->mFont;
    
-	//Luma:	If the font isn't found, we want to decrement the profile usage and return now or we may crash!
-	if (mFont.isNull())	
-	{
-		//decrement the profile referrence
-		mProfile->decRefCount();
-		return;
-	}
+   //Luma:   If the font isn't found, we want to decrement the profile usage and return now or we may crash!
+   if (mFont.isNull())   
+   {
+      //decrement the profile referrence
+      mProfile->decRefCount();
+      return;
+   }
 
-	//resize
+   //resize
    if (mProfile->mAutoSizeWidth)
    {
       if (mProfile->mAutoSizeHeight)
@@ -177,54 +178,55 @@ void GuiTextCtrl::setText(const char *txt)
 
 void GuiTextCtrl::setTextID(const char *id)
 {
-	S32 n = Con::getIntVariable(id, -1);
-	if(n != -1)
-	{
-		mInitialTextID = StringTable->insert(id);
-		setTextID(n);
-	}
+   S32 n = Con::getIntVariable(id, -1);
+   if(n != -1)
+   {
+      mInitialTextID = StringTable->insert(id);
+      setTextID(n);
+   }
 }
 void GuiTextCtrl::setTextID(S32 id)
 {
-	const UTF8 *str = getGUIString(id);
-	if(str)
-		setText((const char*)str);
-	//mInitialTextID = id;
+   const UTF8 *str = getGUIString(id);
+   if(str)
+      setText((const char*)str);
+   //mInitialTextID = id;
 }
 
 //------------------------------------------------------------------------------
 void GuiTextCtrl::onPreRender()
 {
-   const char * var = getVariable();
-   if(var && var[0] && dStricmp((char*)mText, var))
+   ConsoleStringValuePtr varS = getVariable();
+   const char* var = varS.c_str();
+   if(var[0] && dStricmp((char*)mText, var))
       setText(var);
 }
 
 //------------------------------------------------------------------------------
 void GuiTextCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
-	StringBuffer textBuffer(mText);
+   StringBuffer textBuffer(mText);
 
-    ColorI fontColor = mProfile->mFontColor;
+   ColorI fontColor = mProfile->mFontColor;
 
-	if (mTruncateWhenUnfocused)
-    {
-		StringBuffer terminationString = "...";
-        S32 width = mBounds.extent.x;
-        StringBuffer truncatedBuffer = truncate(textBuffer, terminationString, width);
-        const UTF8* truncatedBufferPtr = truncatedBuffer.getPtr8();
-        
-        dglSetBitmapModulation(fontColor);
-		renderJustifiedText(offset, mBounds.extent, (char*)truncatedBufferPtr);
-    }
-    else
-    {
-		dglSetBitmapModulation(fontColor);
-		renderJustifiedText(offset, mBounds.extent, (char*)mText);
-	}
+   if (mTruncateWhenUnfocused)
+   {
+      StringBuffer terminationString = "...";
+      S32 width = mBounds.extent.x;
+      StringBuffer truncatedBuffer = truncate(textBuffer, terminationString, width);
+      const UTF8* truncatedBufferPtr = truncatedBuffer.getPtr8();
 
-    //render the child controls
-    renderChildControls(offset, updateRect);
+      dglSetBitmapModulation(fontColor);
+      renderJustifiedText(offset, mBounds.extent, (char*)truncatedBufferPtr);
+   }
+   else
+   {
+      dglSetBitmapModulation(fontColor);
+      renderJustifiedText(offset, mBounds.extent, (char*)mText);
+   }
+
+   //render the child controls
+   renderChildControls(offset, updateRect);
 }
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- //

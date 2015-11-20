@@ -287,8 +287,8 @@ ConsoleMethodWithDocs(ModuleManager, copyModule, ConsoleString, 6, 6, (sourceMod
     if ( pSourceModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "ModuleManager::copyModule() - Could not find source module definition '%s'.", argv[2] );
-        return NULL;
+        Con::warnf( "ModuleManager::copyModule() - Could not find source module definition '%s'.", argv[2].getTempStringValue() );
+        return "";
     }
 
     // Fetch the target module Id.
@@ -320,7 +320,7 @@ ConsoleMethodWithDocs(ModuleManager, synchronizeDependencies, ConsoleBool, 4, 4,
     if ( pRootModuleDefinition == NULL )
     {
         // No, so warn.
-        Con::warnf( "ModuleManager::synchronizeModules() - Could not find root module definition '%s'.", argv[2] );
+        Con::warnf( "ModuleManager::synchronizeModules() - Could not find root module definition '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -392,7 +392,7 @@ ConsoleMethodWithDocs(ModuleManager, addListener, ConsoleVoid, 3, 3, (listenerOb
     if ( pListener == NULL )
     {
         // No, so warn.
-        Con::warnf( "ModuleManager::addNotifications() - Could not find the listener object '%s'.", argv[2] );
+        Con::warnf( "ModuleManager::addNotifications() - Could not find the listener object '%s'.", argv[2].getTempStringValue() );
         return;
     }
 
@@ -414,7 +414,7 @@ ConsoleMethodWithDocs(ModuleManager, removeListener, ConsoleVoid, 3, 3, (listene
     if ( pListener == NULL )
     {
         // No, so warn.
-        Con::warnf( "ModuleManager::removeNotifications() - Could not find the listener object '%s'.", argv[2] );
+        Con::warnf( "ModuleManager::removeNotifications() - Could not find the listener object '%s'.", argv[2].getTempStringValue() );
         return;
     }
 

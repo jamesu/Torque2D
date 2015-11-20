@@ -27,18 +27,26 @@
 #include "console/consoleBaseType.h"
 #endif
 
+#ifndef _MRECT_H_
+#include "math/mRect.h"
+#endif
+
+#ifndef _MBOX_H_
+#include "math/mBox.h"
+#endif
+
 void RegisterMathFunctions(void);
 
 // Define Math Console Types
-DefineConsoleType( TypePoint2I )
-DefineConsoleType( TypePoint2F )
-DefineConsoleType( TypePoint3F )
-DefineConsoleType( TypePoint4F )
-DefineConsoleType( TypePoint2FVector )
-DefineConsoleType( TypeRectI )
-DefineConsoleType( TypeRectF )
+DefineNativeConsoleType( TypePoint2I, Point2I )
+DefineNativeConsoleType( TypePoint2F, Point2F )
+DefineNativeConsoleType( TypePoint3F, Point3F )
+DefineNativeConsoleType( TypePoint4F, Point4F )
+DefineNativeConsoleType( TypePoint2FVector, Vector<Point2F> )
+DefineNativeConsoleType( TypeRectI, RectI )
+DefineNativeConsoleType( TypeRectF, RectF )
 DefineConsoleType( TypeMatrixPosition )
 DefineConsoleType( TypeMatrixRotation )
-DefineConsoleType( TypeBox3F )
+DefineNativeConsoleType( TypeBox3F, Box3F )
 
 #endif

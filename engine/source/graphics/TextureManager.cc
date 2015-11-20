@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "graphics/TextureManager.h"
 
 #include "platform/platformAssert.h"

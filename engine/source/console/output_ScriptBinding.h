@@ -197,10 +197,10 @@ ConsoleFunctionWithDocs( gotoWebPage, ConsoleVoid, 2, 2, ( address ))
    char urlBuf[2048];
    if(Platform::isFile(argv[1]) || Platform::isDirectory(argv[1]))
    {
-      dSprintf(urlBuf, sizeof(urlBuf), "file://%s",argv[1]);
+      dSprintf(urlBuf, sizeof(urlBuf), "file://%s",argv[1].getTempStringValue());
    }
    else
-      dSprintf(urlBuf, sizeof(urlBuf), "http://%s",argv[1]);
+      dSprintf(urlBuf, sizeof(urlBuf), "http://%s",argv[1].getTempStringValue());
    
    Platform::openWebBrowser(urlBuf);
    return;

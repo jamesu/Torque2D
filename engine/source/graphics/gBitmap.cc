@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "io/stream.h"
 #include "io/fileStream.h"
 #include "graphics/gBitmap.h"

@@ -355,7 +355,7 @@ void GuiControlProfile::incRefCount()
 {
    if(!mRefCount++)
    {
-      sFontCacheDirectory = Con::getVariable("$GUI::fontCacheDirectory");
+      sFontCacheDirectory = StringTable->insert(Con::getVariable("$GUI::fontCacheDirectory").c_str());
 
       //verify the font
       mFont = GFont::create(mFontType, mFontSize, sFontCacheDirectory);
@@ -389,20 +389,30 @@ void GuiControlProfile::decRefCount()
 }
 
 ConsoleType( GuiProfile, TypeGuiProfile, sizeof(GuiControlProfile*), "" )
+ConsoleUseDefaultReferenceType( TypeGuiProfile, GuiControlProfile* )
 
-ConsoleSetType( TypeGuiProfile )
+ConsoleTypeFromConsoleValue( TypeGuiProfile )
 {
+   // Check we have the right sort of value here
+   if (ConsoleValue::isRefType(value.type))
+   {
+      if (value.value.refValue->isEnumerable())
+      {
+         Con::warnf( "(TypeGuiProfile) - Cannot set multiple args to a single GuiProfile." );
+         return;
+      }
+   }
+   
    GuiControlProfile *profile = NULL;
-   if(argc == 1)
-      Sim::findObject(argv[0], profile);
+   Sim::findObject(value, profile);
 
-   AssertWarn(profile != NULL, avar("GuiControlProfile: requested gui profile (%s) does not exist.", argv[0]));
+   AssertWarn(profile != NULL, avar("GuiControlProfile: requested gui profile (%s) does not exist.", value.getTempStringValue()));
    if(!profile)
       profile = dynamic_cast<GuiControlProfile*>(Sim::findObject("GuiDefaultProfile"));
 
-   AssertFatal(profile != NULL, avar("GuiControlProfile: unable to find specified profile (%s) and GuiDefaultProfile does not exist!", argv[0]));
+   AssertFatal(profile != NULL, avar("GuiControlProfile: unable to find specified profile (%s) and GuiDefaultProfile does not exist!", value.getTempStringValue()));
 
-   GuiControlProfile **obj = (GuiControlProfile **)dptr;
+   GuiControlProfile **obj = (GuiControlProfile **)dataPtr;
    if((*obj) == profile)
       return;
 
@@ -413,11 +423,12 @@ ConsoleSetType( TypeGuiProfile )
    (*obj)->incRefCount();
 }
 
-ConsoleGetType( TypeGuiProfile )
+ConsoleTypeToString( TypeGuiProfile )
 {
    static char returnBuffer[256];
 
-   GuiControlProfile **obj = (GuiControlProfile**)dptr;
+   GuiControlProfile **obj = (GuiControlProfile**)dataPtr;
    dSprintf(returnBuffer, sizeof(returnBuffer), "%s", *obj ? (*obj)->getName() ? (*obj)->getName() : (*obj)->getIdString() : "");
    return returnBuffer;
 }
+

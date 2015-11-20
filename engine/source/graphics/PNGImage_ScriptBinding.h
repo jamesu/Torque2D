@@ -44,7 +44,7 @@ ConsoleMethodWithDocs(PNGImage, MergeOn, ConsoleBool, 5, 5, (x, y, imageFile))
 
     if(!fStream.open(argv[4], FileStream::Read))
     { 
-        Con::printf("Failed to open file '%s'.", argv[4]);
+        Con::printf("Failed to open file '%s'.", argv[4].getTempStringValue());
         return false;
     }
 
@@ -78,7 +78,7 @@ ConsoleMethodWithDocs(PNGImage, SaveImage, ConsoleBool, 3, 3, (fileName))
 
     if(!fStream.open(argv[2], FileStream::Write))
     { 
-        Con::printf("Failed to open file '%s'.", argv[2]);
+        Con::printf("Failed to open file '%s'.", argv[2].getTempStringValue());
         return false;
     }
 

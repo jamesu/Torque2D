@@ -394,7 +394,7 @@ void ImageFont::calculateSpatials( void )
 
 //-----------------------------------------------------------------------------
 
-bool ImageFont::setTextAlignment( void* obj, const char* data )
+bool ImageFont::setTextAlignment( void *obj, const ConsoleValuePtr data )
 {
-    static_cast<ImageFont*>( obj )->setTextAlignment( getTextAlignmentEnum(data) ); return false;
+    static_cast<ImageFont*>( obj )->setTextAlignment( getTextAlignmentEnum(data.getTempStringValue()) ); return false;
 }

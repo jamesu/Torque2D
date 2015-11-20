@@ -94,7 +94,7 @@ bool GuiArrayCtrl::cellSelected(Point2I cell)
 
 void GuiArrayCtrl::onCellSelected(Point2I cell)
 {
-    Con::executef(this, 3, "onSelect", Con::getFloatArg(cell.x), Con::getFloatArg(cell.y));
+    Con::executef(this, "onSelect", cell.x, cell.y);
 
    //call the console function
    execConsoleCallback();
@@ -441,6 +441,6 @@ void GuiArrayCtrl::onRightMouseDown(const GuiEvent &event)
       char buf[32];
       dSprintf( buf, sizeof( buf ), "%d %d", event.mousePoint.x, event.mousePoint.y );
       // Pass it to the console:
-       Con::executef(this, 4, "onRightMouseDown", Con::getIntArg(cell.x), Con::getIntArg(cell.y), buf);
+       Con::executef(this, "onRightMouseDown", cell.x, cell.y, buf);
    }
 }

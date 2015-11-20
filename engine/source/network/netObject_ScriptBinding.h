@@ -33,7 +33,7 @@ ConsoleMethodWithDocs(NetObject,scopeToClient, ConsoleVoid,3,3, ( client ))
    NetConnection *conn;
    if(!Sim::findObject(argv[2], conn))
    {
-      Con::errorf(ConsoleLogEntry::General, "NetObject::scopeToClient: Couldn't find connection %s", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "NetObject::scopeToClient: Couldn't find connection %s", argv[2].getTempStringValue());
       return;
    }
    conn->objectLocalScopeAlways(object);
@@ -49,7 +49,7 @@ ConsoleMethodWithDocs(NetObject,clearScopeToClient, ConsoleVoid,3,3, ( client ))
    NetConnection *conn;
    if(!Sim::findObject(argv[2], conn))
    {
-      Con::errorf(ConsoleLogEntry::General, "NetObject::clearScopeToClient: Couldn't find connection %s", argv[2]);
+      Con::errorf(ConsoleLogEntry::General, "NetObject::clearScopeToClient: Couldn't find connection %s", argv[2].getTempStringValue());
       return;
    }
    conn->objectLocalClearAlways(object);

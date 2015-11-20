@@ -112,7 +112,7 @@ public:
    };
 
    /// Set connection arguments; these are passed to the server when we connect.
-   void setConnectArgs(U32 argc, const char **argv);
+   void setConnectArgs(U32 argc, ConsoleValuePtr argv[]);
 
    /// Set the server password to use when we join.
    void setJoinPassword(const char *password);

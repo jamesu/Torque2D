@@ -27,14 +27,18 @@
 #include "platform/platform.h"
 #endif
 
+#ifndef _CONSOLE_H_
+#include "console/console.h"
+#endif
+
 #ifndef _CONSOLE_BASE_TYPE_H_
 #include "console/consoleBaseType.h"
 #endif
 
 //-----------------------------------------------------------------------------
 
-DefineConsoleType( TypeColorI )
-DefineConsoleType( TypeColorF )
+DefineNativeConsoleType( TypeColorI, ColorI )
+DefineNativeConsoleType( TypeColorF, ColorF )
 
 
 //-----------------------------------------------------------------------------

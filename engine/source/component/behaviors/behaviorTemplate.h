@@ -175,8 +175,8 @@ protected:
     Vector<BehaviorPortOutput> mPortOutputs;
 
 
-    static bool setDescription(void* obj, const char* data) { static_cast<BehaviorTemplate *>(obj)->mDescription = data ? StringTable->insert(data) : StringTable->EmptyString; return false; }
-    static const char* getDescription(void* obj, const char* data) { return static_cast<BehaviorTemplate *>(obj)->mDescription; }
+    static bool setDescription(void *obj, const ConsoleValuePtr data) { static_cast<BehaviorTemplate *>(obj)->mDescription = data.getSTEStringValue(); return false; }
+    static ConsoleValuePtr getDescription(void *obj, const ConsoleValuePtr data) { return static_cast<BehaviorTemplate *>(obj)->mDescription; }
 };
 
 #endif // _BEHAVIORTEMPLATE_H_

@@ -143,7 +143,7 @@ void GuiListBoxCtrl::removeSelection( LBItem *item, S32 index )
       {
          mSelectedItems.erase( &mSelectedItems[i] );
          item->isSelected = false;
-         Con::executef(this, 3, "onUnSelect", Con::getIntArg( index ), item->itemText);
+         Con::executef(this, "onUnSelect", Con::getIntArg( index ), item->itemText);
          return;
       }
    }
@@ -189,7 +189,7 @@ void GuiListBoxCtrl::addSelection( LBItem *item, S32 index )
    item->isSelected = true;
    mSelectedItems.push_front( item );
 
-   Con::executef(this, 3, "onSelect", Con::getIntArg( index ), item->itemText);
+   Con::executef(this, "onSelect", Con::getIntArg( index ), item->itemText);
 
 }
 
@@ -242,7 +242,7 @@ S32 GuiListBoxCtrl::getSelectedItem()
    return -1;
 }
 
-ConsoleMethod( GuiListBoxCtrl, getSelectedItems, const char*, 2, 2, "()\n @return Returns a space delimited list "
+ConsoleMethod( GuiListBoxCtrl, getSelectedItems, ConsoleString, 2, 2, "()\n @return Returns a space delimited list "
               "of the selected items indexes in the list")
 {
    S32 selCount = object->getSelCount();
@@ -613,7 +613,7 @@ void  GuiListBoxCtrl::deleteItem( S32 index )
 }
 
 
-ConsoleMethod( GuiListBoxCtrl, getItemText, const char*, 3, 3, "(index) \n @return Returns the text of the item at the specified index")
+ConsoleMethod( GuiListBoxCtrl, getItemText, ConsoleString, 3, 3, "(index) \n @return Returns the text of the item at the specified index")
 {
    return object->getItemText( dAtoi( argv[2] ) );
 }
@@ -767,7 +767,7 @@ void GuiListBoxCtrl::onMouseDragged(const GuiEvent &event)
    Parent::onMouseDragged(event);
 
    if(isMethod("onMouseDragged"))
-      Con::executef(this, 1, "onMouseDragged");
+      Con::executef(this, "onMouseDragged");
 }
 
 void GuiListBoxCtrl::onMouseDown( const GuiEvent &event )
@@ -796,7 +796,7 @@ void GuiListBoxCtrl::onMouseDown( const GuiEvent &event )
       setCurSel( itemHit );
 
       if( itemHit == selItem && event.mouseClickCount == 2 && isMethod("onDoubleClick") )
-         Con::executef( this, 2, "onDoubleClick" );
+         Con::executef( this, "onDoubleClick" );
 
       // Store the clicked item
       mLastClickItem = hitItem;
@@ -842,7 +842,7 @@ void GuiListBoxCtrl::onMouseDown( const GuiEvent &event )
    }
 
    if( hitItem == mLastClickItem && event.mouseClickCount == 2 && isMethod("onDoubleClick") )
-      Con::executef( this, 2, "onDoubleClick" );
+      Con::executef( this, "onDoubleClick" );
 
    mLastClickItem = hitItem;
 

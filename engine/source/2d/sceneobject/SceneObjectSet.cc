@@ -97,14 +97,14 @@ void SceneObjectSet::addTamlChild( SimObject* pSimObject )
 
 //-----------------------------------------------------------------------------
 
-void SceneObjectSet::callOnChildren( const char * method, S32 argc, const char *argv[], bool executeOnChildGroups )
+void SceneObjectSet::callOnChildren( const char *method, S32 argc, ConsoleValuePtr argv[], bool executeOnChildGroups )
 {
    // Prep the arguments for the console exec...
    // Make sure and leave args[1] empty.
-   const char* args[21];
-   args[0] = method;
+   ConsoleValuePtr args[21];
+   args[0].setString(method);
    for (S32 i = 0; i < argc; i++)
-      args[i + 2] = argv[i];
+      args[i + 2].setValue(argv[i]);
 
    for( iterator i = begin(); i != end(); i++ )
    {

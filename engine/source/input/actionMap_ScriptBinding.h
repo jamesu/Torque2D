@@ -100,7 +100,7 @@ ConsoleMethodWithDocs( ActionMap, unbindObj, ConsoleVoid, 5, 5, (device, action,
 */
 ConsoleMethodWithDocs( ActionMap, save, ConsoleVoid, 2, 4, ( [ fileName ] [ , append ] ))
 {
-   const char* fileName = argc > 2 ? argv[2]        : NULL;
+   const char* fileName = argc > 2 ? argv[2].getTempStringValue()        : NULL;
    bool append          = argc > 3 ? dAtob(argv[3]) : false;
 
    char buffer[1024];
@@ -144,7 +144,7 @@ ConsoleMethodWithDocs( ActionMap, pop, ConsoleVoid, 2, 2, ())
 */
 ConsoleMethodWithDocs( ActionMap, getBinding, ConsoleString, 3, 3, ( command ))
 {
-    return( object->getBinding( argv[2] ) );	
+    return( object->getBinding( argv[2] ) );
 }
 
 //------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ ConsoleMethodWithDocs( ActionMap, getBinding, ConsoleString, 3, 3, ( command ))
 */
 ConsoleMethodWithDocs( ActionMap, getCommand, ConsoleString, 4, 4, ( device , action ))
 {
-    return( object->getCommand( argv[2], argv[3] ) );	
+    return( object->getCommand( argv[2], argv[3] ) );
 }
 
 //------------------------------------------------------------------------------

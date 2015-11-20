@@ -125,7 +125,7 @@ void GuiCheckBoxCtrl::onAction()
 
    // Provide and onClick script callback.
    if( isMethod("onClick") )
-      Con::executef( this, 2, "onClick" );
+      Con::executef( this, "onClick" );
 }
 
 //---------------------------------------------------------------------------

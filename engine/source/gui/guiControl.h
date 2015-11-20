@@ -189,7 +189,7 @@ protected:
     /// @param   value   Float value to assign to control's console variable
     void setFloatVariable(F32 value);
 
-    const char* getVariable(); ///< Returns value of control's bound variable as a string
+    ConsoleStringValuePtr getVariable(); ///< Returns value of control's bound variable as a string
     S32 getIntVariable();      ///< Returns value of control's bound variable as a integer
     F32 getFloatVariable();    ///< Returns value of control's bound variable as a float
 

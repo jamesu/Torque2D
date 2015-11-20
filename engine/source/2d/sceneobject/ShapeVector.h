@@ -31,7 +31,7 @@
 
 class ShapeVector : public SceneObject
 {
-    typedef SceneObject			Parent;
+    typedef SceneObject     Parent;
 
 protected:
     ColorF                  mLineColor;
@@ -106,10 +106,11 @@ public:
     DECLARE_CONOBJECT(ShapeVector);
 
 protected:
-    static bool setPolyList(void* obj, const char* data)
+    static bool setPolyList(void *obj, const ConsoleValuePtr data)
     {
-       const U32 count = Utility::mGetStringElementCount(data) >> 1;
-       static_cast<ShapeVector*>(obj)->setPolyCustom(count, data);
+       ConsoleStringValuePtr str = data.getStringValue();
+       const U32 count = Utility::mGetStringElementCount(str.c_str()) >> 1;
+       static_cast<ShapeVector*>(obj)->setPolyCustom(count, str.c_str());
        return false;
     }
     static bool writePolyList( void* obj, StringTableEntry pFieldName ) { return static_cast<ShapeVector*>(obj)->mPolygonBasisList.size() > 0; }

@@ -116,17 +116,17 @@ public:
     DECLARE_CONOBJECT(ImageFont);
 
 protected:
-    static bool setImage(void* obj, const char* data)                       { static_cast<ImageFont*>(obj)->setImage( data ); return false; }
-    static const char* getImage(void* obj, const char* data)                { return static_cast<ImageFont*>(obj)->getImage(); }
+    static bool setImage(void *obj, const ConsoleValuePtr data)                       { static_cast<ImageFont*>(obj)->setImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getImage(void *obj, const ConsoleValuePtr data)                { return static_cast<ImageFont*>(obj)->getImage(); }
     static bool writeImage( void* obj, StringTableEntry pFieldName )        { return static_cast<ImageFont*>(obj)->mImageAsset.notNull(); }
-    static bool setText( void* obj, const char* data )                      { static_cast<ImageFont*>( obj )->setText( data ); return false; }
-    static const char* getText( void* obj, const char* data )               { return static_cast<ImageFont*>( obj )->getText().getPtr8(); }
+    static bool setText( void *obj, const ConsoleValuePtr data )                      { static_cast<ImageFont*>( obj )->setText( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getText( void *obj, const ConsoleValuePtr data )               { return static_cast<ImageFont*>( obj )->getText().getPtr8(); }
     static bool writeText( void* obj, StringTableEntry pFieldName )         { return static_cast<ImageFont*>(obj)->mText.length() != 0; }
-    static bool setTextAlignment( void* obj, const char* data );
+    static bool setTextAlignment( void *obj, const ConsoleValuePtr data );
     static bool writeTextAlignment( void* obj, StringTableEntry pFieldName ){return static_cast<ImageFont*>(obj)->getTextAlignment() != ImageFont::ALIGN_CENTER; }
-    static bool setFontSize( void* obj, const char* data )                  { static_cast<ImageFont*>( obj )->setFontSize( Utility::mGetStringElementVector(data) ); return false; }
+    static bool setFontSize( void *obj, const ConsoleValuePtr data )                  { static_cast<ImageFont*>( obj )->setFontSize( Utility::mGetStringElementVector(data.getTempStringValue()) ); return false; }
 	static bool writeFontSize( void* obj, StringTableEntry pFieldName )     { return static_cast<ImageFont*>(obj)->getFontSize().notEqual(Vector2::getOne()); }	
-    static bool setFontPadding( void* obj, const char* data )               { static_cast<ImageFont*>( obj )->setFontPadding( dAtof(data) ); return false; }
+    static bool setFontPadding( void *obj, const ConsoleValuePtr data )               { static_cast<ImageFont*>( obj )->setFontPadding( dAtof(data) ); return false; }
     static bool writeFontPadding( void* obj, StringTableEntry pFieldName )  { return static_cast<ImageFont*>(obj)->getFontPadding() != 0; }
 };
 

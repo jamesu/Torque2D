@@ -32,13 +32,14 @@
 #ifndef _CONSOLETYPES_H_
 #include "console/consoleTypes.h"
 #endif
+#ifndef _CONSOLEVALUE_H_
+#include "console/consoleValue.h"
+#endif
 
 //-----------------------------------------------------------------------------
 
-class ExprEvalState;
+class CodeBlockEvalState;
 class CodeBlock;
-
-extern char *typeValueEmpty;
 
 //-----------------------------------------------------------------------------
 
@@ -71,16 +72,16 @@ public:
             if(type <= TypeInternalString)
                 return ival;
             else
-                return dAtoi(Con::getData(type, dataPtr, 0));
+                return dAtoi(Con::getData(type, dataPtr, 0).c_str());
         }
         F32 getFloatValue()
         {
             if(type <= TypeInternalString)
                 return fval;
             else
-                return dAtof(Con::getData(type, dataPtr, 0));
+                return dAtof(Con::getData(type, dataPtr, 0).c_str());
         }
-        const char *getStringValue()
+        ConsoleStringValuePtr getStringValue()
         {
             if(type == TypeInternalString)
                 return sval;
@@ -107,8 +108,8 @@ public:
             }
             else
             {
-                const char *dptr = Con::getData(TypeS32, &val, 0);
-                Con::setData(type, dataPtr, 0, 1, &dptr);
+                ConsoleValuePtr dataValue = Con::getDataValue(TypeS32, &val, 0);
+                Con::setDataFromValue(type, dataPtr, 0, dataValue);
             }
         }
         void setFloatValue(F32 val)
@@ -127,8 +128,8 @@ public:
             }
             else
             {
-                const char *dptr = Con::getData(TypeF32, &val, 0);
-                Con::setData(type, dataPtr, 0, 1, &dptr);
+                ConsoleValuePtr dataValue = Con::getDataValue(TypeF32, &val, 0);
+                Con::setData(type, dataPtr, 0, dataValue);
             }
         }
         void setStringValue(const char *value);
@@ -144,7 +145,7 @@ private:
     };
 
     HashTableData *hashTable;
-    ExprEvalState *exprState;
+    CodeBlockEvalState *exprState;
 
 public:
     StringTableEntry scopeName;
@@ -153,11 +154,11 @@ public:
     U32 ip;
 
     Dictionary();
-    Dictionary(ExprEvalState *state, Dictionary* ref=NULL);
+    Dictionary(CodeBlockEvalState *state, Dictionary* ref=NULL);
     ~Dictionary();
     Entry *lookup(StringTableEntry name);
     Entry *add(StringTableEntry name);
-    void setState(ExprEvalState *state, Dictionary* ref=NULL);
+    void setState(CodeBlockEvalState *state, Dictionary* ref=NULL);
     void remove(Entry *);
     void reset();
 
@@ -165,7 +166,7 @@ public:
     void deleteVariables(const char *varString);
 
     void setVariable(StringTableEntry name, const char *value);
-    const char *getVariable(StringTableEntry name, bool *valid = NULL);
+    ConsoleStringValuePtr getVariable(StringTableEntry name, bool *valid = NULL);
 
     void addVariable(const char *name, S32 type, void *dataPtr);
     bool removeVariable(StringTableEntry name);
@@ -173,6 +174,68 @@ public:
     /// Return the best tab completion for prevText, with the length
     /// of the pre-tab string in baseLen.
     const char *tabComplete(const char *prevText, S32 baseLen, bool);
+};
+
+class FunctionDeclStmtNode;
+
+// Function or execution environment for code
+class CodeBlockFunction
+{
+public:
+    typedef struct Symbol
+    {
+        U32 registerIdx;
+        StringTableEntry varName;
+    } Symbol;
+   
+    FunctionDeclStmtNode* stmt;
+    U32 ip;
+    StringTableEntry name;
+    
+    /// List of local variables
+    Vector<Symbol> vars;
+   
+    /// List of vars which are args
+    Vector<Symbol> args;
+    
+    /// Number of parameters (if a function)
+    U32 numArgs;
+    
+    /// Maximum stack position used
+    U32 maxStack;
+    
+    void read(Stream &s, ConsoleSerializationState &serializationState)
+    {
+        name = s.readSTString();
+        s.read(&numArgs);
+        s.read(&maxStack);
+        s.read(&ip);
+        
+        U8 numVars;
+        s.read(&numVars);
+        vars.setSize(numVars);
+        for (U32 i=0; i<numVars; i++)
+        {
+            s.read(&vars[i].registerIdx);
+            vars[i].varName = s.readSTString();
+        }
+    }
+    
+    void write(Stream &s, ConsoleSerializationState &serializationState)
+    {
+        s.writeString(name);
+        s.write(&numArgs);
+        s.write(&maxStack);
+        s.write(&ip);
+        
+        // vars
+        U8 numVars = vars.size();
+        for (U32 i=0; i<numVars; i++)
+        {
+            s.write(&vars[i].registerIdx);
+            s.writeString(vars[i].varName);
+        }
+    }
 };
 
 

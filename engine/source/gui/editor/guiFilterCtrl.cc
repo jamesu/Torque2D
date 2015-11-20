@@ -45,7 +45,7 @@ void GuiFilterCtrl::initPersistFields()
    addField("filter", TypeF32Vector, Offset(mFilter, GuiFilterCtrl));
 }
 
-ConsoleMethod( GuiFilterCtrl, getValue, const char*, 2, 2, "() Use the getValue method to get all the values in the filter.\n"
+ConsoleMethod( GuiFilterCtrl, getValue, ConsoleString, 2, 2, "() Use the getValue method to get all the values in the filter.\n"
 																"@return Returns a n-tuple floating-point vector of values for each knot (left to right)")
 {
    static char buffer[512];
@@ -237,7 +237,7 @@ void GuiFilterCtrl::onRender(Point2I offset, const RectI &updateRect)
 
 
 //--------------------------------------
-void Filter::set(S32 argc, const char *argv[])
+void Filter::set(S32 argc, ConsoleValuePtr argv[])
 {
    setSize(0);
    if (argc == 1)

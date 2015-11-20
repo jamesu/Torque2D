@@ -370,7 +370,7 @@ void GuiTextEditCtrl::onMouseDown( const GuiEvent &event )
         dSprintf(buf[0], 32, "%d", event.modifier);
         dSprintf(buf[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
         dSprintf(buf[2], 32, "%d", event.mouseClickCount);
-        Con::executef(this, 4, "onMouseDown", buf[0], buf[1], buf[2]);
+        Con::executef(this, "onMouseDown", buf[0], buf[1], buf[2]);
     }
 }
 
@@ -408,7 +408,7 @@ void GuiTextEditCtrl::onMouseDragged( const GuiEvent &event )
         dSprintf(buf[0], 32, "%d", event.modifier);
         dSprintf(buf[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
         dSprintf(buf[2], 32, "%d", event.mouseClickCount);
-        Con::executef(this, 4, "onMouseDragged", buf[0], buf[1], buf[2]);
+        Con::executef(this, "onMouseDragged", buf[0], buf[1], buf[2]);
     }
 }
 
@@ -425,7 +425,7 @@ void GuiTextEditCtrl::onMouseUp(const GuiEvent &event)
         dSprintf(buf[0], 32, "%d", event.modifier);
         dSprintf(buf[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
         dSprintf(buf[2], 32, "%d", event.mouseClickCount);
-        Con::executef(this, 4, "onMouseUp", buf[0], buf[1], buf[2]);
+        Con::executef(this, "onMouseUp", buf[0], buf[1], buf[2]);
     }
 }
 
@@ -560,7 +560,7 @@ bool GuiTextEditCtrl::onKeyDown(const GuiEvent &event)
             case KEY_TAB:
                if ( mTabComplete )
                {
-                  Con::executef( this, 2, "onTabComplete", "1" );
+                  Con::executef( this, "onTabComplete", "1" );
                   return( true );
                }
                break; //*** DAW: We don't want to fall through if we don't handle the TAB here.
@@ -819,7 +819,7 @@ bool GuiTextEditCtrl::onKeyDown(const GuiEvent &event)
                }
                
                if( isMethod( "onValidate" ) )
-                  Con::executef( this, 2, "onValidate" );
+                  Con::executef( this, "onValidate" );
             }
 
             updateHistory(&mTextBuffer, true);
@@ -830,7 +830,7 @@ bool GuiTextEditCtrl::onKeyDown(const GuiEvent &event)
 
             // Notify of Return
             if ( isMethod("onReturn") )
-               Con::executef( this, 2, "onReturn" );
+               Con::executef( this, "onReturn" );
 
             if (mProfile->mReturnTab)
             {
@@ -973,7 +973,7 @@ dealWithBackspace:
       case KEY_TAB:
          if ( mTabComplete )
          {
-            Con::executef( this, 2, "onTabComplete", "0" );
+            Con::executef( this, "onTabComplete", "0" );
             return( true );
          }
       case KEY_UP:
@@ -1098,10 +1098,10 @@ void GuiTextEditCtrl::onLoseFirstResponder()
    }
 
    if( isMethod( "onValidate" ) )
-      Con::executef( this, 2, "onValidate" );
+      Con::executef( this, "onValidate" );
 
    if( isMethod( "onLoseFirstResponder" ) )
-      Con::executef( this, 2, "onLoseFirstResponder" );
+      Con::executef( this, "onLoseFirstResponder" );
 
    // Redraw the control:
    setUpdate();
@@ -1391,7 +1391,7 @@ void GuiTextEditCtrl::setScriptValue(const char *value)
    mCursorPos = getMin((S32)(mTextBuffer.length() - 1), 0);
 }
 
-ConsoleMethod( GuiTextEditCtrl, getText, const char*, 2, 2, "() Get the contents of the textedit control\n"
+ConsoleMethod( GuiTextEditCtrl, getText, ConsoleString, 2, 2, "() Get the contents of the textedit control\n"
               "@return Returns the current textedit buffer.")
 {
    if( !object->hasText() )

@@ -106,6 +106,7 @@
 #include "game/version.h"
 #include "game/gameConnection.h"
 
+#include "console/console.h"
 #include "serverQuery_ScriptBinding.h"
 
 // This is basically the server query protocol version now:
@@ -385,7 +386,7 @@ void queryLanServers(U32 port, U8 flags, const char* gameType, const char* missi
    Net::stringToAddress( addrText, &addr );
    pushPingBroadcast( &addr );
 
-   Con::executef( 4, "onServerQueryStatus", "start", "Querying LAN servers", "0");
+   Con::executef( "onServerQueryStatus", "start", "Querying LAN servers", "0");
    processPingsAndQueries( gPingSession );
 }
 
@@ -414,7 +415,7 @@ void queryMasterServer(U8 flags, const char* gameType, const char* missionType,
    sgServerQueryActive = true;
    clearServerList();
 
-   Con::executef( 4, "onServerQueryStatus", "start", "Querying master server", "0");
+   Con::executef( "onServerQueryStatus", "start", "Querying master server", "0");
 
    if ( buddyCount == 0 )
    {
@@ -468,7 +469,7 @@ void queryMasterServer(U8 flags, const char* gameType, const char* missionType,
    if ( !pickMasterServer() )
    {
         Con::errorf( "No master servers found!" );
-        Con::executef( 4, "onServerQueryStatus", "done", "No master servers found.", "0" );
+        Con::executef( "onServerQueryStatus", "done", "No master servers found.", "0" );
    }
    else
       processMasterServerQuery( gPingSession );
@@ -483,7 +484,7 @@ void queryFavoriteServers( U8 /*flags*/ )
    sActiveFilter.type = ServerFilter::Favorites;
    pushServerFavorites();
 
-   Con::executef( 4, "onServerQueryStatus", "start", "Query favorites...", "0" );
+   Con::executef( "onServerQueryStatus", "start", "Query favorites...", "0" );
    processPingsAndQueries( gPingSession );
 }
 
@@ -506,7 +507,7 @@ void querySingleServer( const NetAddress* addr, U8 /*flags*/ )
       }
    }
 
-   Con::executef( 4, "onServerQueryStatus", "start", "Refreshing server...", "0" );
+   Con::executef( "onServerQueryStatus", "start", "Refreshing server...", "0" );
    gServerPingCount = gServerQueryCount = 0;
    pushPingRequest( addr );
    processPingsAndQueries( gPingSession );
@@ -620,7 +621,8 @@ Vector<MasterInfo>* getMasterServerList()
    for (U32 i = 0; i < 10; i++) {
       char buffer[50];
       dSprintf(buffer,sizeof(buffer),"Pref::Master%d",i);
-      const char* master = Con::getVariable(buffer);
+      ConsoleStringValuePtr masterS = Con::getVariable(buffer);
+      const char* master = masterS.c_str();
       if (master && *master) {
          NetAddress address;
          // Format for master server variable:
@@ -788,7 +790,8 @@ static void pushServerFavorites()
    for ( S32 i = 0; i < count; i++ )
    {
       dSprintf( buf, sizeof( buf ), "Pref::Client::ServerFavorite%d", i );
-      server = Con::getVariable( buf );
+      ConsoleStringValuePtr serverV = Con::getVariable( buf );
+      server = serverV.c_str();
       if ( server )
       {
          sz = dStrcspn( server, "\t" );
@@ -1009,7 +1012,7 @@ static void processMasterServerQuery( U32 session )
             keepGoing = pickMasterServer();
             if ( keepGoing )
             {
-               Con::executef( 4, "onServerQueryStatus", "update", "Switching master servers...", "0" );
+               Con::executef( "onServerQueryStatus", "update", "Switching master servers...", "0" );
                Net::addressToString( &gMasterServerPing.address, addressString );
             }
          }
@@ -1044,7 +1047,7 @@ static void processMasterServerQuery( U32 session )
 
             Con::printf( "Requesting the server list from master server %s (%d tries left)...", addressString, gMasterServerPing.tryCount );
             if ( gMasterServerPing.tryCount < gMasterServerRetryCount - 1 )
-               Con::executef( 4, "onServerQueryStatus", "update", "Retrying the master server...", "0" );
+               Con::executef( "onServerQueryStatus", "update", "Retrying the master server...", "0" );
          }
       }
 
@@ -1056,7 +1059,7 @@ static void processMasterServerQuery( U32 session )
       else
       {
          Con::errorf( "There are no more master servers to try!" );
-         Con::executef( 4, "onServerQueryStatus", "done", "No master servers found.", "0" );
+         Con::executef( "onServerQueryStatus", "done", "No master servers found.", "0" );
       }
    }
 }
@@ -1188,7 +1191,7 @@ static void processPingsAndQueries( U32 session, bool schedule )
       else
          dSprintf( msg, sizeof( msg ), "%d servers found.", foundCount );
 
-      Con::executef( 4, "onServerQueryStatus", "done", msg, "1");
+      Con::executef( "onServerQueryStatus", "done", msg, "1" );
    }
 }
 
@@ -1282,7 +1285,7 @@ static void updatePingProgress()
       progress = F32( gServerPingCount - pingsLeft ) / F32( gServerPingCount * 2 );
 
    //Con::errorf( ConsoleLogEntry::General, "Ping progress - %d of %d left - progress = %.2f", pingsLeft, gServerPingCount, progress );
-   Con::executef( 4, "onServerQueryStatus", "ping", msg, Con::getFloatArg( progress ) );
+   Con::executef( "onServerQueryStatus", "ping", msg, Con::getFloatArg( progress ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -1302,7 +1305,7 @@ static void updateQueryProgress()
       progress += ( F32( gServerQueryCount - queriesLeft ) / F32( gServerQueryCount * 2 ) );
 
    //Con::errorf( ConsoleLogEntry::General, "Query progress - %d of %d left - progress = %.2f", queriesLeft, gServerQueryCount, progress );
-   Con::executef( 4, "onServerQueryStatus", "query", msg, Con::getFloatArg( progress ) );
+   Con::executef( "onServerQueryStatus", "query", msg, Con::getFloatArg( progress ) );
 }
 
 
@@ -1320,19 +1323,19 @@ static void handleMasterServerGameTypesResponse( BitStream* stream, U32 /*key*/,
    U8 temp;
    char stringBuf[256];
    stream->read( &temp );
-   Con::executef(1, "onClearGameTypes");
+   Con::executef("onClearGameTypes");
    for ( i = 0; i < U32( temp ); i++ )
    {
       readCString( stream, stringBuf );
-      Con::executef(2, "onAddGameType", stringBuf);
+      Con::executef("onAddGameType", stringBuf);
    }
 
    stream->read( &temp );
-   Con::executef(1, "onClearMissionTypes");
+   Con::executef("onClearMissionTypes");
    for ( i = 0; i < U32( temp ); i++ )
    {
       readCString( stream, stringBuf );
-      Con::executef(2, "onAddMissionType", stringBuf);
+      Con::executef("onAddMissionType", stringBuf);
    }
 }
 
@@ -1450,8 +1453,10 @@ static void handleGameMasterInfoRequest( const NetAddress* address, U32 key, U8 
       out->write( U8( flags ) );
       out->write( key );
 
-      writeCString( out, Con::getVariable( "Server::GameType" ) );
-      writeCString( out, Con::getVariable( "Server::MissionType" ) );
+      ConsoleStringValuePtr value = Con::getVariable( "Server::GameType" ) ;
+      writeCString( out, value.c_str() );
+      value = Con::getVariable( "Server::MissionType" ) ;
+      writeCString( out, value.c_str() );
       temp8 = U8( Con::getIntVariable( "Pref::Server::MaxPlayers" ) );
       out->write( temp8 );
       temp32 = Con::getIntVariable( "Pref::Server::RegionMask" );
@@ -1464,7 +1469,8 @@ static void handleGameMasterInfoRequest( const NetAddress* address, U32 key, U8 
 #endif
       if ( Con::getBoolVariable( "Server::Dedicated" ) )
          temp8 |= ServerInfo::Status_Dedicated;
-      if ( dStrlen( Con::getVariable( "Pref::Server::Password" ) ) > 0 )
+      value = Con::getVariable( "Pref::Server::Password" );
+      if ( dStrlen( value.c_str() ) > 0 )
          temp8 |= ServerInfo::Status_Passworded;
       out->write( temp8 );
       temp8 = U8( Con::getIntVariable( "Server::BotCount" ) );
@@ -1474,7 +1480,8 @@ static void handleGameMasterInfoRequest( const NetAddress* address, U32 key, U8 
       U8 playerCount = U8( Con::getIntVariable( "Server::PlayerCount" ) );
       out->write( playerCount );
 
-      const char* guidList = Con::getVariable( "Server::GuidList" );
+      value = Con::getVariable( "Server::GuidList" );
+      const char* guidList = value.c_str();
       char* buf = new char[dStrlen( guidList ) + 1];
       dStrcpy( buf, guidList );
       char* temp = dStrtok( buf, "\t" );
@@ -1503,7 +1510,8 @@ static void handleGamePingRequest( const NetAddress* address, U32 key, U8 flags 
    if ( GNet->doesAllowConnections() )
    {
       // Do not respond if this is a single-player game:
-      if ( dStricmp( Con::getVariable( "Server::ServerType" ), "SinglePlayer" ) == 0 )
+      ConsoleStringValuePtr strValue = Con::getVariable( "Server::ServerType" );
+      if ( dStricmp( strValue.c_str(), "SinglePlayer" ) == 0 )
          return;
 
       // Do not respond to offline queries if this is an online server:
@@ -1527,7 +1535,8 @@ static void handleGamePingRequest( const NetAddress* address, U32 key, U8 flags 
 
       // Enforce a 24-character limit on the server name:
       char serverName[25];
-      dStrncpy( serverName, Con::getVariable( "Pref::Server::Name" ), 24 );
+      strValue = Con::getVariable( "Pref::Server::Name" );
+      dStrncpy( serverName, strValue.c_str(), 24 );
       serverName[24] = 0;
       if ( flags & ServerFilter::NoStringCompress )
          writeCString( out, serverName );
@@ -1700,20 +1709,27 @@ static void handleGameInfoRequest( const NetAddress* address, U32 key, U8 flags 
 
       bool compressStrings = !( flags & ServerFilter::NoStringCompress );
       BitStream *out = BitStream::getPacketStream();
+      ConsoleStringValuePtr str;
 
       out->write( U8( NetInterface::GameInfoResponse ) );
       out->write( flags );
       out->write( key );
 
       if ( compressStrings ) {
-         out->writeString( Con::getVariable( "Server::GameType" ) );
-         out->writeString( Con::getVariable( "Server::MissionType" ) );
-         out->writeString( Con::getVariable( "Server::MissionName" ) );
+         str = Con::getVariable( "Server::GameType" );
+         out->writeString(str.c_str());
+         str = Con::getVariable( "Server::MissionType" );
+         out->writeString(str.c_str());
+         str = Con::getVariable( "Server::MissionName" );
+         out->writeString(str.c_str());
       }
       else {
-         writeCString( out, Con::getVariable( "Server::GameType" ) );
-         writeCString( out, Con::getVariable( "Server::MissionType" ) );
-         writeCString( out, Con::getVariable( "Server::MissionName" ) );
+         str = Con::getVariable( "Server::GameType" );
+         writeCString(out, str.c_str());
+         str = Con::getVariable( "Server::MissionType" );
+         writeCString(out, str.c_str());
+         str = Con::getVariable( "Server::MissionName" );
+         writeCString(out, str.c_str());
       }
 
       U8 status = 0;
@@ -1722,7 +1738,8 @@ static void handleGameInfoRequest( const NetAddress* address, U32 key, U8 flags 
 #endif
       if ( Con::getBoolVariable( "Server::Dedicated" ) )
          status |= ServerInfo::Status_Dedicated;
-      if ( dStrlen( Con::getVariable( "Pref::Server::Password" ) ) )
+      str = Con::getVariable( "Pref::Server::Password" );
+      if ( dStrlen( str.c_str() ) )
          status |= ServerInfo::Status_Passworded;
       out->write( status );
 
@@ -1730,11 +1747,15 @@ static void handleGameInfoRequest( const NetAddress* address, U32 key, U8 flags 
       out->write( U8( Con::getIntVariable( "Pref::Server::MaxPlayers" ) ) );
       out->write( U8( Con::getIntVariable( "Server::BotCount" ) ) );
       out->write( U16( PlatformSystemInfo.processor.mhz ) );
+      
+      str = Con::getVariable( "Pref::Server::Info" );
       if ( compressStrings )
-         out->writeString( Con::getVariable( "Pref::Server::Info" ) );
+         out->writeString( str.c_str() );
       else
-         writeCString( out, Con::getVariable( "Pref::Server::Info" ) );
-      writeLongCString( out, Con::evaluate( "onServerInfoQuery();" ) );
+         writeCString( out, str.c_str() );
+      
+      ConsoleStringValuePtr value = Con::evaluate( "onServerInfoQuery();" ).getStringValue();
+      writeLongCString( out, value.c_str() );
 
       BitStream::sendPacketStream(address);
    }

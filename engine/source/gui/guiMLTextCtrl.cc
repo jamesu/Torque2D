@@ -40,7 +40,7 @@ ConsoleMethod( GuiMLTextCtrl, setText, void, 3, 3,  "(text) Use the setText meth
    object->setText(argv[2], dStrlen(argv[2]));
 }
 
-ConsoleMethod( GuiMLTextCtrl, getText, const char*, 2, 2, "() Use the getText method to return the current text contents of the control, including all formatting characters.\n"
+ConsoleMethod( GuiMLTextCtrl, getText, ConsoleString, 2, 2, "() Use the getText method to return the current text contents of the control, including all formatting characters.\n"
                                                                 "@return Returns the entire text contents of the control or indicating no contents.\n"
                                                                 "@sa addText")
 {
@@ -86,7 +86,7 @@ ConsoleMethod( GuiMLTextCtrl, scrollToBottom, void, 2, 2, "() Use the scrollToBo
    object->scrollToBottom();
 }
 
-ConsoleFunction( StripMLControlChars, const char*, 2, 2, "( sourceString ) Use the stripMLControlChars function to remove all Torque Markup-Language (ML) symbols from sourceString.\n"
+ConsoleFunction( StripMLControlChars, ConsoleString, 2, 2, "( sourceString ) Use the stripMLControlChars function to remove all Torque Markup-Language (ML) symbols from sourceString.\n"
                                                                 "This may not remove <br> correctly, so check before you trust this function.\n"
                                                                 "@param sourceString The string to be modified.\n"
                                                                 "@return Returns a copy of sourceString with all the ML symbols removed, or the original string if no ML symbols were present.\n"
@@ -376,7 +376,7 @@ void GuiMLTextCtrl::inspectPostApply()
 void GuiMLTextCtrl::resize( const Point2I& newPosition, const Point2I& newExtent )
 {
    Parent::resize( newPosition, newExtent );
-   //Con::executef( this, 3, "onResize", Con::getIntArg( newExtent.x ), Con::getIntArg( newExtent.y ) );
+   //Con::executef( this, "onResize", newExtent.x, newExtent.y );
 }
 
 //--------------------------------------------------------------------------
@@ -689,7 +689,7 @@ void GuiMLTextCtrl::onMouseUp(const GuiEvent& event)
 
       // Convert URL from UTF16 to UTF8.
       UTF8* url = mTextBuffer.createSubstring8(mHitURL->textStart, mHitURL->len);
-      Con::executef(this, 2, "onURL", url);
+      Con::executef(this, "onURL", url);
       delete[] url;
       mHitURL = NULL;
 
@@ -1932,7 +1932,7 @@ textemit:
    processEmitAtoms();
    emitNewLine(mScanPos);
    resize(mBounds.point, Point2I(mBounds.extent.x, mMaxY));
-   Con::executef( this, 3, "onResize", Con::getIntArg( mBounds.extent.x ), Con::getIntArg( mMaxY ) );
+   Con::executef( this, "onResize", mBounds.extent.x, mMaxY );
 
    //make sure the cursor is still visible - this handles if we're a child of a scroll ctrl...
    ensureCursorOnScreen();

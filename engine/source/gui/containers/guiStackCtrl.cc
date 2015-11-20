@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "gui/containers/guiStackCtrl.h"
 
 IMPLEMENT_CONOBJECT(GuiStackControl);

@@ -113,7 +113,7 @@ bool SimObject::readObject(Stream *stream)
 
 void SimObject::buildFilterList()
 {
-   Con::executef(this, 1, "buildFilterList");
+   Con::executef(this, "buildFilterList");
 }
 
 //////////////////////////////////////////////////////////////////////////

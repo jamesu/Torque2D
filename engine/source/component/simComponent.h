@@ -119,7 +119,7 @@ public:
 
    static void initPersistFields();
 
-   virtual bool processArguments(S32 argc, const char **argv);
+   virtual bool processArguments( S32 argc, ConsoleValuePtr argv[] );
 
    /// Will return true if this object contains components.
    bool hasComponents() const { return ( mComponentList.size() > 0 ); };
@@ -145,7 +145,7 @@ public:
    inline U32 getComponentCount() { return mComponentList.size(); }
    inline SimComponent *getComponent( const U32 index ) { return mComponentList[index]; }
 
-   static bool setEnabled( void* obj, const char* data ) { static_cast<SimComponent*>(obj)->setEnabled( dAtob( data ) ); return false; };
+   static bool setEnabled( void *obj, const ConsoleValuePtr data ) { static_cast<SimComponent*>(obj)->setEnabled( dAtob( data ) ); return false; };
    virtual void setEnabled( const bool enabled ) { mEnabled = enabled; }
    bool isEnabled() const { return mEnabled; }
    static bool writeEnabled( void* obj, StringTableEntry pFieldName ) { return static_cast<SimComponent*>(obj)->mEnabled == false; }
@@ -161,7 +161,7 @@ public:
    /// this component, then on its children.
    /// @return True if the given method and arguments was handled by the component or 
    /// one of its children.
-   bool callMethodOnComponents( U32 argc, const char* argv[], const char** result );
+   bool callMethodOnComponents( S32 argc, ConsoleValuePtr argv[], ConsoleValuePtr *result );
 };
 
 #endif // _SIMCOMPONENT_H_

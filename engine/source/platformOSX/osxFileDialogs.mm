@@ -76,15 +76,17 @@ bool FileDialog::Execute()
 
 //-----------------------------------------------------------------------------
 // Default Path Property - String Validated on Write
-bool FileDialog::setDefaultPath(void* obj, const char* data)
+bool FileDialog::setDefaultPath(void* obj, const ConsoleValuePtr data)
 {
-    if (!data || !dStrncmp(data, "", 1))
+	ConsoleStringValuePtr strValue = data.getStringValue();
+	const char* path = strValue.c_str();
+    if (!path || !dStrncmp(path, "", 1))
         return true;
 
     // Expand the path to something fully qualified
     static char szPathValidate[512];
 
-    Platform::makeFullPathName(data, szPathValidate, sizeof(szPathValidate));
+    Platform::makeFullPathName(path, szPathValidate, sizeof(szPathValidate));
 
     // Check to make sure the path is valid
     ResourceManager->addPath(szPathValidate, true);
@@ -100,14 +102,16 @@ bool FileDialog::setDefaultPath(void* obj, const char* data)
 
 //-----------------------------------------------------------------------------
 // Default Path Property - String Validated on Write
-bool FileDialog::setDefaultFile(void* obj, const char* data)
+bool FileDialog::setDefaultFile(void* obj, const ConsoleValuePtr data)
 {
-    if (!data || !dStrncmp(data, "", 1))
-        return true;
+	ConsoleStringValuePtr strValue = data.getStringValue();
+	const char* path = strValue.c_str();
+	if (!path || !dStrncmp(path, "", 1))
+		return true;
 
     // Copy and Backslash the path (Windows dialogs are VERY picky about this format)
     static char szPathValidate[512];
-    Platform::makeFullPathName(data,szPathValidate, sizeof(szPathValidate));
+    Platform::makeFullPathName(path,szPathValidate, sizeof(szPathValidate));
 
     // Finally, assign in proper format.
     FileDialog *pDlg = static_cast<FileDialog*>(obj);

@@ -144,7 +144,7 @@ void GuiImageList::initPersistFields()
   Parent::initPersistFields();
 }
 
-ConsoleMethod(GuiImageList, getImage,const char *, 3, 3, "(int index) Get a path to the texture at the specified index\n"
+ConsoleMethod(GuiImageList, getImage,ConsoleString, 3, 3, "(int index) Get a path to the texture at the specified index\n"
               "@param index The index of the desired image\n"
               "@return The ID of the image or -1 on failure")
 {

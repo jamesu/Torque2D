@@ -46,8 +46,8 @@ ConsoleMethodWithDocs(BehaviorTemplate, createInstance, ConsoleInt, 2, 2, ())
 */
 ConsoleMethodWithDocs(BehaviorTemplate, addBehaviorField, ConsoleBool, 5, 7, (fieldName, desc, type, [defaultValue, userData]))
 {
-    const char *defValue = argc > 5 ? argv[5] : NULL;
-    const char *typeInfo = argc > 6 ? argv[6] : NULL;
+    const char *defValue = argc > 5 ? argv[5].getTempStringValue() : NULL;
+    const char *typeInfo = argc > 6 ? argv[6].getTempStringValue() : NULL;
    
     return object->addBehaviorField(argv[2], argv[3], argv[4], defValue, typeInfo);
 }
@@ -78,7 +78,7 @@ ConsoleMethodWithDocs(BehaviorTemplate, getBehaviorField, ConsoleString, 3, 3, (
     if( !pField )
     {
         // No, so warn.
-        Con::warnf("getBehaviorField() - Could not find the behavior field '%s' on behavior '%s'", argv[2], object->getFriendlyName() );
+        Con::warnf("getBehaviorField() - Could not find the behavior field '%s' on behavior '%s'", argv[2].getTempStringValue(), object->getFriendlyName() );
         return StringTable->EmptyString;
     }
 
@@ -103,7 +103,7 @@ ConsoleMethodWithDocs(BehaviorTemplate, getBehaviorFieldUserData, ConsoleString,
     if( !pField )
     {
         // No, so warn.
-        Con::warnf("getBehaviorFieldUserData() - Could not find the behavior field '%s' on behavior '%s'", argv[2], object->getFriendlyName() );
+        Con::warnf("getBehaviorFieldUserData() - Could not find the behavior field '%s' on behavior '%s'", argv[2].getTempStringValue(), object->getFriendlyName() );
         return StringTable->EmptyString;
     }
 
@@ -125,7 +125,7 @@ ConsoleMethodWithDocs(BehaviorTemplate, getBehaviorFieldDescription, ConsoleStri
     if( !pField )
     {
         // No, so warn.
-        Con::warnf("getBehaviorFieldDescription() - Could not find the behavior field '%s' on behavior '%s'", argv[2], object->getFriendlyName() );
+        Con::warnf("getBehaviorFieldDescription() - Could not find the behavior field '%s' on behavior '%s'", argv[2].getTempStringValue(), object->getFriendlyName() );
         return StringTable->EmptyString;
     }
     return pField->mDescription ? pField->mDescription : StringTable->EmptyString;
@@ -171,7 +171,7 @@ ConsoleMethodWithDocs(BehaviorTemplate, getBehaviorOutput, ConsoleString, 3, 3, 
     if( !pPortOutput )
     {
         // No, so warn.
-        Con::warnf("getBehaviorOutput() - Could not find the behavior output '%s' on behavior '%s'", argv[2], object->getFriendlyName() );
+        Con::warnf("getBehaviorOutput() - Could not find the behavior output '%s' on behavior '%s'", argv[2].getTempStringValue(), object->getFriendlyName() );
         return StringTable->EmptyString;
     }
 
@@ -232,7 +232,7 @@ ConsoleMethodWithDocs(BehaviorTemplate, getBehaviorInput, ConsoleString, 3, 3, (
     if( !pPortInput )
     {
         // No, so warn.
-        Con::warnf("getBehaviorOutput() - Could not find the behavior input '%s' on behavior '%s'", argv[2], object->getFriendlyName() );
+        Con::warnf("getBehaviorOutput() - Could not find the behavior input '%s' on behavior '%s'", argv[2].getTempStringValue() , object->getFriendlyName() );
         return StringTable->EmptyString;
     }
 

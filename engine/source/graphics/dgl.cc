@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "math/mPoint.h"
 #include "graphics/TextureManager.h"
 #include "graphics/dgl.h"

@@ -23,6 +23,8 @@
 // We don't want tests in a shipping version.
 #ifndef TORQUE_SHIPPING
 
+#include "console/console.h"
+
 #ifndef _CONSOLEINTERNAL_H_
 #include "console/consoleInternal.h"
 #endif

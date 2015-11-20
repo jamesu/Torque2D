@@ -193,7 +193,7 @@ ConsoleMethodWithDocs( BehaviorComponent, connect, ConsoleBool, 6, 6, (outputBeh
     if ( !pOutputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::connect() - Could not find output behavior '%s'.", argv[2] );
+        Con::warnf("BehaviorComponent::connect() - Could not find output behavior '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -204,7 +204,7 @@ ConsoleMethodWithDocs( BehaviorComponent, connect, ConsoleBool, 6, 6, (outputBeh
     if ( !pInputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::connect() - Could not find input behavior '%s'.", argv[3] );
+        Con::warnf("BehaviorComponent::connect() - Could not find input behavior '%s'.", argv[3].getTempStringValue() );
         return false;
     }
 
@@ -234,7 +234,7 @@ ConsoleMethodWithDocs( BehaviorComponent, disconnect, ConsoleBool, 6, 6, (output
     if ( !pOutputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::disconnect() - Could not find output behavior '%s'.", argv[2] );
+        Con::warnf("BehaviorComponent::disconnect() - Could not find output behavior '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -245,7 +245,7 @@ ConsoleMethodWithDocs( BehaviorComponent, disconnect, ConsoleBool, 6, 6, (output
     if ( !pInputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::disconnect() - Could not find input behavior '%s'.", argv[3] );
+        Con::warnf("BehaviorComponent::disconnect() - Could not find input behavior '%s'.", argv[3].getTempStringValue() );
         return false;
     }
 
@@ -274,7 +274,7 @@ ConsoleMethodWithDocs( BehaviorComponent, raise, ConsoleBool, 4, 5, (outputBehav
     if ( !pOutputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::raise() - Could not find output behavior '%s'.", argv[2] );
+        Con::warnf("BehaviorComponent::raise() - Could not find output behavior '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -311,7 +311,7 @@ ConsoleMethodWithDocs( BehaviorComponent, getBehaviorConnectionCount, ConsoleInt
     if ( !pOutputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::getBehaviorConnectionCount() - Could not find output behavior '%s'.", argv[2] );
+        Con::warnf("BehaviorComponent::getBehaviorConnectionCount() - Could not find output behavior '%s'.", argv[2].getTempStringValue() );
         return false;
     }
 
@@ -339,8 +339,8 @@ ConsoleMethodWithDocs( BehaviorComponent, getBehaviorConnection, ConsoleString, 
     if ( !pOutputBehavior )
     {
         // No, so warn.
-        Con::warnf("BehaviorComponent::getBehaviorConnections() - Could not find output behavior '%s'.", argv[2] );
-        return NULL;
+        Con::warnf("BehaviorComponent::getBehaviorConnections() - Could not find output behavior '%s'.", argv[2].getTempStringValue() );
+        return "";
     }
 
     // Fetch output name.

@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "gui/containers/guiDragAndDropCtrl.h"
 #include "gui/guiCanvas.h"
 
@@ -102,7 +103,7 @@ void GuiDragAndDropControl::sendDragEvent(GuiControl* target, const char* event)
    char position[32];
    Point2I dropPoint = mBounds.point + (mBounds.extent / 2);
    dSprintf(position, 32, "%d %d", dropPoint.x, dropPoint.y);
-   Con::executef(target, 3, event, Con::getIntArg(at(0)->getId()), position);
+   Con::executef(target, event, at(0)->getId(), position);
 }
 
 GuiControl* GuiDragAndDropControl::findDragTarget(Point2I mousePoint, const char* method)

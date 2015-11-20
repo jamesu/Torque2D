@@ -92,9 +92,9 @@ protected:
 
 
 protected:
-    static bool setSkeletonFile( void* obj, const char* data )              { static_cast<SkeletonAsset*>(obj)->setSkeletonFile(data); return false; }
+    static bool setSkeletonFile( void *obj, const ConsoleValuePtr data )              { static_cast<SkeletonAsset*>(obj)->setSkeletonFile(data.getTempStringValue()); return false; }
     static bool writeSkeletonFile( void* obj, StringTableEntry pFieldName ) { return static_cast<SkeletonAsset*>(obj)->getSkeletonFile() != StringTable->EmptyString; }
-    static bool setAtlasFile( void* obj, const char* data )                 { static_cast<SkeletonAsset*>(obj)->setAtlasFile(data); return false; }
+    static bool setAtlasFile( void *obj, const ConsoleValuePtr data )                 { static_cast<SkeletonAsset*>(obj)->setAtlasFile(data.getTempStringValue()); return false; }
     static bool writeAtlasFile( void* obj, StringTableEntry pFieldName )    { return static_cast<SkeletonAsset*>(obj)->getAtlasFile() != StringTable->EmptyString; }
 };
 

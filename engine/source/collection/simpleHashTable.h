@@ -50,15 +50,15 @@ template <class T> class SimpleHashTable : public SparseArray<T>
       S32 len = dStrlen(str);
       if(len >= sizeof(mCaseConvBuf))  len = sizeof(mCaseConvBuf) - 1;
 
-      char *dptr = mCaseConvBuf;
+      char *dataPtr = mCaseConvBuf;
       const char *sptr = str;
       while(*sptr)
       {
-         *dptr = dTolower(*sptr);
+         *dataPtr = dTolower(*sptr);
          ++sptr;
-         ++dptr;
+         ++dataPtr;
       }
-      *dptr = 0;
+      *dataPtr = 0;
 
       return mCaseConvBuf;
    }

@@ -378,14 +378,14 @@ SpriteBatchItem* CompositeSprite::createCustomLayout( const SpriteBatchItem::Log
         pSpriteBatchItem->setLogicalPosition( logicalPosition );
 
     // Retrieve the local position from the custom layout callback.
-    const char* pLocalPosition = Con::executef(this, 2, "onCustomLayout", logicalPosition.getString() );
+    const char* pLocalPosition = Con::executef(this, "onCustomLayout", logicalPosition.getString() );
 
     // Was a local position returned.
     if ( pLocalPosition != NULL && dStrlen(pLocalPosition) != 0 )
     {
         // Fetch the local position.
         Vector2 position(0.0f, 0.0f);
-        Con::setData( TypeVector2, &position, 0, 1, &pLocalPosition );
+        Con::setData( TypeVector2, &position, 0, pLocalPosition );
 
         // Set the sprite default position.
         pSpriteBatchItem->setLocalPosition( position );

@@ -420,7 +420,7 @@ bool ModuleManager::loadModuleGroup( const char* pModuleGroup )
         if ( pLoadReadyModuleDefinition->getModuleScriptFilePath() != StringTable->EmptyString )
         {
             // Yes, so execute the script file.
-            const bool scriptFileExecuted = dAtob( Con::executef(2, "exec", pLoadReadyModuleDefinition->getModuleScriptFilePath() ) );
+            const bool scriptFileExecuted = dAtob( Con::executef("exec", pLoadReadyModuleDefinition->getModuleScriptFilePath() ) );
 
             // Did we execute the script file?
             if ( scriptFileExecuted )
@@ -429,7 +429,7 @@ bool ModuleManager::loadModuleGroup( const char* pModuleGroup )
                 if ( pScopeSet->isMethod( pLoadReadyModuleDefinition->getCreateFunction() ) )
                 {
                     // Yes, so call the create method.
-                    Con::executef( pScopeSet, 1, pLoadReadyModuleDefinition->getCreateFunction() );
+                    Con::executef( pScopeSet, pLoadReadyModuleDefinition->getCreateFunction() );
                 }
             }
             else
@@ -607,7 +607,7 @@ bool ModuleManager::unloadModuleGroup( const char* pModuleGroup )
             if ( pScopeSet->isMethod( pLoadReadyModuleDefinition->getDestroyFunction() ) )
             {
                 // Yes, so call the destroy method.
-                Con::executef( pScopeSet, 1, pLoadReadyModuleDefinition->getDestroyFunction() );
+                Con::executef( pScopeSet, pLoadReadyModuleDefinition->getDestroyFunction() );
             }
 
             // Remove scope set.
@@ -783,7 +783,7 @@ bool ModuleManager::loadModuleExplicit( const char* pModuleId, const U32 version
         if ( pLoadReadyModuleDefinition->getModuleScriptFilePath() != StringTable->EmptyString )
         {
             // Yes, so execute the script file.
-            const bool scriptFileExecuted = dAtob( Con::executef(2, "exec", pLoadReadyModuleDefinition->getModuleScriptFilePath() ) );
+            const bool scriptFileExecuted = dAtob( Con::executef("exec", pLoadReadyModuleDefinition->getModuleScriptFilePath() ) );
 
             // Did we execute the script file?
             if ( scriptFileExecuted )
@@ -792,7 +792,7 @@ bool ModuleManager::loadModuleExplicit( const char* pModuleId, const U32 version
                 if ( pScopeSet->isMethod( pLoadReadyModuleDefinition->getCreateFunction() ) )
                 {
                     // Yes, so call the create method.
-                    Con::executef( pScopeSet, 1, pLoadReadyModuleDefinition->getCreateFunction() );
+                    Con::executef( pScopeSet, pLoadReadyModuleDefinition->getCreateFunction() );
                 }
             }
             else
@@ -958,7 +958,7 @@ bool ModuleManager::unloadModuleExplicit( const char* pModuleId )
             if ( pScopeSet->isMethod( pLoadReadyModuleDefinition->getDestroyFunction() ) )
             {
                 // Yes, so call the destroy method.
-                Con::executef( pScopeSet, 1, pLoadReadyModuleDefinition->getDestroyFunction() );
+                Con::executef( pScopeSet, pLoadReadyModuleDefinition->getDestroyFunction() );
             }
 
             // Remove scope set.
@@ -2126,7 +2126,7 @@ bool ModuleManager::registerModule( const char* pModulePath, const char* pModule
     // Emit notifications.
     for( SimSet::iterator notifyItr = mNotificationListeners.begin(); notifyItr != mNotificationListeners.end(); ++notifyItr )
     {
-        Con::executef( *notifyItr, 2, "onModuleRegister", pModuleDefinition->getIdString() );
+        Con::executef( *notifyItr, "onModuleRegister", pModuleDefinition->getIdString() );
     }
 
     return true;
@@ -2174,7 +2174,7 @@ void ModuleManager::raiseModulePreLoadNotifications( ModuleDefinition* pModuleDe
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePreLoad" ) )
-            Con::executef( pListener, 2, "onModulePreLoad", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePreLoad", pModuleDefinition->getIdString() );
     }
 }
 
@@ -2195,7 +2195,7 @@ void ModuleManager::raiseModulePostLoadNotifications( ModuleDefinition* pModuleD
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePostLoad" ) )
-            Con::executef( pListener, 2, "onModulePostLoad", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePostLoad", pModuleDefinition->getIdString() );
     }
 }
 
@@ -2216,7 +2216,7 @@ void ModuleManager::raiseModulePreUnloadNotifications( ModuleDefinition* pModule
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePreUnload" ) )
-            Con::executef( pListener, 2, "onModulePreUnload", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePreUnload", pModuleDefinition->getIdString() );
     }
 }
 
@@ -2237,7 +2237,7 @@ void ModuleManager::raiseModulePostUnloadNotifications( ModuleDefinition* pModul
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePostUnload" ) )
-            Con::executef( pListener, 2, "onModulePostUnload", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePostUnload", pModuleDefinition->getIdString() );
     }
 }
 

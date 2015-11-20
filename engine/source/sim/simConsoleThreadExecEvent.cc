@@ -20,19 +20,17 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "sim/simConsoleThreadExecEvent.h"
 #include "platform/platform.h"
 #include "console/consoleInternal.h"
-
-//-----------------------------------------------------------------------------
-
-extern ExprEvalState gEvalState;
+#include "platform/threads/semaphore.h"
 
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 
-SimConsoleThreadExecCallback::SimConsoleThreadExecCallback() : retVal(NULL)
+SimConsoleThreadExecCallback::SimConsoleThreadExecCallback() : retVal()
 {
    sem = Semaphore::createSemaphore(0);
 }
@@ -42,25 +40,27 @@ SimConsoleThreadExecCallback::~SimConsoleThreadExecCallback()
    Semaphore::destroySemaphore(sem);
 }
 
-void SimConsoleThreadExecCallback::handleCallback(const char *ret)
+void SimConsoleThreadExecCallback::handleCallback(ConsoleValuePtr ret)
 {
-   retVal = ret;
+   retVal.setValue(ConsoleStringValue::fromString(ret));
    Semaphore::releaseSemaphore(sem);
 }
 
-const char *SimConsoleThreadExecCallback::waitForResult()
+ConsoleValuePtr SimConsoleThreadExecCallback::waitForResult()
 {
    if(Semaphore::acquireSemaphore(sem, true))
    {
-      return retVal;
+      ConsoleValuePtr outRef;
+      outRef.setValue(retVal);
+      return outRef;
    }
 
-   return NULL;
+   return ConsoleValuePtr();
 }
 
 //-----------------------------------------------------------------------------
 
-SimConsoleThreadExecEvent::SimConsoleThreadExecEvent(S32 argc, const char **argv, bool onObject, SimConsoleThreadExecCallback *callback) : 
+SimConsoleThreadExecEvent::SimConsoleThreadExecEvent(S32 argc, ConsoleValuePtr argv[], bool onObject, SimConsoleThreadExecCallback *callback) :
    SimConsoleEvent(argc, argv, onObject),
    cb(callback)
 {
@@ -68,11 +68,11 @@ SimConsoleThreadExecEvent::SimConsoleThreadExecEvent(S32 argc, const char **argv
 
 void SimConsoleThreadExecEvent::process(SimObject* object)
 {
-   const char *retVal;
+   ConsoleValuePtr retVal;
    if(mOnObject)
-      retVal = Con::execute(object, mArgc, const_cast<const char**>( mArgv ));
+      retVal = Con::execute(object, mArgc, mArgv);
    else
-      retVal = Con::execute(mArgc, const_cast<const char**>( mArgv ));
+      retVal = Con::execute(mArgc, mArgv);
 
    if(cb)
       cb->handleCallback(retVal);

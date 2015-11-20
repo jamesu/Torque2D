@@ -35,7 +35,7 @@ ConsoleFunctionWithDocs( t2dGetCommonElements, ConsoleString, 3, 3, (set1, set2)
     if (argc != 3)
     {
         Con::warnf("t2dGetCommonElements - Invalid number of parameters!");
-        return NULL;
+        return "";
     }
 
     // Grab the element count of the first set.
@@ -44,7 +44,7 @@ ConsoleFunctionWithDocs( t2dGetCommonElements, ConsoleString, 3, 3, (set1, set2)
     // Make sure we get at least one number.
     if (elementCount1 < 1)
     {
-        return NULL;
+        return "";
     }
 
     // Grab the element count of the second set.
@@ -53,7 +53,7 @@ ConsoleFunctionWithDocs( t2dGetCommonElements, ConsoleString, 3, 3, (set1, set2)
     // Make sure we get at least one number.
     if (elementCount2 < 1)
     {
-        return NULL;
+        return "";
     }
 
     char* buffer = Con::getReturnBuffer(dStrlen(argv[1]) + 1);

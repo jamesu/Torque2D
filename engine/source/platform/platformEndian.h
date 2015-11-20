@@ -29,10 +29,14 @@ inline U16 convertHostToLEndian(U16 i) { return i; }
 inline U16 convertLEndianToHost(U16 i) { return i; }
 inline U32 convertHostToLEndian(U32 i) { return i; }
 inline U32 convertLEndianToHost(U32 i) { return i; }
+inline U64 convertHostToLEndian(U64 i) { return i; }
+inline U64 convertLEndianToHost(U64 i) { return i; }
 inline S16 convertHostToLEndian(S16 i) { return i; }
 inline S16 convertLEndianToHost(S16 i) { return i; }
 inline S32 convertHostToLEndian(S32 i) { return i; }
 inline S32 convertLEndianToHost(S32 i) { return i; }
+inline S64 convertHostToLEndian(S64 i) { return i; }
+inline S64 convertLEndianToHost(S64 i) { return i; }
 
 inline F32 convertHostToLEndian(F32 i) { return i; }
 inline F32 convertLEndianToHost(F32 i) { return i; }
@@ -123,11 +127,15 @@ inline F64 convertHostToBEndian(F64 in_swap)
 inline U16 convertHostToBEndian(U16 i) { return i; }
 inline U16 convertBEndianToHost(U16 i) { return i; }
 inline U32 convertHostToBEndian(U32 i) { return i; }
-inline U32 convertBEndianToHost(U32 i) { return i; }
+inline U32 convertHostToBEndian(U32 i) { return i; }
+inline U64 convertBEndianToHost(U64 i) { return i; }
+inline U64 convertBEndianToHost(U64 i) { return i; }
 inline S16 convertHostToBEndian(S16 i) { return i; }
 inline S16 convertBEndianToHost(S16 i) { return i; }
 inline S32 convertHostToBEndian(S32 i) { return i; }
 inline S32 convertBEndianToHost(S32 i) { return i; }
+inline S64 convertHostToBEndian(S64 i) { return i; }
+inline S64 convertBEndianToHost(S64 i) { return i; }
 
 inline U16 convertHostToLEndian(U16 i)
 {
@@ -200,6 +208,8 @@ inline S16 convertHostToLEndian(S16 i) { return S16(convertHostToLEndian(U16(i))
 inline S16 convertLEndianToHost(S16 i) { return S16(convertLEndianToHost(U16(i))); }
 inline S32 convertHostToLEndian(S32 i) { return S32(convertHostToLEndian(U32(i))); }
 inline S32 convertLEndianToHost(S32 i) { return S32(convertLEndianToHost(U32(i))); }
+inline S64 convertHostToLEndian(S64 i) { return S64(convertHostToLEndian(U64(i))); }
+inline S64 convertLEndianToHost(S64 i) { return S64(convertLEndianToHost(U64(i))); }
 
 #else
 #error "Endian define not set"

@@ -20,40 +20,31 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "sim/simConsoleEvent.h"
 #include "platform/platform.h"
 #include "console/consoleInternal.h"
 
-//-----------------------------------------------------------------------------
-
-extern ExprEvalState gEvalState;
+extern CodeBlockEvalState gNewEvalState;
 
 //-----------------------------------------------------------------------------
 
-SimConsoleEvent::SimConsoleEvent(S32 argc, const char **argv, bool onObject)
+SimConsoleEvent::SimConsoleEvent(S32 argc, ConsoleValuePtr argv[], bool onObject)
 {
    mOnObject = onObject;
    mArgc = argc;
    U32 totalSize = 0;
-   S32 i;
-   for(i = 0; i < argc; i++)
-      totalSize += dStrlen(argv[i]) + 1;
-   totalSize += sizeof(char *) * argc;
+   mArgv = new ConsoleValuePtr[argc];
 
-   mArgv = (char **) dMalloc(totalSize);
-   char *argBase = (char *) &mArgv[argc];
-
-   for(i = 0; i < argc; i++)
+   for(U32 i = 0; i < argc; i++)
    {
-      mArgv[i] = argBase;
-      dStrcpy(mArgv[i], argv[i]);
-      argBase += dStrlen(argv[i]) + 1;
+      mArgv[i].setValue(argv[i]);
    }
 }
 
 SimConsoleEvent::~SimConsoleEvent()
 {
-   dFree(mArgv);
+   delete[] mArgv;
 }
 
 void SimConsoleEvent::process(SimObject* object)
@@ -61,13 +52,15 @@ void SimConsoleEvent::process(SimObject* object)
 // #ifdef DEBUG
 //    Con::printf("Executing schedule: %d", sequenceCount);
 // #endif
+   
     if(mOnObject)
-      Con::execute(object, mArgc, const_cast<const char**>( mArgv ));
+      Con::execute(object, mArgc, mArgv);
    else
    {
       // Grab the function name. If '::' doesn't exist, then the schedule is
       // on a global function.
-      char* func = dStrstr( mArgv[0], (char*)"::" );
+      StringTableEntry v = mArgv[0].getSTEStringValue();
+      char* func = dStrstr( v, (char*)"::" );
       if( func )
       {
          // Set the first colon to NULL, so we can reference the namespace.
@@ -79,17 +72,16 @@ void SimConsoleEvent::process(SimObject* object)
          func += 2;
 
          // Lookup the namespace and function entry.
-         Namespace* ns = Namespace::find( StringTable->insert( mArgv[0] ) );
+         Namespace* ns = Namespace::find( v );
          if( ns )
          {
             Namespace::Entry* nse = ns->lookup( StringTable->insert( func ) );
             if( nse )
                // Execute.
-               nse->execute( mArgc, (const char**)mArgv, &gEvalState );
+               nse->execute( mArgc, mArgv, &gNewEvalState );
          }
       }
-
       else
-         Con::execute(mArgc, const_cast<const char**>( mArgv ));
+         Con::execute( mArgc, mArgv );
    }
 }

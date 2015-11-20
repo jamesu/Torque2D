@@ -468,5 +468,5 @@ void SkeletonObject::updateComposition( const F32 time )
 void SkeletonObject::onAnimationFinished()
 {
     // Do script callback.
-    Con::executef( this, 2, "onAnimationFinished", mCurrentAnimation );
+    Con::executef( this, "onAnimationFinished", mCurrentAnimation );
 }

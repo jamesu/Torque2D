@@ -166,7 +166,7 @@ bool PopupMenu::isItemChecked(S32 pos)
 //-----------------------------------------------------------------------------
 bool PopupMenu::handleSelect(U32 command, const char *text /* = NULL */)
 {
-    return dAtob(Con::executef(this, 4, "onSelectItem", Con::getIntArg(command), text ? text : ""));
+    return dAtob(Con::executef(this, "onSelectItem", Con::getIntArg(command), text ? text : ""));
 }
 
 //-----------------------------------------------------------------------------

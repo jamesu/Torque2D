@@ -92,11 +92,11 @@ void PopupMenu::onRemove()
 
 bool PopupMenu::onMessageReceived(StringTableEntry queue, const char* event, const char* data)
 {
-   return Con::executef(this, 4, "onMessageReceived", queue, event, data);
+   return Con::executef(this, "onMessageReceived", queue, event, data);
 }
 
 
 bool PopupMenu::onMessageObjectReceived(StringTableEntry queue, Message *msg )
 {
-   return Con::executef(this, 4, "onMessageReceived", queue, Con::getIntArg(msg->getId()));
+   return Con::executef(this, "onMessageReceived", queue, msg->getId());
 }

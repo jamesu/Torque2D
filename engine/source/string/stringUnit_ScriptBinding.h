@@ -263,10 +263,11 @@ ConsoleFunctionWithDocs(firstWord, ConsoleString, 2, 2, ( sourceString ))
    TORQUE_UNUSED( argc );
    const char *word = dStrchr(argv[1], ' ');
    U32 len;
+   const char* sourceString = argv[1];
    if(word == NULL)
       len = dStrlen(argv[1]);
    else
-      len = (U32)(word - argv[1]);
+      len = (U32)(word - sourceString);
    char *ret = Con::getReturnBuffer(len + 1);
    dStrncpy(ret, argv[1], len);
    ret[len - 1] = 0;
@@ -317,8 +318,11 @@ static bool isInSet(char c, const char *set)
 ConsoleFunctionWithDocs(NextToken, ConsoleString,4,4, ( tokenList , tokenVar , delimeter ))
 {
    TORQUE_UNUSED( argc );
-
-   char *str = (char *) argv[1];
+   
+   char buffer[4096];
+   dStrncpy(buffer, argv[1], 4096);
+   char *str = buffer;
+   
    const char *token = argv[2];
    const char *delim = argv[3];
 
@@ -340,10 +344,10 @@ ConsoleFunctionWithDocs(NextToken, ConsoleString,4,4, ( tokenList , tokenVar , d
          *str++ = 0;
 
       // set local variable if inside a function
-      if (gEvalState.stack.size() && 
+      /*if (gEvalState.stack.size() &&
          gEvalState.stack.last()->scopeName)
          Con::setLocalVariable(token,tmp);
-      else
+      else*/ // TOFIX
          Con::setVariable(token,tmp);
 
       // advance str past the 'delim space'

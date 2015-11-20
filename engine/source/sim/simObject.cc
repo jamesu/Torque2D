@@ -62,7 +62,7 @@ SimObject::SimObject( const U8 namespaceLinkMask ) : mNSLinkMask( namespaceLinkM
     mTypeMask                = 0;
     mScriptCallbackGuard     = 0;
     mFieldDictionary         = NULL;
-    mCanSaveFieldDictionary	 = true;
+    mCanSaveFieldDictionary  = true;
     mClassName               = NULL;
     mSuperClassName          = NULL;
     mProgenitorFile          = CodeBlock::getCurrentCodeBlockFullPath();
@@ -103,7 +103,7 @@ bool SimObject::registerObject()
    AssertFatal(Sim::gIdDictionary && Sim::gNameDictionary, 
       "SimObject::registerObject - tried to register an object before Sim::init()!");
 
-   Sim::gIdDictionary->insert(this);	
+   Sim::gIdDictionary->insert(this);
 
    Sim::gNameDictionary->insert(this);
 
@@ -116,7 +116,7 @@ bool SimObject::registerObject()
    AssertFatal(!ret || isProperlyAdded(), "Object did not call SimObject::onAdd()");
 
     if ( isMethod( "onAdd" ) )
-        Con::executef( this, 1, "onAdd" );
+        Con::executef( this, "onAdd" );
 
    return ret;
 }
@@ -129,7 +129,7 @@ void SimObject::unregisterObject()
     AssertISV( getScriptCallbackGuard() == 0, "SimObject::unregisterObject: Object is being unregistered whilst performing a script callback!" );
 
     if ( isMethod( "onRemove" ) )
-        Con::executef( this, 1, "onRemove" );
+        Con::executef( this, "onRemove" );
 
    mFlags.set(Removed);
 
@@ -281,22 +281,11 @@ void SimObject::assignFieldsFrom(SimObject *parent)
          S32 lastField = f->elementCount - 1;
          for(S32 j = 0; j <= lastField; j++)
          {
-             const char* fieldVal = (*f->getDataFn)( this,  Con::getData(f->type, (void *) (((const char *)parent) + f->offset), j, f->table, f->flag));
-            //if(fieldVal)
-            //   Con::setData(f->type, (void *) (((const char *)this) + f->offset), j, 1, &fieldVal, f->table);
+             ConsoleValuePtr fieldVal = (*f->getDataFn)( this,  Con::getDataValue(f->type, (void *) (((const char *)parent) + f->offset), j, f->table));
             if(fieldVal)
             {
-               // code copied from SimObject::setDataField().
-               // TODO: paxorr: abstract this into a better setData / getData that considers prot fields.
-               FrameTemp<char> buffer(2048);
-               FrameTemp<char> bufferSecure(2048); // This buffer is used to make a copy of the data 
-               ConsoleBaseType *cbt = ConsoleBaseType::getType( f->type );
-               const char* szBuffer = cbt->prepData( fieldVal, buffer, 2048 );
-               dMemset( bufferSecure, 0, 2048 );
-               dMemcpy( bufferSecure, szBuffer, dStrlen( szBuffer ) );
-
-               if((*f->setDataFn)( this, bufferSecure ) )
-                  Con::setData(f->type, (void *) (((const char *)this) + f->offset), j, 1, &fieldVal, f->table);
+               if((*f->setDataFn)( this, fieldVal ) )
+                  Con::setData(f->type, (void *) (((const char *)this) + f->offset), j, fieldVal, f->table);
             }
          }
       }
@@ -487,7 +476,7 @@ void  SimObject::dumpClassHierarchy()
    while(pRep)
    {
       Con::warnf("%s ->", pRep->getClassName());
-      pRep	=	pRep->getParentClass();
+      pRep = pRep->getParentClass();
    }
 }
 
@@ -527,12 +516,16 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
             ConsoleBaseType *cbt = ConsoleBaseType::getType( fld->type );
             AssertFatal( cbt != NULL, "Could not resolve Type Id." );
 
-            const char* szBuffer = cbt->prepData( value, buffer, 2048 );
-            dMemset( bufferSecure, 0, 2048 );
-            dMemcpy( bufferSecure, szBuffer, dStrlen( szBuffer ) );
+            dStrncpy(buffer, value, 2048);
+            //const char* szBuffer = cbt->prepData( value, buffer, 2048 );
+            //dMemset( bufferSecure, 0, 2048 );
+            //dMemcpy( bufferSecure, szBuffer, dStrlen( szBuffer ) );
 
-            if( (*fld->setDataFn)( this, bufferSecure ) )
-               Con::setData(fld->type, (void *) (((const char *)this) + fld->offset), array1, 1, &value, fld->table);
+            ConsoleValuePtr value;
+            value.setString(buffer);
+
+            if( (*fld->setDataFn)( this, value ) )
+               Con::setData(fld->type, (void *) (((const char *)this) + fld->offset), array1, value, fld->table);
 
             onStaticModified( slotName, value );
 
@@ -568,6 +561,7 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
 
 const char *SimObject::getDataField(StringTableEntry slotName, const char *array)
 {
+   ConsoleValuePtr result;
    if(mFlags.test(ModStaticFields))
    {
       S32 array1 = array ? dAtoi(array) : -1;
@@ -576,10 +570,10 @@ const char *SimObject::getDataField(StringTableEntry slotName, const char *array
       if(fld)
       {
          if(array1 == -1 && fld->elementCount == 1)
-            return (*fld->getDataFn)( this, Con::getData(fld->type, (void *) (((const char *)this) + fld->offset), 0, fld->table, fld->flag) );
+            result.setValue((*fld->getDataFn)( this, Con::getDataValue(fld->type, (void *) (((const char *)this) + fld->offset), 0, fld->table) ));
          if(array1 >= 0 && array1 < fld->elementCount)
-            return (*fld->getDataFn)( this, Con::getData(fld->type, (void *) (((const char *)this) + fld->offset), array1, fld->table, fld->flag) );// + typeSizes[fld.type] * array1));
-         return "";
+            result.setValue((*fld->getDataFn)( this, Con::getDataValue(fld->type, (void *) (((const char *)this) + fld->offset), array1, fld->table) ));
+         return result.getTempStringValue(); // TOFIX this should return a ConsoleStringValuePtr or ConsoleValuePtr
       }
    }
 
@@ -913,7 +907,7 @@ void SimObject::onStaticModified(const char* slotName, const char* newValue)
 {
 }
 
-bool SimObject::processArguments(S32 argc, const char**)
+bool SimObject::processArguments(S32 argc, ConsoleValuePtr argv[])
 {
    return argc == 0;
 }
@@ -928,7 +922,7 @@ bool SimObject::isChildOfGroup(SimGroup* pGroup)
    if(pGroup == dynamic_cast<SimGroup*>(this))
       return true;
 
-   SimGroup* temp	=	mGroup;
+   SimGroup* temp = mGroup;
    while(temp)
    {
       if(temp == pGroup)
@@ -1079,9 +1073,9 @@ void SimObject::initPersistFields()
 {
    Parent::initPersistFields();
    addGroup("SimBase");
-   addField("canSaveDynamicFields",		TypeBool,		Offset(mCanSaveFieldDictionary, SimObject), &writeCanSaveDynamicFields, "");
+   addField("canSaveDynamicFields",    TypeBool,         Offset(mCanSaveFieldDictionary, SimObject), &writeCanSaveDynamicFields, "");
    addField("internalName",            TypeString,       Offset(mInternalName, SimObject), &writeInternalName, "");   
-   addProtectedField("parentGroup",        TypeSimObjectPtr, Offset(mGroup, SimObject), &setParentGroup, &defaultProtectedGetFn, &writeParentGroup, "Group hierarchy parent of the object." );
+   addProtectedField("parentGroup",    TypeSimObjectPtr, Offset(mGroup, SimObject), &setParentGroup, &defaultProtectedGetFn, &writeParentGroup, "Group hierarchy parent of the object." );
    endGroup("SimBase");
 
    // Namespace Linking.
@@ -1134,7 +1128,7 @@ void SimObject::copyTo(SimObject* object)
 
 //-----------------------------------------------------------------------------
 
-bool SimObject::setParentGroup(void* obj, const char* data)
+bool SimObject::setParentGroup(void *obj, const ConsoleValuePtr data)
 {
    SimGroup *parent = NULL;
    SimObject *object = static_cast<SimObject*>(obj);
@@ -1359,9 +1353,11 @@ void SimObject::dump()
          // [neo, 07/05/2007 - #3000]
          // Some objects use dummy vars and projected fields so make sure we call the get functions 
          //const char *val = Con::getData(f->type, (void *) (((const char *)object) + f->offset), j, f->table, f->flag);                          
-         const char *val = (*f->getDataFn)( this, Con::getData(f->type, (void *) (((const char *)this) + f->offset), j, f->table, f->flag) );// + typeSizes[fld.type] * array1));
+         ConsoleValuePtr value = (*f->getDataFn)( this, Con::getDataValue(f->type, (void *) (((const char *)this) + f->offset), j, f->table) );// + typeSizes[fld.type] * array1));
 
-         if(!val /*|| !*val*/)
+         ConsoleStringValuePtr valS = value.getStringValue();
+         const char* val = valS.c_str();
+         if(!val || !*val)
             continue;
          if(f->elementCount == 1)
             dSprintf(expandedBuffer, sizeof(expandedBuffer), "  %s = \"", f->pFieldname);

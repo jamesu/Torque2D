@@ -25,7 +25,7 @@ ConsoleMethodGroupBeginWithDocs(StreamObject, SimObject)
 /*! Gets the current status of the StreamObject
     @return The current status as a string (Ok, IOError, EOS, IllegalCall, Closed, UnknownError, Invalid)
 */
-ConsoleMethodWithDocs(StreamObject, getStatus, const char *, 2, 2, ())
+ConsoleMethodWithDocs(StreamObject, getStatus, ConsoleString, 2, 2, ())
 {
    return object->getStatus();
 }
@@ -79,7 +79,7 @@ ConsoleMethodWithDocs(StreamObject, getStreamSize, ConsoleInt, 2, 2, ())
 /*! Read the stream until '\' or EOS
     @return A string containing the read line or an empty string if failed
 */
-ConsoleMethodWithDocs(StreamObject, readLine, const char *, 2, 2, ())
+ConsoleMethodWithDocs(StreamObject, readLine, ConsoleString, 2, 2, ())
 {
    const char *str = object->readLine();
    return str ? str : "";
@@ -91,7 +91,7 @@ ConsoleMethodWithDocs(StreamObject, readLine, const char *, 2, 2, ())
 */
 ConsoleMethodWithDocs(StreamObject, writeLine, ConsoleVoid, 3, 3, (line))
 {
-   object->writeLine((U8 *)argv[2]);
+   object->writeLine((U8 *)argv[2].getTempStringValue());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ ConsoleMethodWithDocs(StreamObject, writeLine, ConsoleVoid, 3, 3, (line))
     @param caseSensitive A boolean representing whether the parser should ignore case or not (default false)
     @return Returns the string, or empty string if failed
 */
-ConsoleMethodWithDocs(StreamObject, readSTString, const char *, 2, 3, ([caseSensitive = false]))
+ConsoleMethodWithDocs(StreamObject, readSTString, ConsoleString, 2, 3, ([caseSensitive = false]))
 {
    const char *str = object->readSTString(argc > 2 ? dAtob(argv[2]) : false);
    return str ? str : "";
@@ -109,7 +109,7 @@ ConsoleMethodWithDocs(StreamObject, readSTString, const char *, 2, 3, ([caseSens
 /*! Reads a string from a stream buffer
     @return The string or an empty string if failed.
 */
-ConsoleMethodWithDocs(StreamObject, readString, const char *, 2, 2, ())
+ConsoleMethodWithDocs(StreamObject, readString, ConsoleString, 2, 2, ())
 {
    const char *str = object->readString();
    return str ? str : "";
@@ -119,7 +119,7 @@ ConsoleMethodWithDocs(StreamObject, readString, const char *, 2, 2, ())
     @param The maximum length to read in
     @return The requested string
 */
-ConsoleMethodWithDocs(StreamObject, readLongString, const char *, 3, 3, (maxLength))
+ConsoleMethodWithDocs(StreamObject, readLongString, ConsoleString, 3, 3, (maxLength))
 {
    const char *str = object->readLongString(dAtoi(argv[2]));
    return str ? str : "";

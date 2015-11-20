@@ -135,7 +135,7 @@ void GuiPopupTextListCtrlEx::onCellSelected( Point2I cell )
 	   return;
 
    if( isMethod( "onSelect" ) )
-      Con::executef(this, 3, "onSelect", Con::getFloatArg(cell.x), Con::getFloatArg(cell.y));
+      Con::executef(this, "onSelect", Con::getFloatArg(cell.x), Con::getFloatArg(cell.y));
    
    //call the console function
    if (mConsoleCommand[0])
@@ -216,10 +216,10 @@ void GuiPopupTextListCtrlEx::onMouseMove( const GuiEvent &event )
    // Within Bounds?
    if (cell.x >= 0 && cell.x < mSize.x && cell.y >= 0 && cell.y < mSize.y)
       // Hot Track notification
-      Con::executef( mPopUpCtrl, 2, "onHotTrackItem", Con::getIntArg(mList[cell.y].id) );
+      Con::executef( mPopUpCtrl, "onHotTrackItem", mList[cell.y].id );
    else 
       // Hot Track -1
-      Con::executef( mPopUpCtrl, 2, "onHotTrackItem", Con::getIntArg(-1) );
+      Con::executef( mPopUpCtrl, "onHotTrackItem", -1 );
 
    // Call Parent
    Parent::onMouseMove(event);
@@ -422,7 +422,7 @@ ConsoleMethod( GuiPopUpMenuCtrlEx, setText, void, 3, 3, "(string text) Set contr
    object->setText(argv[2]);
 }
 
-ConsoleMethod( GuiPopUpMenuCtrlEx, getText, const char*, 2, 2, "()\n @return Returns the control's text")
+ConsoleMethod( GuiPopUpMenuCtrlEx, getText, ConsoleString, 2, 2, "()\n @return Returns the control's text")
 {
    return object->getText();
 }
@@ -476,7 +476,7 @@ ConsoleMethod( GuiPopUpMenuCtrlEx, setNoneSelected, void, 2, 2, "")
    object->setNoneSelected();
 }
 
-ConsoleMethod( GuiPopUpMenuCtrlEx, getTextById, const char*, 3, 3,  "(int id)")
+ConsoleMethod( GuiPopUpMenuCtrlEx, getTextById, ConsoleString, 3, 3,  "(int id)")
 {
    return(object->getTextById(dAtoi(argv[2])));
 }
@@ -499,7 +499,7 @@ ConsoleMethod( GuiPopUpMenuCtrlEx, setEnumContent, void, 4, 4, "(string class, s
    // get it?
    if(!classRep)
    {
-      Con::warnf(ConsoleLogEntry::General, "failed to locate class rep for '%s'", argv[2]);
+      Con::warnf(ConsoleLogEntry::General, "failed to locate class rep for '%s'", argv[2].getTempStringValue());
       return;
    }
 
@@ -512,7 +512,7 @@ ConsoleMethod( GuiPopUpMenuCtrlEx, setEnumContent, void, 4, 4, "(string class, s
    // found it?   
    if(i == classRep->mFieldList.size())
    {   
-      Con::warnf(ConsoleLogEntry::General, "failed to locate field '%s' for class '%s'", argv[3], argv[2]);
+      Con::warnf(ConsoleLogEntry::General, "failed to locate field '%s' for class '%s'", argv[3].getTempStringValue(), argv[2].getTempStringValue());
       return;
    }
    
@@ -521,11 +521,11 @@ ConsoleMethod( GuiPopUpMenuCtrlEx, setEnumContent, void, 4, 4, "(string class, s
    // check the type
    if(field.type != TypeEnum)
    {
-      Con::warnf(ConsoleLogEntry::General, "field '%s' is not an enumeration for class '%s'", argv[3], argv[2]);
+      Con::warnf(ConsoleLogEntry::General, "field '%s' is not an enumeration for class '%s'", argv[3].getTempStringValue(), argv[2].getTempStringValue());
       return;
    }
 
-   AssertFatal(field.table, avar("enumeration '%s' for class '%s' with NULL ", argv[3], argv[2]));
+   AssertFatal(field.table, avar("enumeration '%s' for class '%s' with NULL ", argv[3].getTempStringValue(), argv[2].getTempStringValue()));
 
    // fill it
    for(i = 0; i < (U32)field.table->size; i++)
@@ -778,7 +778,7 @@ void GuiPopUpMenuCtrlEx::setSelected(S32 id)
          char idval[24];
          dSprintf( idval, sizeof(idval), "%d", mEntries[mSelIndex].id );
          if( isMethod( "onSelect" ) )
-            Con::executef( this, 3, "onSelect", idval, mEntries[mSelIndex].buf );
+            Con::executef( this, "onSelect", idval, mEntries[mSelIndex].buf );
          return;
       }
 
@@ -788,7 +788,7 @@ void GuiPopUpMenuCtrlEx::setSelected(S32 id)
    }
    mSelIndex = -1;
 
-   Con::executef( this, 1, "onCancel" );
+   Con::executef( this, "onCancel" );
    
    if( id == -1 )
       return;
@@ -814,7 +814,7 @@ void GuiPopUpMenuCtrlEx::setFirstSelected()
       char idval[24];
       dSprintf( idval, sizeof(idval), "%d", mEntries[mSelIndex].id );
       if(isMethod("onSelect"))
-         Con::executef( this, 3, "onSelect", idval, mEntries[mSelIndex].buf );
+         Con::executef( this, "onSelect", idval, mEntries[mSelIndex].buf );
       return;
    }
 
@@ -824,7 +824,7 @@ void GuiPopUpMenuCtrlEx::setFirstSelected()
    }
    mSelIndex = -1;
 
-   Con::executef( this, 1, "onCancel" );
+   Con::executef( this, "onCancel" );
    
    // Execute the popup console command:
    if ( mConsoleCommand[0] )
@@ -1145,10 +1145,10 @@ void GuiPopUpMenuCtrlEx::closePopUp()
       char idval[24];
       dSprintf( idval, sizeof(idval), "%d", mEntries[mSelIndex].id );
       if(isMethod("onSelect"))
-         Con::executef( this, 3, "onSelect", idval, mEntries[mSelIndex].buf );
+         Con::executef( this, "onSelect", idval, mEntries[mSelIndex].buf );
    }
    else if(isMethod("onSelect"))
-         Con::executef( this, 1, "onCancel" );
+         Con::executef( this, "onCancel" );
   
    // Execute the popup console command:
    if ( mConsoleCommand[0] )

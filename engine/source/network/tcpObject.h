@@ -76,7 +76,7 @@ public:
    //Luma:	Encode data before sending via TCP so that only valid URL characters are sent
    U8	*URLEncodeData(U8 *pData, U32 iDataSize, U32 *piNewDataSize);
 
-   bool processArguments(S32 argc, const char **argv);
+   bool processArguments(S32 argc, ConsoleValuePtr argv[]);
    void send(const U8 *buffer, U32 bufferLen);
    void addToTable(NetSocket newTag);
    void removeFromTable();

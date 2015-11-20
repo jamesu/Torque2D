@@ -111,4 +111,93 @@ template <class T> class SimObjectPtr
    operator T*() const   { return static_cast<T*>(mObj)? static_cast<T*>(mObj) : 0; }
 };
 
+
+// Stuff for console
+
+
+
+// Simple buffer string type
+class ConsoleSimObjectPtr : public ConsoleReferenceCountedType
+{
+public:
+   SimObjectPtr<SimObject> value;
+   
+   ConsoleSimObjectPtr()
+   {
+      
+   }
+   
+   virtual ~ConsoleSimObjectPtr()
+   {
+   }
+   
+   void setString(const char* str);
+   
+   virtual ConsoleBaseType *getType();
+   
+   virtual bool getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue);
+   virtual void setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue);
+   virtual Namespace* getNamespace();
+   
+   
+   virtual S32 getIteratorLength();
+   virtual bool advanceIterator(ConsoleValue &iterator, ConsoleValue &iteratorValue);
+   
+   virtual void read(Stream &s, ConsoleSerializationState &state);
+   
+   virtual void write(Stream &s, ConsoleSerializationState &state);
+   
+   ConsoleStringValuePtr getString()
+   {
+      return value ? (value->getName() ? value->getName() : value->getIdString()) : StringTable->EmptyString;
+   }
+   
+   virtual bool stringCompare(const char* other)
+   {
+      return dStricmp(getString().c_str(), other) == 0;
+   }
+   
+   virtual bool refCompare(ConsoleReferenceCountedType* other);
+   
+   static ConsoleSimObjectPtr *fromObject(SimObject* obj);
+   static ConsoleSimObjectPtr *fromObjectId(SimObjectId objId);
+};
+
+#include "console/consoleCallbackHelper.h"
+
+template< typename T >
+inline ConsoleValuePtr ConsoleMarshallData( T* object )
+{
+   ConsoleValuePtr cvalue;
+   cvalue.setValue(ConsoleSimObjectPtr::fromObject(dynamic_cast<SimObject*>(object)));
+   return cvalue;
+}
+template< typename T >
+inline ConsoleValuePtr ConsoleMarshallData( const T* object )
+{
+   ConsoleValuePtr cvalue;
+   cvalue.setValue(ConsoleSimObjectPtr::fromObjectId(object->getId()));
+   return cvalue;
+}
+
+
+template< typename T >
+inline void ConsoleMarshallData( T* object, S32& argc, ConsoleValuePtr *argv )
+{
+   if (object)
+      argv[ argc ].setValue(ConsoleSimObjectPtr::fromObject(object));
+   else
+      argv[ argc ].setNull();
+   argc ++;
+}
+template< typename T >
+inline void ConsoleMarshallData( const T* object, S32& argc, ConsoleValuePtr *argv )
+{
+   if (object)
+      argv[ argc ].setValue(ConsoleSimObjectPtr::fromObject(object));
+   else
+      argv[ argc ].setNull();
+   argc ++;
+}
+
 #endif // _SIM_OBJECT_PTR_H_

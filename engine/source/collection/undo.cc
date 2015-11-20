@@ -151,7 +151,7 @@ UndoManager& UndoManager::getDefaultManager()
 void UndoManager::clearAll()
 {
    clearStack(mUndoStack); clearStack(mRedoStack);
-   Con::executef(this, 1, "onClear");
+   Con::executef(this, "onClear");
 }
 
 //-----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ void UndoManager::removeAction(UndoAction *action)
          mUndoStack.erase(itr);
          if (!dynamic_cast<UndoScriptAction*>(deleteAction))
             delete deleteAction;
-         Con::executef(this, 1, "onRemoveUndo");
+         Con::executef(this, "onRemoveUndo");
          return;
       }
       itr++;
@@ -213,7 +213,7 @@ void UndoManager::removeAction(UndoAction *action)
          mRedoStack.erase(itr);
          if (!dynamic_cast<UndoScriptAction*>(deleteAction))
             delete deleteAction;
-         Con::executef(this, 1, "onRemoveUndo");
+         Con::executef(this, "onRemoveUndo");
          return;
       }
       itr++;
@@ -236,7 +236,7 @@ void UndoManager::undo()
    if((U32)mRedoStack.size() > mNumLevels)
       mRedoStack.pop_front();
    
-   Con::executef(this, 1, "onUndo");
+   Con::executef(this, "onUndo");
 
    // perform the undo, whatever it may be.
    (*act).undo();
@@ -258,7 +258,7 @@ void UndoManager::redo()
    if((U32)mUndoStack.size() > mNumLevels)
       mUndoStack.pop_front();
    
-   Con::executef(this, 1, "onRedo");
+   Con::executef(this, "onRedo");
    
    // perform the redo, whatever it may be.
    (*react).redo();
@@ -313,7 +313,7 @@ void UndoManager::addAction(UndoAction* action)
    if((U32)mUndoStack.size() > mNumLevels)
       mUndoStack.pop_front();
    
-   Con::executef(this, 1, "onAddUndo");
+   Con::executef(this, "onAddUndo");
 
    // clear the redo stack
    clearStack(mRedoStack);

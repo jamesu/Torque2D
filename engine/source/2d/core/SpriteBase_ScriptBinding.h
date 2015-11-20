@@ -62,14 +62,14 @@ ConsoleMethodWithDocs(SpriteBase, setImage, ConsoleBool, 3, 4, (imageAssetId, [f
         else
         {
             // Set the image and pass the named frame string
-            return static_cast<ImageFrameProvider*>(object)->setImage( argv[2], argv[3] );
+            return static_cast<ImageFrameProvider*>(object)->setImage( argv[2].getTempStringValue(), argv[3].getTempStringValue() );
         }
     }
     else
     {
         // Frame was not specified, use default 0 and set the image
         const U32 frame = 0;
-        return static_cast<ImageFrameProvider*>(object)->setImage( argv[2], frame );
+        return static_cast<ImageFrameProvider*>(object)->setImage( argv[2].getTempStringValue(), frame );
     }
 }
 
@@ -170,7 +170,7 @@ ConsoleMethodWithDocs(SpriteBase, getNamedImageFrame, ConsoleString, 2, 2, ())
     {
         // No, so warn.
         Con::warnf( "SpriteBase::getNamedImageFrame() - Method invalid, not in static mode." );
-        return NULL;
+        return "";
     }
 
     // Are we using a named image frame?
@@ -178,7 +178,7 @@ ConsoleMethodWithDocs(SpriteBase, getNamedImageFrame, ConsoleString, 2, 2, ())
     {
         // No, so warn.
         Con::warnf( "SpriteBase::getNamedImageFrame() - Method invalid, not using a named image frame." );
-        return NULL;
+        return "";
     }
 
     return static_cast<ImageFrameProvider*>(object)->getNamedImageFrame();
@@ -314,7 +314,7 @@ ConsoleMethodWithDocs(SpriteBase, getAnimationNamedImageFrame, ConsoleString, 2,
     {
         // Yes, so warn.
         Con::warnf( "SpriteBase::getAnimationNamedImageFrame() - Method invalid, not in dynamic (animated) mode." );
-        return NULL;
+        return "";
     }
     
     // Get the current animation asset
@@ -325,7 +325,7 @@ ConsoleMethodWithDocs(SpriteBase, getAnimationNamedImageFrame, ConsoleString, 2,
     {
         // No, so warn.
         Con::warnf( "SpriteBase::getAnimationNamedImageFrame() - Method invalid, animation not in named cells mode." );
-        return NULL;
+        return "";
     }
 
     // Get Image Frame.

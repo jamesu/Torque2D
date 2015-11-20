@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/console.h"
 #include "console/consoleTypes.h"
 #include "console/console.h"
 #include "graphics/gBitmap.h"
@@ -429,7 +430,7 @@ void GuiScrollCtrl::scrollTo(S32 x, S32 y)
 	   dSprintf(buf[1], 32, "%d %d", startPointRel.x, startPointRel.y);
 	   dSprintf(buf[2], 32, "%d %d", mChildPos.x, mChildPos.y);
 	   dSprintf(buf[3], 32, "%d %d", mChildRelPos.x, mChildRelPos.y);
-	   Con::executef(this, 5, "onScroll", buf[0], buf[1], buf[2], buf[3]);
+	   Con::executef(this, "onScroll", buf[0], buf[1], buf[2], buf[3]);
    }
 }
 

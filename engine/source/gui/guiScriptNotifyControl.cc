@@ -62,7 +62,7 @@ void GuiScriptNotifyCtrl::onChildAdded( GuiControl *child )
 
    // Call Script.
    if( mOnChildAdded && isMethod( "onChildAdded" ) )
-      Con::executef(this, 3, "onChildAdded", child->getIdString() );
+      Con::executef(this, "onChildAdded", child->getIdString() );
 }
 
 void GuiScriptNotifyCtrl::onChildRemoved( GuiControl *child )
@@ -71,7 +71,7 @@ void GuiScriptNotifyCtrl::onChildRemoved( GuiControl *child )
 
    // Call Script.
    if( mOnChildRemoved && isMethod( "onChildRemoved" ) )
-      Con::executef(this, 3, "onChildRemoved", child->getIdString() ); 
+      Con::executef(this, "onChildRemoved", child->getIdString() ); 
 }
 //----------------------------------------------------------------
 
@@ -81,7 +81,7 @@ void GuiScriptNotifyCtrl::resize(const Point2I &newPosition, const Point2I &newE
 
    // Call Script.
    if( mOnResize && isMethod( "onResize" ) )
-      Con::executef(this, 2, "onResize" );
+      Con::executef(this, "onResize" );
 
 }
 
@@ -91,7 +91,7 @@ void GuiScriptNotifyCtrl::childResized(GuiScriptNotifyCtrl *child)
 
    // Call Script.
    if( mOnChildResized && isMethod( "onChildResized" ) )
-      Con::executef(this, 3, "onChildResized", child->getIdString() );
+      Con::executef(this, "onChildResized", child->getIdString() );
 }
 
 void GuiScriptNotifyCtrl::parentResized(const Point2I &oldParentExtent, const Point2I &newParentExtent)
@@ -100,7 +100,7 @@ void GuiScriptNotifyCtrl::parentResized(const Point2I &oldParentExtent, const Po
 
    // Call Script.
    if( mOnParentResized && isMethod( "onParentResized" ) )
-      Con::executef(this, 2, "onParentResized" );
+      Con::executef(this, "onParentResized" );
 
 }
  
@@ -110,7 +110,7 @@ void GuiScriptNotifyCtrl::onLoseFirstResponder()
 
    // Call Script.
    if( mOnLoseFirstResponder && isMethod( "onLoseFirstResponder" ) )
-      Con::executef(this, 2, "onLoseFirstResponder" );
+      Con::executef(this, "onLoseFirstResponder" );
 
 }
 
@@ -120,7 +120,7 @@ void GuiScriptNotifyCtrl::setFirstResponder( GuiControl* firstResponder )
 
    // Call Script.
    if( mOnGainFirstResponder && isFirstResponder() && isMethod( "onGainFirstResponder" ) )
-      Con::executef(this, 2, "onGainFirstResponder" );
+      Con::executef(this, "onGainFirstResponder" );
 
 }
 
@@ -130,7 +130,7 @@ void GuiScriptNotifyCtrl::setFirstResponder()
 
    // Call Script.
    if( mOnGainFirstResponder && isFirstResponder() && isMethod( "onGainFirstResponder" ) )
-      Con::executef(this, 2, "onGainFirstResponder" );
+      Con::executef(this, "onGainFirstResponder" );
 }
 
 void GuiScriptNotifyCtrl::onMessage(GuiScriptNotifyCtrl *sender, S32 msg)

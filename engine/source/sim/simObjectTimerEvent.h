@@ -56,7 +56,7 @@ public:
 
         // Script callback.
         // This *must* be done here in-case the user turns off the timer which would be the one above!
-        Con::executef( object, 1, mCallbackFunction );
+        Con::executef( object, mCallbackFunction );
     }
 
 private:

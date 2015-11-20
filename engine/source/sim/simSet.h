@@ -205,7 +205,7 @@ public:
         addObject( pSimObject );
     }
 
-   void callOnChildren( const char * method, S32 argc, const char *argv[], bool executeOnChildGroups = true );
+   void callOnChildren(const char *method, S32 argc, ConsoleValuePtr argv[], bool executeOnChildGroups = true);
 
    virtual void write(Stream &stream, U32 tabStop, U32 flags = 0);
 
@@ -313,7 +313,7 @@ public:
    /// Find an object in the group.
    virtual SimObject* findObject(const char* name);
 
-   bool processArguments(S32 argc, const char **argv);
+   bool processArguments(S32 argc, ConsoleValuePtr argv[]);
 
    DECLARE_CONOBJECT(SimGroup);
 };

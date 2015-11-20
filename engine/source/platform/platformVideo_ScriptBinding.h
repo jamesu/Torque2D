@@ -199,8 +199,8 @@ ConsoleFunctionWithDocs( getResolutionList, ConsoleString, 2, 2, ( devicename ))
     DisplayDevice* device = Video::getDevice( argv[1] );
     if ( !device )
     {
-        Con::warnf( ConsoleLogEntry::General, "\"%s\" display device not found!", argv[1] );
-        return( NULL );
+        Con::warnf( ConsoleLogEntry::General, "\"%s\" display device not found!", argv[1].getTempStringValue() );
+        return( "" );
     }
     
     return( device->getResolutionList() );		
@@ -226,7 +226,7 @@ ConsoleFunctionWithDocs( isDeviceFullScreenOnly, ConsoleBool, 2, 2, ( devicename
     DisplayDevice* device = Video::getDevice( argv[1] );
     if ( !device )
     {
-        Con::warnf( ConsoleLogEntry::General, "\"%s\" display device not found!", argv[1] );
+        Con::warnf( ConsoleLogEntry::General, "\"%s\" display device not found!", argv[1].getTempStringValue() );
         return( false );
     }
     

@@ -975,13 +975,13 @@ void SceneWindow::sendWindowInputEvent( StringTableEntry name, const GuiEvent& e
     dSprintf(argBuffer[2], 64, "%d", event.mouseClickCount);
 
     // Call Scripts.
-    Con::executef(this, 4, name, argBuffer[0], argBuffer[1], argBuffer[2]);
+    Con::executef(this, name, argBuffer[0], argBuffer[1], argBuffer[2]);
 
     // Iterate listeners.
     for( SimSet::iterator listenerItr = mInputListeners.begin(); listenerItr != mInputListeners.end(); ++listenerItr )
     {
         // Call scripts on listener.
-        Con::executef( *listenerItr, 4, name, argBuffer[0], argBuffer[1], argBuffer[2] );
+        Con::executef( *listenerItr, name, argBuffer[0], argBuffer[1], argBuffer[2] );
     }
 }
 
@@ -1459,7 +1459,7 @@ void SceneWindow::resize(const Point2I &newPosition, const Point2I &newExtent)
     dSprintf( argBuffer, 64, "%d %d %d %d", newPosition.x, newPosition.y, newExtent.x, newExtent.y );
 
     // Resize Callback.
-    Con::executef( this, 2, "onExtentChange", argBuffer );
+    Con::executef( this, "onExtentChange", argBuffer );
 }
 
 //-----------------------------------------------------------------------------

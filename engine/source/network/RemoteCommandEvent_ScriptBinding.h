@@ -40,7 +40,7 @@ ConsoleFunctionWithDocs( commandToServer, ConsoleVoid, 2, RemoteCommandEvent::Ma
    NetConnection *conn = NetConnection::getConnectionToServer();
    if(!conn)
       return;
-   sendRemoteCommand(conn, argc - 1, argv + 1);
+   // TOFIX sendRemoteCommand(conn, argc - 1, argv + 1);
 }
 
 /*! Use the commandToClient function to issue a remote procedure call on a client.
@@ -55,7 +55,7 @@ ConsoleFunctionWithDocs( commandToClient, ConsoleVoid, 3, RemoteCommandEvent::Ma
    NetConnection *conn;
    if(!Sim::findObject(argv[1], conn))
       return;
-   sendRemoteCommand(conn, argc - 2, argv + 2);
+   // TOFIX sendRemoteCommand(conn, argc - 2, argv + 2);
 }
 
 /*! Use the removeTaggedSTring function to remove a previously tagged string from the NetStringTable.
@@ -64,7 +64,7 @@ ConsoleFunctionWithDocs( commandToClient, ConsoleVoid, 3, RemoteCommandEvent::Ma
 */
 ConsoleFunctionWithDocs(removeTaggedString, ConsoleVoid, 2, 2, ( tag ))
 {
-   gNetStringTable->removeString(dAtoi(argv[1]+1), true);
+   // TOFIX gNetStringTable->removeString(dAtoi(argv[1]+1), true);
 }
 
 /*! Use the addTaggedString function to tag a new string and add it to the NetStringTable.
@@ -72,14 +72,15 @@ ConsoleFunctionWithDocs(removeTaggedString, ConsoleVoid, 2, 2, ( tag ))
     @return Returns a string (containing a numeric value) equivalent to the string ID for the newly tagged string
 */
 ConsoleFunctionWithDocs( addTaggedString, ConsoleString, 2, 2, ( string ))
-{
+{/*
    NetStringHandle s(argv[1]);
    gNetStringTable->incStringRefScript(s.getIndex());
 
    char *ret = Con::getReturnBuffer(10);
    ret[0] = StringTagPrefixByte;
    dSprintf(ret + 1, 9, "%d", s.getIndex());
-   return ret;
+   return ret;*/ // TOFIX
+	return "";
 }
 
 /*! Use the getTaggedString function to convert a tag to a string. This is not the same a detag() which can only be used within the context of a function that receives a tag. This function can be used any time and anywhere to convert a tag to a string.

@@ -74,13 +74,13 @@ bool GameConnection::canRemoteCreate()
    return true;
 }
 
-void GameConnection::setConnectArgs(U32 argc, const char **argv)
+void GameConnection::setConnectArgs(U32 argc, ConsoleValuePtr argv[])
 {
    if(argc > MaxConnectArgs)
       argc = MaxConnectArgs;
    mConnectArgc = argc;
    for(U32 i = 0; i < mConnectArgc; i++)
-      mConnectArgv[i] = dStrdup(argv[i]);
+      mConnectArgv[i] = dStrdup(argv[i].getTempStringValue());
 }
 
 void GameConnection::setJoinPassword(const char *password)
@@ -93,7 +93,7 @@ void GameConnection::onTimedOut()
    if(isConnectionToServer())
    {
       Con::printf("Connection to server timed out");
-      Con::executef(this, 1, "onConnectionTimedOut");
+      Con::executef(this, "onConnectionTimedOut");
    }
    else
    {
@@ -114,7 +114,7 @@ void GameConnection::onConnectionEstablished(bool isInitiator)
       setIsConnectionToServer();
       mServerConnection = this;
       Con::printf("Connection established %d", getId());
-      Con::executef(this, 1, "onConnectionAccepted");
+      Con::executef(this, "onConnectionAccepted");
    }
    else
    {
@@ -128,13 +128,13 @@ void GameConnection::onConnectionEstablished(bool isInitiator)
       argv[0] = "onConnect";
       for(U32 i = 0; i < mConnectArgc; i++)
          argv[i + 2] = mConnectArgv[i];
-      Con::execute(this, mConnectArgc + 2, argv);
+      Con::executeS(this, mConnectArgc + 2, argv);
    }
 }
 
 void GameConnection::onConnectTimedOut()
 {
-   Con::executef(this, 1, "onConnectRequestTimedOut");
+   Con::executef(this, "onConnectRequestTimedOut");
 }
 
 void GameConnection::onDisconnect(const char *reason)
@@ -142,7 +142,7 @@ void GameConnection::onDisconnect(const char *reason)
    if(isConnectionToServer())
    {
       Con::printf("Connection with server lost.");
-      Con::executef(this, 2, "onConnectionDropped", reason);
+      Con::executef(this, "onConnectionDropped", reason);
    }
    else
    {
@@ -153,12 +153,12 @@ void GameConnection::onDisconnect(const char *reason)
 
 void GameConnection::onConnectionRejected(const char *reason)
 {
-   Con::executef(this, 2, "onConnectRequestRejected", reason);
+   Con::executef(this, "onConnectRequestRejected", reason);
 }
 
 void GameConnection::handleStartupError(const char *errorString)
 {
-   Con::executef(this, 2, "onConnectRequestRejected", errorString);
+   Con::executef(this, "onConnectRequestRejected", errorString);
 }
 
 void GameConnection::writeConnectAccept(BitStream *stream)
@@ -226,7 +226,8 @@ bool GameConnection::readConnectRequest(BitStream *stream, const char **errorStr
    }
    setProtocolVersion(currentProtocol < CurrentProtocolVersion ? currentProtocol : CurrentProtocolVersion);
 
-   const char *serverPassword = Con::getVariable("Pref::Server::Password");
+	ConsoleStringValuePtr serverPasswordS = Con::getVariable("Pref::Server::Password");
+   const char *serverPassword = serverPasswordS.c_str();
    if(serverPassword[0])
    {
       if(dStrcmp(joinPassword, serverPassword))
@@ -255,10 +256,10 @@ bool GameConnection::readConnectRequest(BitStream *stream, const char **errorStr
    Net::addressToString(getNetAddress(), buffer);
    connectArgv[2] = buffer;
 
-   const char *ret = Con::execute(this, mConnectArgc + 3, connectArgv);
-   if(ret[0])
+   ConsoleStringValuePtr ret = Con::executeS(this, mConnectArgc + 3, connectArgv);
+   if(ret.c_str()[0])
    {
-      *errorString = ret;
+      *errorString = ret.c_str();
       return false;
    }
    return true;
@@ -270,7 +271,7 @@ void GameConnection::connectionError(const char *errorString)
    if(isConnectionToServer())
    {
       Con::printf("Connection error: %s.", errorString);
-      Con::executef(this, 2, "onConnectionError", errorString);
+      Con::executef(this, "onConnectionError", errorString);
    }
    else
    {
@@ -309,7 +310,7 @@ void GameConnection::onRemove()
        sendDisconnectPacket(mDisconnectReason);
    }
    if(!isConnectionToServer())
-      Con::executef(this, 2, "onDrop", mDisconnectReason);
+      Con::executef(this, "onDrop", mDisconnectReason);
 
    Parent::onRemove();
 }
@@ -361,13 +362,13 @@ void GameConnection::detectLag()
       if (!mLagging)
       {
          mLagging = true;
-         Con::executef(this, 2, "setLagIcon", "true");
+         Con::executef(this, "setLagIcon", true);
       }
    }
    else if (mLagging)
    {
       mLagging = false;
-      Con::executef(this, 2, "setLagIcon", "false");
+      Con::executef(this, "setLagIcon", false);
    }
 }
 

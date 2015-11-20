@@ -22,6 +22,7 @@
 
 #include "platform/platform.h"
 #include "console/console.h"
+#include "console/consoleBaseType.h"
 
 #include "console/ast.h"
 #include "collection/findIterator.h"
@@ -48,10 +49,7 @@
 
 using namespace Compiler;
 
-enum EvalConstants {
-   MaxStackSize = 1024,
-   MethodOnComponent = -2
-};
+extern CodeBlockEvalState gNewEvalState;
 
 namespace Con
 {
@@ -61,18 +59,12 @@ extern StringTableEntry gCurrentFile;
 extern StringTableEntry gCurrentRoot;
 }
 
-F64 floatStack[MaxStackSize];
-S64 intStack[MaxStackSize];
-
 StringStack STR;
-
-U32 FLT = 0;
-U32 UINT = 0;
 
 static const char *getNamespaceList(Namespace *ns)
 {
    U32 size = 1;
-   Namespace * walk;
+   Namespace *walk;
    for(walk = ns; walk; walk = walk->mParent)
       size += dStrlen(walk->mName) + 4;
    char *ret = Con::getReturnBuffer(size);
@@ -84,25 +76,6 @@ static const char *getNamespaceList(Namespace *ns)
          dStrcat(ret, " -> ");
    }
    return ret;
-}
-
-//------------------------------------------------------------
-
-F64 consoleStringToNumber(const char *str, StringTableEntry file, U32 line)
-{
-   F64 val = dAtof(str);
-   if(val != 0)
-      return val;
-   else if(!dStricmp(str, "true"))
-      return 1;
-   else if(!dStricmp(str, "false"))
-      return 0;
-   else if(file)
-   {
-      Con::warnf(ConsoleLogEntry::General, "%s (%d): string always evaluates to 0.", file, line);
-      return 0;
-   }
-   return 0;
 }
 
 //------------------------------------------------------------
@@ -141,7 +114,7 @@ namespace Con
         return ret;
     }
 
-    char* getBoolArg(bool arg)
+    char *getBoolArg(bool arg)
     {
         char *ret = STR.getArgBuffer(32);
         dSprintf(ret, 32, "%d", arg);
@@ -151,75 +124,14 @@ namespace Con
 
 //------------------------------------------------------------
 
-inline void ExprEvalState::setCurVarName(StringTableEntry name)
-{
-   if(name[0] == '$')
-      currentVariable = globalVars.lookup(name);
-   else if(stack.size())
-      currentVariable = stack.last()->lookup(name);
-   if(!currentVariable && gWarnUndefinedScriptVariables)
-       Con::warnf(ConsoleLogEntry::Script, "Variable referenced before assignment: %s", name);
-}
-
-inline void ExprEvalState::setCurVarNameCreate(StringTableEntry name)
-{
-   if(name[0] == '$')
-      currentVariable = globalVars.add(name);
-   else if(stack.size())
-      currentVariable = stack.last()->add(name);
-   else
-   {
-      currentVariable = NULL;
-      Con::warnf(ConsoleLogEntry::Script, "Accessing local variable in global scope... failed: %s", name);
-   }
-}
-
-//------------------------------------------------------------
-
-inline S32 ExprEvalState::getIntVariable()
-{
-   return currentVariable ? currentVariable->getIntValue() : 0;
-}
-
-inline F64 ExprEvalState::getFloatVariable()
-{
-   return currentVariable ? currentVariable->getFloatValue() : 0;
-}
-
-inline const char *ExprEvalState::getStringVariable()
-{
-   return currentVariable ? currentVariable->getStringValue() : "";
-}
-
-//------------------------------------------------------------
-
-inline void ExprEvalState::setIntVariable(S32 val)
-{
-   AssertFatal(currentVariable != NULL, "Invalid evaluator state - trying to set null variable!");
-   currentVariable->setIntValue(val);
-}
-
-inline void ExprEvalState::setFloatVariable(F64 val)
-{
-   AssertFatal(currentVariable != NULL, "Invalid evaluator state - trying to set null variable!");
-   currentVariable->setFloatValue((F32)val);
-}
-
-inline void ExprEvalState::setStringVariable(const char *val)
-{
-   AssertFatal(currentVariable != NULL, "Invalid evaluator state - trying to set null variable!");
-   currentVariable->setStringValue(val);
-}
-
-//------------------------------------------------------------
-
 void CodeBlock::getFunctionArgs(char buffer[1024], U32 ip)
 {
-   U32 fnArgc = code[ip + 5];
+   CodeBlockFunction *func = functions[ip];
+   U32 fnArgc = func->numArgs;
    buffer[0] = 0;
    for(U32 i = 0; i < fnArgc; i++)
    {
-      StringTableEntry var = CodeToSTE(code, ip + (i*2) + 6);
+      StringTableEntry var = func->args[i].varName;
       
       // Add a comma so it looks nice!
       if(i != 0)
@@ -235,1551 +147,1633 @@ void CodeBlock::getFunctionArgs(char buffer[1024], U32 ip)
    }
 }
 
-// Returns, in 'val', the specified component of a string.
-static void getUnit(const char *string, U32 index, const char *set, char val[], S32 len)
+//-----------------------------------------------------------------------------
+
+#define vmdispatch(o)   switch(o)
+#define vmcase(l)   case l:
+#define vmbreak   break
+
+inline U32 ts2_equal(ConsoleValue *a, ConsoleValue *b)
 {
-   U32 sz;
-   while(index--)
-   {
-      if(!*string)
-         return;
-      sz = dStrcspn(string, set);
-      if (string[sz] == 0)
-         return;
-      string += (sz + 1);
-   }
-   sz = dStrcspn(string, set);
-   if (sz == 0)
-      return;
-
-   if( ( sz + 1 ) > (U32)len )
-      return;
-
-   dStrncpy(val, string, sz);
-   val[sz] = '\0';
+   // TODO: handle same reference types
+   return a->getFloatValue() == b->getFloatValue() ? 1 : 0;
 }
 
-// Copies a string, replacing the (space separated) specified component. The
-// return value is stored in 'val'.
-static void setUnit(const char *string, U32 index, const char *replace, const char *set, char val[], S32 len)
+inline U32 ts2_lt(ConsoleValue *a, ConsoleValue *b)
 {
-   U32 sz;
-   const char *start = string;
-   if( ( dStrlen(string) + dStrlen(replace) + 1 ) > (U32)len )
-      return;
+   return a->getFloatValue() < b->getFloatValue() ? 1 : 0;
+}
 
-   U32 padCount = 0;
+inline U32 ts2_le(ConsoleValue *a, ConsoleValue *b)
+{
+   return a->getFloatValue() <= b->getFloatValue() ? 1 : 0;
+}
 
-   while(index--)
+// jamesu - string equals will compare values as if they were case insensitive strings
+inline U32 ts2_eq_str(ConsoleValue *a, ConsoleValue *b)
+{
+   if (a->type == b->type)
    {
-      sz = dStrcspn(string, set);
-      if(string[sz] == 0)
+      if (a->type == ConsoleValue::TypeInternalStringTableEntry)
       {
-         string += sz;
-         padCount = index + 1;
-         break;
+         return a->value.string == b->value.string;
+      }
+      else if (a->type == ConsoleValue::TypeInternalNamespaceName)
+      {
+         return a->value.string == b->value.string;
+      }
+      else if (a->type == ConsoleValue::TypeReferenceCounted)
+      {
+         return a->value.refValue->stringCompare(b->value.refValue->getString().c_str());
       }
       else
-         string += (sz + 1);
+      {
+         return a->getFloatValue() == b->getFloatValue();
+      }
    }
-   // copy first chunk
-   sz = (U32)(string-start);
-   dStrncpy(val, start, sz);
-   for(U32 i = 0; i < padCount; i++)
-      val[sz++] = set[0];
-
-   // replace this unit
-   val[sz] = '\0';
-   dStrcat(val, replace);
-
-   // copy remaining chunks
-   sz = dStrcspn(string, set);         // skip chunk we're replacing
-   if(!sz && !string[sz])
-      return;
-
-   string += sz;
-   dStrcat(val, string);
-   return;
-}
-
-//-----------------------------------------------------------------------------
-
-static bool isDigitsOnly( const char* pString )
-{
-    // Sanity.
-    AssertFatal( pString != NULL, "isDigits() - Cannot check a NULL string." );
-
-    const char* pDigitCursor = pString;
-    if ( *pDigitCursor == 0 )
-        return false;
-
-    // Check for digits only.
-    do
-    {
-        if ( dIsdigit( *pDigitCursor++ ) )
-            continue;
-
-        return false;
-    }
-    while( *pDigitCursor != 0 );
-
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-
-static const StringTableEntry _xyzw[] = 
-{
-    StringTable->insert( "x" ),
-    StringTable->insert( "y" ),
-    StringTable->insert( "z" ),
-    StringTable->insert( "w" )
-};
-
-static const StringTableEntry _rgba[] = 
-{
-    StringTable->insert( "r" ),
-    StringTable->insert( "g" ),
-    StringTable->insert( "b" ),
-    StringTable->insert( "a" )
-};
-
-static const StringTableEntry _size[] = 
-{
-    StringTable->insert( "width" ),
-    StringTable->insert( "height" )
-};
-
-static const StringTableEntry _count = StringTable->insert( "count" );
-
-//-----------------------------------------------------------------------------
-
-// Gets a component of an object's field value or a variable and returns it in val.
-static void getFieldComponent( SimObject* object, StringTableEntry field, const char* array, StringTableEntry subField, char* val, const U32 bufferSize )
-{
-    const char* prevVal = NULL;
-   
-    // Grab value from object.
-    if( object && field )
-        prevVal = object->getDataField( field, array );
-   
-    // Otherwise, grab from the string stack. The value coming in will always
-    // be a string because that is how multi-component variables are handled.
-    else
-        prevVal = STR.getStringValue();
-
-    // Make sure we got a value.
-    if ( prevVal && *prevVal )
-    {
-        if ( subField == _count )
-            dSprintf( val, bufferSize, "%d", StringUnit::getUnitCount( prevVal, " \t\n" ) );
-
-        else if ( subField == _xyzw[0] || subField == _rgba[0] || subField == _size[0] )
-            dStrncpy( val, StringUnit::getUnit( prevVal, 0, " \t\n"), bufferSize );
-
-        else if ( subField == _xyzw[1] || subField == _rgba[1] || subField == _size[1] )
-            dStrncpy( val, StringUnit::getUnit( prevVal, 1, " \t\n"), bufferSize );
-
-        else if ( subField == _xyzw[2] || subField == _rgba[2] )
-            dStrncpy( val, StringUnit::getUnit( prevVal, 2, " \t\n"), bufferSize );
-
-        else if ( subField == _xyzw[3] || subField == _rgba[3] )
-            dStrncpy( val, StringUnit::getUnit( prevVal, 3, " \t\n"), bufferSize );
-
-        else if ( *subField == '_' && isDigitsOnly(subField+1) )
-            dStrncpy( val, StringUnit::getUnit( prevVal, dAtoi(subField+1), " \t\n"), bufferSize );
-
-        else
-            val[0] = 0;
-    }
-    else
-        val[0] = 0;
-}
-
-//-----------------------------------------------------------------------------
-
-// Sets a component of an object's field value based on the sub field. 'x' will
-// set the first field, 'y' the second, and 'z' the third.
-static void setFieldComponent( SimObject* object, StringTableEntry field, const char* array, StringTableEntry subField )
-{
-    // Copy the current string value
-    char strValue[1024];
-    dStrncpy( strValue, STR.getStringValue(), sizeof(strValue) );
-
-    char val[1024] = "";
-    const U32 bufferSize = sizeof(val);
-    const char* prevVal = NULL;
-
-    // Set the value on an object field.
-    if( object && field )
-        prevVal = object->getDataField( field, array );
-
-    // Set the value on a variable.
-    else if( gEvalState.currentVariable )
-        prevVal = gEvalState.getStringVariable();
-
-    // Ensure that the variable has a value
-    if (!prevVal)
-        return;
-
-    if ( subField == _xyzw[0] || subField == _rgba[0] || subField == _size[0] )
-        dStrncpy( val, StringUnit::setUnit( prevVal, 0, strValue, " \t\n"), bufferSize );
-
-    else if ( subField == _xyzw[1] || subField == _rgba[1] || subField == _size[1] )
-        dStrncpy( val, StringUnit::setUnit( prevVal, 1, strValue, " \t\n"), bufferSize );
-
-    else if ( subField == _xyzw[2] || subField == _rgba[2] )
-        dStrncpy( val, StringUnit::setUnit( prevVal, 2, strValue, " \t\n"), bufferSize );
-
-    else if ( subField == _xyzw[3] || subField == _rgba[3] )
-        dStrncpy( val, StringUnit::setUnit( prevVal, 3, strValue, " \t\n"), bufferSize );
-
-    else if ( *subField == '_' && isDigitsOnly(subField+1) )
-        dStrncpy( val, StringUnit::setUnit( prevVal, dAtoi(subField+1), strValue, " \t\n"), bufferSize );
-
-    if ( val[0] != 0 )
-    {
-        // Update the field or variable.
-        if( object && field )
-            object->setDataField( field, 0, val );
-        else if( gEvalState.currentVariable )
-            gEvalState.setStringVariable( val );
-    }
-}
-
-const char *CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, const char **argv, bool noCalls, StringTableEntry packageName, S32 setFrame)
-{
-#ifdef TORQUE_DEBUG
-   U32 stackStart = STR.mStartStackSize;
-#endif
-
-   static char traceBuffer[1024];
-   U32 i;
-
-   incRefCount();
-   F64 *curFloatTable;
-   char *curStringTable;
-   STR.clearFunctionOffset();
-   StringTableEntry thisFunctionName = NULL;
-   bool popFrame = false;
-   if(argv)
+   else if (a->type > ConsoleValue::TypeReferenceCounted && b->type >= ConsoleValue::TypeReferenceCounted)
    {
-      // assume this points into a function decl:
-      U32 fnArgc = code[ip + 2 + 6];
-      thisFunctionName = CodeToSTE(code, ip);
-      argc = getMin(argc-1, fnArgc); // argv[0] is func name
-      if(gEvalState.traceOn)
-      {
-         traceBuffer[0] = 0;
-         dStrcat(traceBuffer, "Entering ");
-         if(packageName)
-         {
-            dStrcat(traceBuffer, "[");
-            dStrcat(traceBuffer, packageName);
-            dStrcat(traceBuffer, "]");
-         }
-         if(thisNamespace && thisNamespace->mName)
-         {
-            dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-               "%s::%s(", thisNamespace->mName, thisFunctionName);
-         }
-         else
-         {
-            dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-               "%s(", thisFunctionName);
-         }
-         for(i = 0; i < argc; i++)
-         {
-            dStrcat(traceBuffer, argv[i+1]);
-            if(i != argc - 1)
-               dStrcat(traceBuffer, ", ");
-         }
-         dStrcat(traceBuffer, ")");
-         Con::printf("%s", traceBuffer);
-      }
-      gEvalState.pushFrame(thisFunctionName, thisNamespace);
-      popFrame = true;
-      for(i = 0; i < argc; i++)
-      {
-         StringTableEntry var = CodeToSTE(code, ip + (2 + 6 + 1) + (i * 2));
-         gEvalState.setCurVarNameCreate(var);
-         gEvalState.setStringVariable(argv[i+1]);
-      }
-      ip = ip + (fnArgc * 2) + (2 + 6 + 1);
-      curFloatTable = functionFloats;
-      curStringTable = functionStrings;
+      // Both values are custom, easy!
+      return a->value.refValue->refCompare(b->value.refValue);
+   }
+   else if (a->type > ConsoleValue::TypeReferenceCounted)
+   {
+      return a->value.refValue->stringCompare(b->getTempStringValue());
+   }
+   else if (b->type > ConsoleValue::TypeReferenceCounted)
+   {
+      return b->value.refValue->stringCompare(a->getTempStringValue());
    }
    else
    {
-      curFloatTable = globalFloats;
-      curStringTable = globalStrings;
-
-      // Do we want this code to execute using a new stack frame?
-      if (setFrame < 0)
-      {
-         gEvalState.pushFrame(NULL, NULL);
-         popFrame = true;
-      }
-      else if (!gEvalState.stack.empty())
-      {
-         // We want to copy a reference to an existing stack frame
-         // on to the top of the stack.  Any change that occurs to 
-         // the locals during this new frame will also occur in the 
-         // original frame.
-         S32 stackIndex = gEvalState.stack.size() - setFrame - 1;
-         gEvalState.pushFrameRef( stackIndex );
-         popFrame = true;
-      }
+      // Must be some sort of numeric comparison
+      return a->getFloatValue() == b->getFloatValue();
    }
+}
 
-   // Grab the state of the telenet debugger here once
-   // so that the push and pop frames are always balanced.
-   const bool telDebuggerOn = TelDebugger && TelDebugger->isConnected();
-   if ( telDebuggerOn && setFrame < 0 )
-      TelDebugger->pushStackFrame();
-
-   // Notify the remote debugger.
-   RemoteDebuggerBase* pRemoteDebugger = RemoteDebuggerBase::getRemoteDebugger();
-   if ( pRemoteDebugger != NULL && setFrame < 0 )
-       pRemoteDebugger->pushStackFrame();
-
-   StringTableEntry var, objParent;
-   U32 failJump;
-   StringTableEntry fnName;
-   StringTableEntry fnNamespace, fnPackage;
-   SimObject *currentNewObject = 0;
-   StringTableEntry prevField = NULL;
-   StringTableEntry curField = NULL;
-   SimObject *prevObject = NULL;
-   SimObject *curObject = NULL;
-   SimObject *saveObject=NULL;
-   Namespace::Entry *nsEntry;
-   Namespace *ns;
-   const char* curFNDocBlock = NULL;
-   const char* curNSDocBlock = NULL;
-   const S32 nsDocLength = 128;
-   char nsDocBlockClass[nsDocLength];
-
-   U32 callArgc;
-   const char **callArgv;
-
-   static char curFieldArray[256];
-   static char prevFieldArray[256];
-
-   CodeBlock *saveCodeBlock = smCurrentCodeBlock;
-   smCurrentCodeBlock = this;
-   if(this->name)
-   {
-      Con::gCurrentFile = this->name;
-      Con::gCurrentRoot = mRoot;
-   }
-   const char * val;
-
-   // The frame temp is used by the variable accessor ops (OP_SAVEFIELD_* and
-   // OP_LOADFIELD_*) to store temporary values for the fields.
-   static S32 VAL_BUFFER_SIZE = 1024;
-   FrameTemp<char> valBuffer( VAL_BUFFER_SIZE );
+static char printBuf[128];
+static char printBuf2[128];
+static char *printBufPtr = NULL;
+inline const char *ts2PrintKonstOrRef(U32 value, ConsoleValue *konst)
+{
+   if (printBufPtr == NULL || printBufPtr == printBuf2)
+      printBufPtr = printBuf;
+   else
+      printBufPtr = printBuf2;
    
-   for(;;)
+   if (value & Compiler::OP_K_MASK)
    {
-      U32 instruction = code[ip++];
-breakContinue:
-      switch(instruction)
-      {
-         case OP_FUNC_DECL:
-            if(!noCalls)
-            {
-               fnName       = CodeToSTE(code, ip);
-               fnNamespace  = CodeToSTE(code, ip+2);
-               fnPackage    = CodeToSTE(code, ip+4);
-               bool hasBody = bool(code[ip+6]);
-               
-               Namespace::unlinkPackages();
-               ns = Namespace::find(fnNamespace, fnPackage);
-               ns->addFunction(fnName, this, hasBody ? ip : 0, curFNDocBlock ? dStrdup( curFNDocBlock ) : NULL );// if no body, set the IP to 0
-               if( curNSDocBlock )
-               {
-                  if( fnNamespace == StringTable->lookup( nsDocBlockClass ) )
-                  {
-                     char *usageStr = dStrdup( curNSDocBlock );
-                     usageStr[dStrlen(usageStr)] = '\0';
-                     ns->mUsage = usageStr;
-                     ns->mCleanUpUsage = true;
-                     curNSDocBlock = NULL;
-                  }
-               }
-               Namespace::relinkPackages();
-
-               // If we had a docblock, it's definitely not valid anymore, so clear it out.
-               curFNDocBlock = NULL;
-
-               //Con::printf("Adding function %s::%s (%d)", fnNamespace, fnName, ip);
-            }
-            ip = code[ip + 7];
-            break;
-
-         case OP_CREATE_OBJECT:
-         {
-            // Read some useful info.
-            objParent        = CodeToSTE(code, ip);
-            bool isDataBlock =          code[ip + 2];
-            bool isInternal  =          code[ip + 3];
-            bool isMessage   =          code[ip + 4];
-            failJump         =          code[ip + 5];
-            
-            // If we don't allow calls, we certainly don't allow creating objects!
-            // Moved this to after failJump is set. Engine was crashing when
-            // noCalls = true and an object was being created at the beginning of
-            // a file. ADL.
-            if(noCalls)
-            {
-               ip = failJump;
-               break;
-            }
-
-            // Get the constructor information off the stack.
-            STR.getArgcArgv(NULL, &callArgc, &callArgv, true);
-
-            // Con::printf("Creating object...");
-
-            // objectName = argv[1]...
-            currentNewObject = NULL;
-
-            // Are we creating a datablock? If so, deal with case where we override
-            // an old one.
-            if(isDataBlock)
-            {
-               // Con::printf("  - is a datablock");
-
-               // Find the old one if any.
-               SimObject *db = Sim::getDataBlockGroup()->findObject(callArgv[2]);
-               
-               // Make sure we're not changing types on ourselves...
-               if(db && dStricmp(db->getClassName(), callArgv[1]))
-               {
-                  Con::errorf(ConsoleLogEntry::General, "Cannot re-declare data block %s with a different class.", callArgv[2]);
-                  ip = failJump;
-                  break;
-               }
-
-               // If there was one, set the currentNewObject and move on.
-               if(db)
-                  currentNewObject = db;
-            }
-
-            if(!currentNewObject)
-            {
-               // Well, looks like we have to create a new object.
-               ConsoleObject *object = ConsoleObject::create(callArgv[1]);
-
-               // Deal with failure!
-               if(!object)
-               {
-                  Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-conobject class %s.", getFileLine(ip-1), callArgv[1]);
-                  ip = failJump;
-                  break;
-               }
-
-               // Do special datablock init if appropros
-               if(isDataBlock)
-               {
-                  SimDataBlock *dataBlock = dynamic_cast<SimDataBlock *>(object);
-                  if(dataBlock)
-                  {
-                     dataBlock->assignId();
-                  }
-                  else
-                  {
-                     // They tried to make a non-datablock with a datablock keyword!
-                     Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-datablock class %s.", getFileLine(ip-1), callArgv[1]);
-
-                     // Clean up...
-                     delete object;
-                     ip = failJump;
-                     break;
-                  }
-               }
-
-               // Finally, set currentNewObject to point to the new one.
-               currentNewObject = dynamic_cast<SimObject *>(object);
-
-               // Deal with the case of a non-SimObject.
-               if(!currentNewObject)
-               {
-                  Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-SimObject class %s.", getFileLine(ip-1), callArgv[1]);
-                  delete object;
-                  ip = failJump;
-                  break;
-               }
-
-               // Does it have a parent object? (ie, the copy constructor : syntax, not inheriance)
-               // [tom, 9/8/2006] it is inheritance if it's a message ... muwahahah!
-               if(!isMessage && *objParent)
-               {
-                  // Find it!
-                  SimObject *parent;
-                  if(Sim::findObject(objParent, parent))
-                  {
-                     // Con::printf(" - Parent object found: %s", parent->getClassName());
-
-                     // and suck the juices from it!
-                     currentNewObject->assignFieldsFrom(parent);
-                  }
-                  else
-                     Con::errorf(ConsoleLogEntry::General, "%s: Unable to find parent object %s for %s.", getFileLine(ip-1), objParent, callArgv[1]);
-
-                  // Mm! Juices!
-               }
-
-               // If a name was passed, assign it.
-               if(callArgv[2][0])
-               {
-                  if(! isMessage)
-                  {
-                     if(! isInternal)
-                        currentNewObject->assignName(callArgv[2]);
-                     else
-                        currentNewObject->setInternalName(callArgv[2]);
-                  }
-                  else
-                  {
-                     Message *msg = dynamic_cast<Message *>(currentNewObject);
-                     if(msg)
-                     {
-                        msg->setClassNamespace(callArgv[2]);
-                        msg->setSuperClassNamespace(objParent);
-                     }
-                     else
-                     {
-                        Con::errorf(ConsoleLogEntry::General, "%s: Attempting to use newmsg on non-message type %s", getFileLine(ip-1), callArgv[1]);
-                        delete currentNewObject;
-                        currentNewObject = NULL;
-                        ip = failJump;
-                        break;
-                     }
-                  }
-               }
-
-               // Do the constructor parameters.
-               if(!currentNewObject->processArguments(callArgc-3, callArgv+3))
-               {
-                  delete currentNewObject;
-                  currentNewObject = NULL;
-                  ip = failJump;
-                  break;
-               }
-
-               // If it's not a datablock, allow people to modify bits of it.
-               if(!isDataBlock)
-               {
-                  currentNewObject->setModStaticFields(true);
-                  currentNewObject->setModDynamicFields(true);
-               }
-            }
-
-            // Advance the IP past the create info...
-            ip += 6;
-            break;
-         }
-
-         case OP_ADD_OBJECT:
-         {
-            // See OP_SETCURVAR for why we do this.
-            curFNDocBlock = NULL;
-            curNSDocBlock = NULL;
-            
-            // Do we place this object at the root?
-            bool placeAtRoot = code[ip++];
-
-            // Con::printf("Adding object %s", currentNewObject->getName());
-
-            // Make sure it wasn't already added, then add it.
-            if (currentNewObject == NULL)
-            {
-               break;
-            }
-
-            if(currentNewObject->isProperlyAdded() == false)
-            {
-               bool ret = false;
-
-               Message *msg = dynamic_cast<Message *>(currentNewObject);
-               if(msg)
-               {
-                  SimObjectId id = Message::getNextMessageID();
-                  if(id != 0xffffffff)
-                     ret = currentNewObject->registerObject(id);
-                  else
-                     Con::errorf("%s: No more object IDs available for messages", getFileLine(ip-2));
-               }
-               else
-                  ret = currentNewObject->registerObject();
-               
-               if(! ret)
-               {
-                  // This error is usually caused by failing to call Parent::initPersistFields in the class' initPersistFields().
-                  Con::warnf(ConsoleLogEntry::General, "%s: Register object failed for object %s of class %s.", getFileLine(ip-2), currentNewObject->getName(), currentNewObject->getClassName());
-                  delete currentNewObject;
-                  ip = failJump;
-                  break;
-               }
-            }
-
-            // Are we dealing with a datablock?
-            SimDataBlock *dataBlock = dynamic_cast<SimDataBlock *>(currentNewObject);
-            static char errorBuffer[256];
-
-            // If so, preload it.
-            if(dataBlock && !dataBlock->preload(true, errorBuffer))
-            {
-               Con::errorf(ConsoleLogEntry::General, "%s: preload failed for %s: %s.", getFileLine(ip-2),
-                           currentNewObject->getName(), errorBuffer);
-               dataBlock->deleteObject();
-               ip = failJump;
-               break;
-            }
-
-            // What group will we be added to, if any?
-            U32 groupAddId = (U32)intStack[UINT];
-            SimGroup *grp = NULL;
-            SimSet   *set = NULL;
-            SimComponent *comp = NULL;
-            bool isMessage = dynamic_cast<Message *>(currentNewObject) != NULL;
-
-            if(!placeAtRoot || !currentNewObject->getGroup())
-            {
-               if(! isMessage)
-               {
-                  if(! placeAtRoot)
-                  {
-                     // Otherwise just add to the requested group or set.
-                     if(!Sim::findObject(groupAddId, grp))
-                        if(!Sim::findObject(groupAddId, comp))
-                           Sim::findObject(groupAddId, set);
-                  }
-                  
-                  if(placeAtRoot || comp != NULL)
-                  {
-                     // Deal with the instantGroup if we're being put at the root or we're adding to a component.
-                     const char *addGroupName = Con::getVariable("instantGroup");
-                     if(!Sim::findObject(addGroupName, grp))
-                        Sim::findObject(RootGroupId, grp);
-                  }
-
-                  if(comp)
-                  {
-                     SimComponent *newComp = dynamic_cast<SimComponent *>(currentNewObject);
-                     if(newComp)
-                     {
-                        if(! comp->addComponent(newComp))
-                           Con::errorf("%s: Unable to add component %s, template not loaded?", getFileLine(ip-2), currentNewObject->getName() ? currentNewObject->getName() : currentNewObject->getIdString());
-                     }
-                  }
-               }
-
-               // If we didn't get a group, then make sure we have a pointer to
-               // the rootgroup.
-               if(!grp)
-                  Sim::findObject(RootGroupId, grp);
-
-               // add to the parent group
-               grp->addObject(currentNewObject);
-
-               // add to any set we might be in
-               if(set)
-                  set->addObject(currentNewObject);
-            }
-
-            // store the new object's ID on the stack (overwriting the group/set
-            // id, if one was given, otherwise getting pushed)
-            if(placeAtRoot) 
-               intStack[UINT] = currentNewObject->getId();
-            else
-               intStack[++UINT] = currentNewObject->getId();
-
-            break;
-         }
-
-         case OP_END_OBJECT:
-         {
-            // If we're not to be placed at the root, make sure we clean up
-            // our group reference.
-            bool placeAtRoot = code[ip++];
-            if(!placeAtRoot)
-               UINT--;
-            break;
-         }
-
-         case OP_JMPIFFNOT:
-            if(floatStack[FLT--])
-            {
-               ip++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMPIFNOT:
-            if(intStack[UINT--])
-            {
-               ip++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMPIFF:
-            if(!floatStack[FLT--])
-            {
-               ip++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMPIF:
-            if(!intStack[UINT--])
-            {
-               ip ++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMPIFNOT_NP:
-            if(intStack[UINT])
-            {
-               UINT--;
-               ip++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMPIF_NP:
-            if(!intStack[UINT])
-            {
-               UINT--;
-               ip++;
-               break;
-            }
-            ip = code[ip];
-            break;
-         case OP_JMP:
-            ip = code[ip];
-            break;
-         case OP_RETURN:
-            goto execFinished;
-         case OP_CMPEQ:
-            intStack[UINT+1] = bool(floatStack[FLT] == floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_CMPGR:
-            intStack[UINT+1] = bool(floatStack[FLT] > floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_CMPGE:
-            intStack[UINT+1] = bool(floatStack[FLT] >= floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_CMPLT:
-            intStack[UINT+1] = bool(floatStack[FLT] < floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_CMPLE:
-            intStack[UINT+1] = bool(floatStack[FLT] <= floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_CMPNE:
-            intStack[UINT+1] = bool(floatStack[FLT] != floatStack[FLT-1]);
-            UINT++;
-            FLT -= 2;
-            break;
-
-         case OP_XOR:
-            intStack[UINT-1] = intStack[UINT] ^ intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_MOD:
-            if(  intStack[UINT-1] != 0 )
-               intStack[UINT-1] = intStack[UINT] % intStack[UINT-1];
-            else
-               intStack[UINT-1] = 0;
-            UINT--;
-            break;
-
-         case OP_BITAND:
-            intStack[UINT-1] = intStack[UINT] & intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_BITOR:
-            intStack[UINT-1] = intStack[UINT] | intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_NOT:
-            intStack[UINT] = !intStack[UINT];
-            break;
-
-         case OP_NOTF:
-            intStack[UINT+1] = !floatStack[FLT];
-            FLT--;
-            UINT++;
-            break;
-
-         case OP_ONESCOMPLEMENT:
-            intStack[UINT] = ~intStack[UINT];
-            break;
-
-         case OP_SHR:
-            intStack[UINT-1] = intStack[UINT] >> intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_SHL:
-            intStack[UINT-1] = intStack[UINT] << intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_AND:
-            intStack[UINT-1] = intStack[UINT] && intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_OR:
-            intStack[UINT-1] = intStack[UINT] || intStack[UINT-1];
-            UINT--;
-            break;
-
-         case OP_ADD:
-            floatStack[FLT-1] = floatStack[FLT] + floatStack[FLT-1];
-            FLT--;
-            break;
-
-         case OP_SUB:
-            floatStack[FLT-1] = floatStack[FLT] - floatStack[FLT-1];
-            FLT--;
-            break;
-
-         case OP_MUL:
-            floatStack[FLT-1] = floatStack[FLT] * floatStack[FLT-1];
-            FLT--;
-            break;
-         case OP_DIV:
-            floatStack[FLT-1] = floatStack[FLT] / floatStack[FLT-1];
-            FLT--;
-            break;
-         case OP_NEG:
-            floatStack[FLT] = -floatStack[FLT];
-            break;
-
-         case OP_SETCURVAR:
-            var = CodeToSTE(code, ip);
-            ip += 2;
-
-            // If a variable is set, then these must be NULL. It is necessary
-            // to set this here so that the vector parser can appropriately
-            // identify whether it's dealing with a vector.
-            prevField = NULL;
-            prevObject = NULL;
-            curObject = NULL;
-
-            gEvalState.setCurVarName(var);
-
-            // In order to let docblocks work properly with variables, we have
-            // clear the current docblock when we do an assign. This way it 
-            // won't inappropriately carry forward to following function decls.
-            curFNDocBlock = NULL;
-            curNSDocBlock = NULL;
-            break;
-
-         case OP_SETCURVAR_CREATE:
-            var = CodeToSTE(code, ip);
-            ip += 2;
-
-            // See OP_SETCURVAR
-            prevField = NULL;
-            prevObject = NULL;
-            curObject = NULL;
-
-            gEvalState.setCurVarNameCreate(var);
-
-            // See OP_SETCURVAR for why we do this.
-            curFNDocBlock = NULL;
-            curNSDocBlock = NULL;
-            break;
-
-         case OP_SETCURVAR_ARRAY:
-            var = STR.getSTValue();
-
-            // See OP_SETCURVAR
-            prevField = NULL;
-            prevObject = NULL;
-            curObject = NULL;
-
-            gEvalState.setCurVarName(var);
-
-            // See OP_SETCURVAR for why we do this.
-            curFNDocBlock = NULL;
-            curNSDocBlock = NULL;
-            break;
-
-         case OP_SETCURVAR_ARRAY_CREATE:
-            var = STR.getSTValue();
-
-            // See OP_SETCURVAR
-            prevField = NULL;
-            prevObject = NULL;
-            curObject = NULL;
-
-            gEvalState.setCurVarNameCreate(var);
-
-            // See OP_SETCURVAR for why we do this.
-            curFNDocBlock = NULL;
-            curNSDocBlock = NULL;
-            break;
-
-         case OP_LOADVAR_UINT:
-            intStack[UINT+1] = gEvalState.getIntVariable();
-            UINT++;
-            break;
-
-         case OP_LOADVAR_FLT:
-            floatStack[FLT+1] = gEvalState.getFloatVariable();
-            FLT++;
-            break;
-
-         case OP_LOADVAR_STR:
-            val = gEvalState.getStringVariable();
-            STR.setStringValue(val);
-            break;
-
-         case OP_SAVEVAR_UINT:
-            gEvalState.setIntVariable((S32)intStack[UINT]);
-            break;
-
-         case OP_SAVEVAR_FLT:
-            gEvalState.setFloatVariable(floatStack[FLT]);
-            break;
-
-         case OP_SAVEVAR_STR:
-            gEvalState.setStringVariable(STR.getStringValue());
-            break;
-
-         case OP_SETCUROBJECT:
-            // Save the previous object for parsing vector fields.
-            prevObject = curObject;
-            val = STR.getStringValue();
-
-            // Sim::findObject will sometimes find valid objects from
-            // multi-component strings. This makes sure that doesn't
-            // happen.
-            for( const char* check = val; *check; check++ )
-            {
-               if( *check == ' ' )
-               {
-                  val = "";
-                  break;
-               }
-            }
-            curObject = Sim::findObject(val);
-            break;
-
-         case OP_SETCUROBJECT_INTERNAL:
-            ++ip; // To skip the recurse flag if the object wasnt found
-            if(curObject)
-            {
-               SimGroup *group = dynamic_cast<SimGroup *>(curObject);
-               if(group)
-               {
-                  StringTableEntry intName = StringTable->insert(STR.getStringValue());
-                  bool recurse = code[ip-1];
-                  SimObject *obj = group->findObjectByInternalName(intName, recurse);
-                  intStack[UINT+1] = obj ? obj->getId() : 0;
-                  UINT++;
-               }
-               else
-               {
-                  Con::errorf(ConsoleLogEntry::Script, "%s: Attempt to use -> on non-group %s of class %s.", getFileLine(ip-2), curObject->getName(), curObject->getClassName());
-                  intStack[UINT] = 0;
-               }
-            }
-            break;
-
-         case OP_SETCUROBJECT_NEW:
-            curObject = currentNewObject;
-            break;
-
-         case OP_SETCURFIELD:
-            // Save the previous field for parsing vector fields.
-            prevField = curField;
-            dStrcpy( prevFieldArray, curFieldArray );
-            curField = CodeToSTE(code, ip);
-            curFieldArray[0] = 0;
-            ip += 2;
-            break;
-
-         case OP_SETCURFIELD_ARRAY:
-            dStrcpy(curFieldArray, STR.getStringValue());
-            break;
-
-         case OP_LOADFIELD_UINT:
-            if(curObject)
-               intStack[UINT+1] = U32(dAtoi(curObject->getDataField(curField, curFieldArray)));
-            else
-            {
-               // The field is not being retrieved from an object. Maybe it's
-               // a special accessor?
-
-               getFieldComponent( prevObject, prevField, prevFieldArray, curField, valBuffer, VAL_BUFFER_SIZE );
-               intStack[UINT+1] = dAtoi( valBuffer );
-            }
-            UINT++;
-            break;
-
-         case OP_LOADFIELD_FLT:
-            if(curObject)
-               floatStack[FLT+1] = dAtof(curObject->getDataField(curField, curFieldArray));
-            else
-            {
-               // The field is not being retrieved from an object. Maybe it's
-               // a special accessor?
-               getFieldComponent( prevObject, prevField, prevFieldArray, curField, valBuffer, VAL_BUFFER_SIZE );
-               floatStack[FLT+1] = dAtof( valBuffer );
-            }
-            FLT++;
-            break;
-
-         case OP_LOADFIELD_STR:
-            if(curObject)
-            {
-               val = curObject->getDataField(curField, curFieldArray);
-               STR.setStringValue( val );
-            }
-            else
-            {
-               // The field is not being retrieved from an object. Maybe it's
-               // a special accessor?
-               getFieldComponent( prevObject, prevField, prevFieldArray, curField, valBuffer, VAL_BUFFER_SIZE );
-               STR.setStringValue( valBuffer );
-            }
-
-            break;
-
-         case OP_SAVEFIELD_UINT:
-            STR.setIntValue((U32)intStack[UINT]);
-            if(curObject)
-               curObject->setDataField(curField, curFieldArray, STR.getStringValue());
-            else
-            {
-               // The field is not being set on an object. Maybe it's
-               // a special accessor?
-               setFieldComponent( prevObject, prevField, prevFieldArray, curField );
-               prevObject = NULL;
-            }
-            break;
-
-         case OP_SAVEFIELD_FLT:
-            STR.setFloatValue(floatStack[FLT]);
-            if(curObject)
-               curObject->setDataField(curField, curFieldArray, STR.getStringValue());
-            else
-            {
-               // The field is not being set on an object. Maybe it's
-               // a special accessor?
-               setFieldComponent( prevObject, prevField, prevFieldArray, curField );
-               prevObject = NULL;
-            }
-            break;
-
-         case OP_SAVEFIELD_STR:
-            if(curObject)
-               curObject->setDataField(curField, curFieldArray, STR.getStringValue());
-            else
-            {
-               // The field is not being set on an object. Maybe it's
-               // a special accessor?
-               setFieldComponent( prevObject, prevField, prevFieldArray, curField );
-               prevObject = NULL;
-            }
-            break;
-
-         case OP_STR_TO_UINT:
-            intStack[UINT+1] = STR.getIntValue();
-            UINT++;
-            break;
-
-         case OP_STR_TO_FLT:
-            floatStack[FLT+1] = STR.getFloatValue();
-            FLT++;
-            break;
-
-         case OP_STR_TO_NONE:
-            // This exists simply to deal with certain typecast situations.
-            break;
-
-         case OP_FLT_TO_UINT:
-            intStack[UINT+1] = (S64)floatStack[FLT];
-            FLT--;
-            UINT++;
-            break;
-
-         case OP_FLT_TO_STR:
-            STR.setFloatValue(floatStack[FLT]);
-            FLT--;
-            break;
-
-         case OP_FLT_TO_NONE:
-            FLT--;
-            break;
-
-         case OP_UINT_TO_FLT:
-            floatStack[FLT+1] = (F64)intStack[UINT];
-            UINT--;
-            FLT++;
-            break;
-
-         case OP_UINT_TO_STR:
-            STR.setIntValue((U32)intStack[UINT]);
-            UINT--;
-            break;
-
-         case OP_UINT_TO_NONE:
-            UINT--;
-            break;
-
-         case OP_LOADIMMED_UINT:
-            intStack[UINT+1] = code[ip++];
-            UINT++;
-            break;
-
-         case OP_LOADIMMED_FLT:
-            floatStack[FLT+1] = curFloatTable[code[ip]];
-            ip++;
-            FLT++;
-            break;
-         case OP_TAG_TO_STR:
-            code[ip-1] = OP_LOADIMMED_STR;
-            // it's possible the string has already been converted
-            if(U8(curStringTable[code[ip]]) != StringTagPrefixByte)
-            {
-               U32 id = GameAddTaggedString(curStringTable + code[ip]);
-               dSprintf(curStringTable + code[ip] + 1, 7, "%d", id);
-               *(curStringTable + code[ip]) = StringTagPrefixByte;
-            }
-         case OP_LOADIMMED_STR:
-            STR.setStringValue(curStringTable + code[ip++]);
-            break;
-
-         case OP_DOCBLOCK_STR:
-            {
-               // If the first word of the doc is '\class' or '@class', then this
-               // is a namespace doc block, otherwise it is a function doc block.
-               const char* docblock = curStringTable + code[ip++];
-
-               const char* sansClass = dStrstr( docblock, "@class" );
-               if( !sansClass )
-                  sansClass = dStrstr( docblock, "\\class" );
-
-               if( sansClass )
-               {
-                  // Don't save the class declaration. Scan past the 'class'
-                  // keyword and up to the first whitespace.
-                  sansClass += 7;
-                  S32 index = 0;
-                  while( ( *sansClass != ' ' ) && ( *sansClass != '\n' ) && *sansClass && ( index < ( nsDocLength - 1 ) ) )
-                  {
-                     nsDocBlockClass[index++] = *sansClass;
-                     sansClass++;
-                  }
-                  nsDocBlockClass[index] = '\0';
-
-                  curNSDocBlock = sansClass + 1;
-               }
-               else
-                  curFNDocBlock = docblock;
-            }
-
-            break;
-
-         case OP_LOADIMMED_IDENT:
-            STR.setStringValue(CodeToSTE(code, ip));
-            ip += 2;
-            break;
-
-         case OP_CALLFUNC_RESOLVE:
-            // This deals with a function that is potentially living in a namespace.
-            fnNamespace = CodeToSTE(code, ip+2);
-            fnName      = CodeToSTE(code, ip);
-
-            // Try to look it up.
-            ns = Namespace::find(fnNamespace);
-            nsEntry = ns->lookup(fnName);
-            if(!nsEntry)
-            {
-               ip+= 5;
-               Con::warnf(ConsoleLogEntry::General,
-                  "%s: Unable to find function %s%s%s",
-                  getFileLine(ip-4), fnNamespace ? fnNamespace : "",
-                  fnNamespace ? "::" : "", fnName);
-               STR.popFrame();
-               break;
-            }
-            // Now, rewrite our code a bit (ie, avoid future lookups) and fall
-            // through to OP_CALLFUNC
-#ifdef TORQUE_64
-            *((U64*)(code+ip+2)) = ((U64)nsEntry);
-#else
-            code[ip+2] = ((U32)nsEntry);
-#endif
-            code[ip-1] = OP_CALLFUNC;
-
-         case OP_CALLFUNC:
-         {
-            // This routingId is set when we query the object as to whether
-            // it handles this method.  It is set to an enum from the table
-            // above indicating whether it handles it on a component it owns
-            // or just on the object.
-            S32 routingId = 0;
-
-            fnName = CodeToSTE(code, ip);
-
-            //if this is called from inside a function, append the ip and codeptr
-            if (!gEvalState.stack.empty())
-            {
-               gEvalState.stack.last()->code = this;
-               gEvalState.stack.last()->ip = ip - 1;
-            }
-
-            U32 callType = code[ip+4];
-
-            ip += 5;
-            STR.getArgcArgv(fnName, &callArgc, &callArgv);
-
-            if(callType == FuncCallExprNode::FunctionCall) 
-            {
-#ifdef TORQUE_64
-               nsEntry = ((Namespace::Entry *) *((U64*)(code+ip-3)));
-#else
-               nsEntry = ((Namespace::Entry *) *(code+ip-3));
-#endif
-               ns = NULL;
-            }
-            else if(callType == FuncCallExprNode::MethodCall)
-            {
-               saveObject = gEvalState.thisObject;
-               gEvalState.thisObject = Sim::findObject(callArgv[1]);
-               if(!gEvalState.thisObject)
-               {
-                  gEvalState.thisObject = 0;
-                  Con::warnf(ConsoleLogEntry::General,"%s: Unable to find object: '%s' attempting to call function '%s'", getFileLine(ip-6), callArgv[1], fnName);
-                  
-                  STR.popFrame(); // [neo, 5/7/2007 - #2974]
-
-                  break;
-               }
-               
-               bool handlesMethod = gEvalState.thisObject->handlesConsoleMethod(fnName,&routingId);
-               if( handlesMethod && routingId == MethodOnComponent )
-               {
-                  DynamicConsoleMethodComponent *pComponent = dynamic_cast<DynamicConsoleMethodComponent*>( gEvalState.thisObject );
-                  if( pComponent )
-                     pComponent->callMethodArgList( callArgc, callArgv, false );
-               }
-               
-               ns = gEvalState.thisObject->getNamespace();
-               if(ns)
-                  nsEntry = ns->lookup(fnName);
-               else
-                  nsEntry = NULL;
-            }
-            else // it's a ParentCall
-            {
-               if(thisNamespace)
-               {
-                  ns = thisNamespace->mParent;
-                  if(ns)
-                     nsEntry = ns->lookup(fnName);
-                  else
-                     nsEntry = NULL;
-               }
-               else
-               {
-                  ns = NULL;
-                  nsEntry = NULL;
-               }
-            }
-
-            S32 nsType = -1;
-            S32 nsMinArgs = 0;
-            S32 nsMaxArgs = 0;
-            Namespace::Entry::CallbackUnion * nsCb = NULL;
-            //Namespace::Entry::CallbackUnion cbu;
-            const char * nsUsage = NULL;
-            if (nsEntry)
-            {
-               nsType = nsEntry->mType;
-               nsMinArgs = nsEntry->mMinArgs;
-               nsMaxArgs = nsEntry->mMaxArgs;
-               nsCb = &nsEntry->cb;
-               nsUsage = nsEntry->mUsage;
-               routingId = 0;
-            }
-            if(!nsEntry || noCalls)
-            {
-               if(!noCalls && !( routingId == MethodOnComponent ) )
-               {
-                  Con::warnf(ConsoleLogEntry::General,"%s: Unknown command %s.", getFileLine(ip-6), fnName);
-                  if(callType == FuncCallExprNode::MethodCall)
-                  {
-                     Con::warnf(ConsoleLogEntry::General, "  Object %s(%d) %s",
-                           gEvalState.thisObject->getName() ? gEvalState.thisObject->getName() : "",
-                           gEvalState.thisObject->getId(), getNamespaceList(ns) );
-                  }
-               }
-               STR.popFrame();
-               STR.setStringValue("");
-               break;
-            }
-            if(nsEntry->mType == Namespace::Entry::ScriptFunctionType)
-            {
-               const char *ret = "";
-               if(nsEntry->mFunctionOffset)
-                  ret = nsEntry->mCode->exec(nsEntry->mFunctionOffset, fnName, nsEntry->mNamespace, callArgc, callArgv, false, nsEntry->mPackage);
-               
-               STR.popFrame();
-               STR.setStringValue(ret);
-            }
-            else
-            {
-               const char* nsName = ns? ns->mName: "";
-               if((nsEntry->mMinArgs && S32(callArgc) < nsEntry->mMinArgs) || (nsEntry->mMaxArgs && S32(callArgc) > nsEntry->mMaxArgs))
-               {
-                  Con::warnf(ConsoleLogEntry::Script, "%s: %s::%s - wrong number of arguments.", getFileLine(ip-6), nsName, fnName);
-                  Con::warnf(ConsoleLogEntry::Script, "%s: usage: %s", getFileLine(ip-4), nsEntry->mUsage);
-                  STR.popFrame();
-               }
-               else
-               {
-                  switch(nsEntry->mType)
-                  {
-                     case Namespace::Entry::StringCallbackType:
-                     {
-                        const char *ret = nsEntry->cb.mStringCallbackFunc(gEvalState.thisObject, callArgc, callArgv);
-                        STR.popFrame();
-                        if(ret != STR.getStringValue())
-                           STR.setStringValue(ret);
-                        else
-                           STR.setLen(dStrlen(ret));
-                        break;
-                     }
-                     case Namespace::Entry::IntCallbackType:
-                     {
-                        S32 result = nsEntry->cb.mIntCallbackFunc(gEvalState.thisObject, callArgc, callArgv);
-                        STR.popFrame();
-                        if(code[ip] == OP_STR_TO_UINT)
-                        {
-                           ip++;
-                           intStack[++UINT] = result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_FLT)
-                        {
-                           ip++;
-                           floatStack[++FLT] = result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_NONE)
-                           ip++;
-                        else
-                           STR.setIntValue(result);
-                        break;
-                     }
-                     case Namespace::Entry::FloatCallbackType:
-                     {
-                        F64 result = nsEntry->cb.mFloatCallbackFunc(gEvalState.thisObject, callArgc, callArgv);
-                        STR.popFrame();
-                        if(code[ip] == OP_STR_TO_UINT)
-                        {
-                           ip++;
-                           intStack[++UINT] = (S64)result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_FLT)
-                        {
-                           ip++;
-                           floatStack[++FLT] = result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_NONE)
-                           ip++;
-                        else
-                           STR.setFloatValue(result);
-                        break;
-                     }
-                     case Namespace::Entry::VoidCallbackType:
-                        nsEntry->cb.mVoidCallbackFunc(gEvalState.thisObject, callArgc, callArgv);
-                        if(code[ip] != OP_STR_TO_NONE)
-                           Con::warnf(ConsoleLogEntry::General, "%s: Call to %s in %s uses result of void function call.", getFileLine(ip-6), fnName, functionName);
-                        
-                        STR.popFrame();
-                        STR.setStringValue("");
-                        break;
-                     case Namespace::Entry::BoolCallbackType:
-                     {
-                        bool result = nsEntry->cb.mBoolCallbackFunc(gEvalState.thisObject, callArgc, callArgv);
-                        STR.popFrame();
-                        if(code[ip] == OP_STR_TO_UINT)
-                        {
-                           ip++;
-                           intStack[++UINT] = result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_FLT)
-                        {
-                           ip++;
-                           floatStack[++FLT] = result;
-                           break;
-                        }
-                        else if(code[ip] == OP_STR_TO_NONE)
-                           ip++;
-                        else
-                           STR.setIntValue(result);
-                        break;
-                     }
-                  }
-               }
-            }
-
-            if(callType == FuncCallExprNode::MethodCall)
-               gEvalState.thisObject = saveObject;
-            break;
-         }
-         case OP_ADVANCE_STR:
-            STR.advance();
-            break;
-         case OP_ADVANCE_STR_APPENDCHAR:
-            STR.advanceChar(code[ip++]);
-            break;
-
-         case OP_ADVANCE_STR_COMMA:
-            STR.advanceChar('_');
-            break;
-
-         case OP_ADVANCE_STR_NUL:
-            STR.advanceChar(0);
-            break;
-
-         case OP_REWIND_STR:
-            STR.rewind();
-            break;
-
-         case OP_TERMINATE_REWIND_STR:
-            STR.rewindTerminate();
-            break;
-
-         case OP_COMPARE_STR:
-            intStack[++UINT] = STR.compare();
-            break;
-         case OP_PUSH:
-            STR.push();
-            break;
-
-         case OP_PUSH_FRAME:
-            STR.pushFrame();
-            break;
-         case OP_BREAK:
-         {
-            //append the ip and codeptr before managing the breakpoint!
-            AssertFatal( !gEvalState.stack.empty(), "Empty eval stack on break!");
-            gEvalState.stack.last()->code = this;
-            gEvalState.stack.last()->ip = ip - 1;
-
-            U32 breakLine;
-            findBreakLine(ip-1, breakLine, instruction);
-            if(!breakLine)
-               goto breakContinue;
-            TelDebugger->executionStopped(this, breakLine);
-
-            // Notify the remote debugger.
-            if ( pRemoteDebugger != NULL )
-                pRemoteDebugger->executionStopped(this, breakLine);
-
-            goto breakContinue;
-         }
-         case OP_INVALID:
-
-         default:
-            // error!
-            goto execFinished;
-      }
-   }
-execFinished:
-
-   if ( telDebuggerOn && setFrame < 0 )
-      TelDebugger->popStackFrame();
-
-   // Notify the remote debugger.
-   if ( pRemoteDebugger != NULL && setFrame < 0 )
-       pRemoteDebugger->popStackFrame();
-
-   if ( popFrame )
-      gEvalState.popFrame();
-
-   if(argv)
-   {
-      if(gEvalState.traceOn)
-      {
-         traceBuffer[0] = 0;
-         dStrcat(traceBuffer, "Leaving ");
-
-         if(packageName)
-         {
-            dStrcat(traceBuffer, "[");
-            dStrcat(traceBuffer, packageName);
-            dStrcat(traceBuffer, "]");
-         }
-         if(thisNamespace && thisNamespace->mName)
-         {
-            dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-               "%s::%s() - return %s", thisNamespace->mName, thisFunctionName, STR.getStringValue());
-         }
-         else
-         {
-            dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-               "%s() - return %s", thisFunctionName, STR.getStringValue());
-         }
-         Con::printf("%s", traceBuffer);
-      }
+      //dSprintf(printBufPtr, 128, "C%i(%s)", value & Compiler::OP_KV_MASK, konst[value & Compiler::OP_KV_MASK].getTempStringValue());
+      dSprintf(printBufPtr, 128, "C%i", value & Compiler::OP_KV_MASK);
    }
    else
    {
-      delete[] const_cast<char*>(globalStrings);
-      delete[] globalFloats;
-      globalStrings = NULL;
-      globalFloats = NULL;
+      dSprintf(printBufPtr, 128, "R%i", value);
    }
-   smCurrentCodeBlock = saveCodeBlock;
-   if(saveCodeBlock && saveCodeBlock->name)
-   {
-      Con::gCurrentFile = saveCodeBlock->name;
-      Con::gCurrentRoot = saveCodeBlock->mRoot;
-   }
-
-   decRefCount();
-
-#ifdef TORQUE_DEBUG
-   AssertFatal(!(STR.mStartStackSize > stackStart), "String stack not popped enough in script exec");
-   AssertFatal(!(STR.mStartStackSize < stackStart), "String stack popped too much in script exec");
-#endif
-   return STR.getStringValue();
+   
+   return printBufPtr;
 }
+
+void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
+{
+   ConsoleValue *konst = state->currentFrame.constants;
+   ConsoleValue *konstBase = konst;
+   U32 ip = state->currentFrame.savedIP;
+   U32 targetRegTmp = 0;
+   
+   // Debug print instructions
+   for (int j=0; j<codeSize; j++)
+   {
+      Compiler::Instruction i = (code[j]);
+      
+      switch (TS2_OP_DEC(i))
+      {
+            vmcase(Compiler::OP_MOVE) {
+               
+               Con::printf("[%i] OP_MOV %i %i", j, TS2_OP_DEC_A(i),TS2_OP_DEC_B(i));
+               vmbreak;
+            }
+            vmcase(Compiler::OP_LOADK) {
+               
+               Con::printf("[%i] OP_LOADK %i %i (%s)", j, TS2_OP_DEC_A(i),TS2_OP_DEC_Bx(i), konst[TS2_OP_DEC_Bx(i)].getTempStringValue());
+               vmbreak;
+            }
+            vmcase(Compiler::OP_PAGEK) {
+               Con::printf("[%i] OP_PAGEK %i %i", j, TS2_OP_DEC_A(i), TS2_OP_DEC_Bx(i));
+               konst = konstBase + (Compiler::CONSTANTS_PER_PAGE * TS2_OP_DEC_Bx(i));
+               vmbreak;
+            }
+            vmcase(Compiler::OP_LOADVAR) {
+               // A := B
+               Con::printf("[%i] OP_LOADVAR %i %s", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst));
+               vmbreak;
+            }
+            vmcase(Compiler::OP_GETFIELD) {
+               // a := object(b).slot(c)
+               Con::printf("[%i] OP_GETFIELD R%i %s %s", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            vmcase(Compiler::OP_GETFIELDA) {
+               // a := object(b).slot(c).array(b+1)
+               Con::printf("[%i] OP_GETFIELDA R%i %s %s [%s]", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_B(i)+1, konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_SETFIELD) {
+               // a := object(b).slot(c)
+               Con::printf("[%i] OP_SETFIELD R%i %s %s", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            vmcase(Compiler::OP_SETFIELDA) {
+               // object(a).slot(b).array(b+1) := c
+               Con::printf("[%i] OP_SETFIELDA R%i %s [%s] %s", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i)+1, konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_SETVAR) {
+               // B := C
+               Con::printf("[%i] OP_SETVAR %i %s %s", j, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst),ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_GETFUNC) {
+               Con::printf("[%i] OP_GETFUNC %s %s -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_GETINTERNAL) {
+               Con::printf("[%i] OP_GETINTERNAL %s->%s -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_GETINTERNAL_N) {
+               Con::printf("[%i] OP_GETINTERNAL_N %s-->%s -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_CREATE_VALUE) {
+               Con::printf("[%i] OP_CREATE_OBJECT R%i %s args:%i", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_C(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_CREATE_OBJECT) {
+               Con::printf("[%i] OP_CREATE_OBJECT R%i %s args:%i", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_C(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_FINISH_OBJECT) {
+               // registerObject(A), B.addObject(A), [flags(c)]
+               Con::printf("[%i] OP_FINISH_OBJECT R%i %s %i", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_C(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_DELETE_OBJECT) {
+               // delete A
+               Con::printf("[%i] OP_DELETE_OBJECT R%i", j, TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            
+            
+#define _TS2_INT_OP(_op, _operand) \
+            vmcase(_op) { \
+               targetRegTmp = TS2_OP_DEC_A(i);\
+               Con::printf(#_op "[%i] -> (%s & %s) -> %i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);\
+               vmbreak; \
+            }
+            
+#define _TS2_FLOAT_OP(_op, _operand) \
+            vmcase(_op) { \
+               targetRegTmp = TS2_OP_DEC_A(i); \
+               Con::printf(#_op "[%i] -> (%s & %s) -> %i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);\
+               vmbreak; \
+            }
+            
+            //TS2_FLOAT_OP(Compiler::OP_ADD, +)
+            vmcase(Compiler::OP_ADD) {
+               targetRegTmp = TS2_OP_DEC_A(i);
+               Con::printf("Compiler::OP_ADD" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               vmbreak;
+            }
+            
+            //TS2_FLOAT_OP(Compiler::OP_SUB, -)
+            vmcase(Compiler::OP_SUB) {
+               targetRegTmp = TS2_OP_DEC_A(i);
+               Con::printf("Compiler::OP_SUB" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               vmbreak;
+            }
+            
+            
+            _TS2_FLOAT_OP(Compiler::OP_MUL, *)
+            _TS2_FLOAT_OP(Compiler::OP_DIV, /)
+            _TS2_INT_OP(Compiler::OP_MOD, %)
+            //_TS2_FLOAT_OP(Compiler::OP_POW, +)
+            //_TS2_FLOAT_OP(Compiler::OP_UMN, -)
+            //_TS2_MATH_OP(Compiler::OP_NOT, !)
+            _TS2_INT_OP(Compiler::OP_XOR, ^)
+            _TS2_INT_OP(Compiler::OP_SHL, <<)
+            _TS2_INT_OP(Compiler::OP_SHR, >>)
+            _TS2_INT_OP(Compiler::OP_BITAND, &)
+            _TS2_INT_OP(Compiler::OP_BITOR, |)
+            //_TS2_INT_OP(Compiler::OP_ONESCOMPLEMENT, ~)
+            
+            vmcase(Compiler::OP_ONESCOMPLEMENT) {
+               targetRegTmp = TS2_OP_DEC_A(i);
+               Con::printf("Compiler::OP_ONESCOMPLEMENT" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               vmbreak;
+            }
+            
+            
+            vmcase(Compiler::OP_CONCAT) {
+               Con::printf("[%i] OP_CONCAT %i..%i", j, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_JMP) {
+               Con::printf("[%i] OP_JMP %i [to %i]", j, TS2_OP_DEC_sBx(i), j+TS2_OP_DEC_sBx(i)+1);
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_LT) {
+               Con::printf("[%i] OP_LT %i %s %s", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_LE) {
+               Con::printf("[%i] OP_LE %i %s %s", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_EQ) {
+               Con::printf("[%i] OP_EQ %i %s %s", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_EQ_STR) {
+               Con::printf("[%i] OP_EQ_STR %i %s %s", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_CALL) {
+               // [abc] [a := a(a[...b params])[...c return params]]
+               U32 returnStart = TS2_OP_DEC_A(i);
+               U32 numParams = TS2_OP_DEC_B(i);
+               U32 numReturn = TS2_OP_DEC_C(i);
+               
+               Con::printf("[%i] OP_CALL R%i %i %i", j, returnStart, numParams, numReturn);
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_BINDNSFUNC) {
+               U32 defStart = TS2_OP_DEC_A(i);
+               U32 funcIdx = TS2_OP_DEC_B(i);
+               U32 dummy = TS2_OP_DEC_C(i);
+               
+               Con::printf("[%i] OP_BINDNSFUNC R%i %i %i", j, defStart, funcIdx, dummy);
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_COPYFIELDS) {
+               Con::printf("[%i] OP_COPYFIELDS R%i <- ", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_ITR_GET) {
+               U32 defStart = TS2_OP_DEC_A(i);
+               
+               Con::printf("[%i] OP_ITR_GET R%i %s %s", j, defStart, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            
+            vmcase(Compiler::OP_ITR_SGET) {
+               U32 outValue = TS2_OP_DEC_A(i);
+               
+               Con::printf("[%i] OP_ITR_SGET R%i %s %s", j, outValue, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_RETURN) {
+               U32 outValue = TS2_OP_DEC_A(i);
+               
+               Con::printf("[%i] OP_RETURN R%i %s %s", j, outValue, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_BREAK) {
+               Con::printf("[%i] OP_BREAK", j);
+            }
+            
+            vmcase(Compiler::OP_ASSERT) {
+               
+               Con::printf("[%i] OP_ASSERT %i %s", j, TS2_OP_DEC_A(i), ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst));
+               vmbreak;
+            }
+      }
+   }
+}
+
+void CodeBlock::execBlock(CodeBlockEvalState *state)
+{
+    // Executes code block as normal
+    U32 ip = state->currentFrame.savedIP;
+    ConsoleValue *konst = state->currentFrame.constants;
+    ConsoleValue *konstBase = konst;
+    ConsoleValuePtr *base = state->stack.address() + state->currentFrame.stackTop;
+    
+    char temp1[256];
+    
+    ConsoleValue acc;
+   acc.type = ConsoleValue::TypeInternalFloat;
+   ConsoleValue iacc;
+   iacc.type = ConsoleValue::TypeInternalInt;
+   U32 end;
+   U32 startFrameSize = state->frames.size();
+   
+#ifdef DEBUG_COMPILER
+   state->currentFrame.code->dumpOpcodes(state);
+#endif
+   
+   U32 *code = state->currentFrame.code->code;
+
+    for (;;)
+    {
+        const Compiler::Instruction i = (code[ip++]);
+       
+        ConsoleValue *ra = base+TS2_OP_DEC_A(i);
+        vmdispatch (TS2_OP_DEC(i)) {
+           
+           
+            vmcase(Compiler::OP_MOVE) {
+               
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_MOV %i %i", ip-1, ra,TS2_OP_DEC_B(i));
+#endif
+                //ConsoleValue *v1 = base+ra;
+                //ConsoleValue *v2 = base+TS2_OP_DEC_B(i);
+               //*v1 = *v2;
+               
+               //*ra = *(base+TS2_OP_DEC_B(i));
+               
+               //*ra = *(base+(((i) >> 14) & 0x1FF));
+               
+               U32 xOffs = TS2_OP_DEC_A(i);
+               U32 yOffs = TS2_OP_DEC_B(i);
+                base[xOffs].setValue(base[yOffs]);
+                vmbreak;
+            }
+            vmcase(Compiler::OP_LOADK) {
+               
+//#ifdef TS2_VM_DEBUG
+               //Con::printf("[%i] OP_LOADK %i %i", ip-1, TS2_OP_DEC_A(i),TS2_OP_DEC_Bx(i));
+//#endif
+                *ra = konst[TS2_OP_DEC_Bx(i)];
+                vmbreak;
+            }
+            vmcase(Compiler::OP_PAGEK) {
+               konst = konstBase + (Compiler::CONSTANTS_PER_PAGE * TS2_OP_DEC_Bx(i));
+                vmbreak;
+            }
+           
+           vmcase(Compiler::OP_GETFIELD) {
+              // a := object(b).slot(c)
+              //Con::printf("[%i] OP_GETFIELD R%i %s %s", ip-1, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
+              
+              
+              ConsoleValuePtr& targetObject = base[TS2_OP_DEC_B(i)];
+              ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValue arrayValue;
+              
+              if (targetObject.type > ConsoleValue::TypeReferenceCounted)
+              {
+                 targetObject.value.refValue->getDataField(targetSlot.getSTEStringValue(), arrayValue, *ra);
+              }
+              else
+              {
+                 SimObject *obj = Sim::findObject<SimObject>(targetObject);
+                 if (obj)
+                 {
+                    // TODO: direct access
+                    ((ConsoleValuePtr*)(ra))->setValue(ConsoleStringValue::fromString(obj->getDataField(targetSlot.getSTEStringValue(), NULL)));
+                 }
+                 else
+                 {
+                    ((ConsoleValuePtr*)(ra))->setNull();
+                 }
+              }
+              
+              vmbreak;
+           }
+           vmcase(Compiler::OP_GETFIELDA) {
+              // a := object(b).slot(c).array(b+1)
+              //Con::printf("[%i] OP_GETFIELD R%i %s %s [%s]", ip-1, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_B(i)+1, konst));
+              
+              ConsoleValuePtr& targetObject = base[TS2_OP_DEC_B(i)];
+              ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValue targetArray = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)+1);
+              
+              if (targetObject.type > ConsoleValue::TypeReferenceCounted)
+              {
+                 targetObject.value.refValue->getDataField(targetSlot.getSTEStringValue(), targetArray, *ra);
+              }
+              else
+              {
+                 SimObject *obj = Sim::findObject<SimObject>(targetObject);
+                 if (obj)
+                 {
+                    // TODO: direct access
+                     ((ConsoleValuePtr*)(ra))->setValue(ConsoleStringValue::fromString(obj->getDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue())));
+                 }
+                 else
+                 {
+                    ((ConsoleValuePtr*)(ra))->setNull();
+                 }
+              }
+              
+              vmbreak;
+           }
+           
+            vmcase(Compiler::OP_LOADVAR) {
+               // A := B
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_LOADVAR %i %i", ip-1, ra,TS2_OP_DEC_B(i));
+#endif
+                ((ConsoleValuePtr*)(ra))->setValue(Con::getVariable(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getTempStringValue()));
+                vmbreak;
+            }
+           
+           
+            vmcase(Compiler::OP_SETFIELD) {
+              // a := object(b).slot(c)
+               const U32 tname = TS2_OP_DEC_A(i);
+               const U32 nvalue = TS2_OP_DEC_C(i);
+               ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
+               ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+               ConsoleValue newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+               ConsoleValue arrayValue;
+               
+               // We use two methods here:
+               // 1) If we have a basic type, assume we have a SimObject
+               // 2) If we have a custom type, use that types field accessors (this will default to SimObject)
+               if (targetObject.type > ConsoleValue::TypeReferenceCounted)
+               {
+                  ((ConsoleValuePtr*)&targetObject)->value.refValue->setDataField(targetSlot.getSTEStringValue(), arrayValue, newValue);
+                  //*((ConsoleValuePtr*)(ra)) = newValue;
+               }
+               else
+               {
+                  SimObject *obj = Sim::findObject<SimObject>(targetObject);
+                  if (obj)
+                  {
+                     // TODO: direct set
+                     obj->setDataField(targetSlot.getSTEStringValue(), NULL, newValue.getTempStringValue());
+                  }
+               }
+               
+              vmbreak;
+            }
+            vmcase(Compiler::OP_SETFIELDA) {
+              // a.b[c+1] := c
+               
+               U32 opA = TS2_OP_DEC_A(i);
+               U32 opB = TS2_OP_DEC_B(i);
+               U32 opC = TS2_OP_DEC_C(i);
+               ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
+               ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+               ConsoleValue targetArray = base[TS2_OP_DEC_C(i)+1];
+               ConsoleValue newValue = base[TS2_OP_DEC_C(i)];
+               
+               if (targetObject.type > ConsoleValue::TypeReferenceCounted)
+               {
+                  ((ConsoleValuePtr)targetObject).value.refValue->setDataField(targetSlot.getSTEStringValue(), targetArray, newValue);
+               }
+               else
+               {
+                  SimObject *obj = Sim::findObject<SimObject>(targetObject);
+                  if (obj)
+                  {
+                     // TODO: direct set
+                     obj->setDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue(), newValue.getTempStringValue());
+                  }
+                  else
+                  {
+                     Con::warnf("OP_SETFIELDA object '%s' not found", targetObject.getTempStringValue());
+                  }
+               }
+               
+               vmbreak;
+            }
+           
+            vmcase(Compiler::OP_SETVAR) {
+                // B := C
+               
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_SETVAR %i %i %i", ip-1, ra,TS2_OP_DEC_B(i),TS2_OP_DEC_C(i));
+#endif
+                U32 bValue = TS2_OP_DEC_B(i);
+                ConsoleValuePtr namePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+                ConsoleValuePtr valuePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+               
+               if (valuePtr.type >= ConsoleValue::TypeReferenceCounted && valuePtr.type != TypeBufferString)
+               {
+                  Con::warnf("OP_SETVAR global variables of type currently not supported, variable %s will be converted to a string.", namePtr.getTempStringValue());
+               }
+               
+                valuePtr.getInternalStringValue(temp1, 256);
+                Con::setVariable(temp1, valuePtr.getTempStringValue());
+                vmbreak;
+            }
+           
+           vmcase(Compiler::OP_GETFUNC) {
+              U32 setReg = TS2_OP_DEC_A(i);
+              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_GETFUNC %s %s -> %i", ip-1, ra);
+#endif
+              
+              if (targetObject.type > ConsoleValue::TypeReferenceCounted)
+              {
+                 Namespace *ns = targetObject.value.refValue->getNamespace();
+                 if (!ns)
+                 {
+                    ns = targetObject.value.refValue->getNamespace();
+                    Con::errorf("Couldn't find namespace for %s.", targetObject.getTempStringValue());
+                    vmbreak;
+                 }
+                 Namespace::Entry *entry = ns->lookup(nameId.getSTEStringValue());
+                 
+                 if (!entry)
+                 {
+                    Con::warnf("Couldn't find function %s in object %s", targetObject.getTempStringValue(), nameId.getSTEStringValue());
+                    base[setReg].setNull();
+                 }
+                 else
+                 {
+                    base[setReg].setNull();
+                    base[setReg].type = ConsoleValue::TypeInternalNamespaceEntry;
+                    base[setReg].value.ptrValue = entry;
+                 }
+              }
+              else if (targetObject.type == ConsoleValue::TypeInternalNamespaceName)
+              {
+                 StringTableEntry steValue = targetObject.getSTEStringValue();
+                 Namespace *ns = steValue == StringTable->EmptyString ? Namespace::global() : Namespace::find(targetObject.getSTEStringValue());
+                 Namespace::Entry *entry = ns->lookup(nameId.getSTEStringValue());
+                 
+                 if (!entry)
+                 {
+                    if (steValue == StringTable->EmptyString)
+                    {
+                       Con::errorf("Couldn't find global function %s", nameId.getSTEStringValue());
+                    }
+                    else
+                    {
+                       Con::errorf("Couldn't find function %s::%s", steValue, nameId.getSTEStringValue());
+                    }
+                    base[setReg].setNull();
+                 }
+                 else
+                 {
+                    base[setReg].setNull();
+                    base[setReg].type = ConsoleValue::TypeInternalNamespaceEntry;
+                    base[setReg].value.ptrValue = entry;
+                 }
+              }
+              else
+              {
+                 SimObject *object = Sim::findObject<SimObject>(targetObject);
+                 if (object)
+                 {
+                    Namespace *ns = object->getNamespace();
+                    Namespace::Entry *entry = ns->lookup(nameId.getSTEStringValue());
+                    
+                    if (!entry)
+                    {
+                       Con::errorf("Object %s has no function %s", targetObject.getTempStringValue(), nameId.getSTEStringValue());
+                       base[setReg].setNull();
+                    }
+                    else
+                    {
+                       base[setReg].setNull();
+                       base[setReg].type = ConsoleValue::TypeInternalNamespaceEntry;
+                       base[setReg].value.ptrValue = entry;
+                    }
+                 }
+                 else
+                 {
+                    Con::errorf("Object %s does not exist, cannot call %s.", targetObject.getTempStringValue(), nameId.getSTEStringValue());
+                    base[setReg].setNull();
+                 }
+              }
+              
+              vmbreak;
+           }
+           
+           
+           vmcase(Compiler::OP_GETINTERNAL) {
+              U32 setReg = TS2_OP_DEC_A(i);
+              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+              SimSet *object = Sim::findObject<SimSet>(targetObject);
+              if (object)
+              {
+                 SimObject *findObject = object->findObjectByInternalName(nameId.getSTEStringValue(), false);
+                 if (findObject)
+                 {
+                    base[setReg].setValue(ConsoleSimObjectPtr::fromObject(findObject));
+                    vmbreak;
+                 }
+              }
+              
+              base[setReg].setNull();
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_GETINTERNAL_N) {
+              U32 setReg = TS2_OP_DEC_A(i);
+              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+              SimSet *object = Sim::findObject<SimSet>(targetObject);
+              if (object)
+              {
+                 SimObject *findObject = object->findObjectByInternalName(nameId.getSTEStringValue(), true);
+                 if (findObject)
+                 {
+                    base[setReg].setValue(ConsoleSimObjectPtr::fromObject(findObject));
+                    vmbreak;
+                 }
+              }
+              
+              base[setReg].setNull();
+              vmbreak;
+           }
+           
+           
+           vmcase(Compiler::OP_CREATE_VALUE) {
+              ConsoleValue typeName = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              StringTableEntry typeSTE = typeName.getSTEStringValue();
+              
+              ConsoleBaseType *typeInst = ConsoleBaseType::getTypeByName(typeSTE);
+              if (!typeInst)
+              {
+                 Con::errorf("Could not create value of type %s", typeSTE);
+                 ((ConsoleValuePtr*)ra)->setNull();
+                 vmbreak;
+              }
+              
+              ConsoleReferenceCountedType *typeRef = typeInst->createReferenceCountedValue();
+              
+              if (!typeRef)
+              {
+                 Con::errorf("Could not create value of type %s", typeSTE);
+                 ((ConsoleValuePtr*)ra)->setNull();
+                 vmbreak;
+              }
+              
+              ((ConsoleValuePtr*)ra)->setValue(typeRef);
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_CREATE_OBJECT) {
+              U32 flagArgs = TS2_OP_DEC_C(i);
+              U32 flags = (flagArgs >> 8);
+              U32 numParams = flagArgs & 0xFF;
+              bool isDataBlock = flags & Compiler::CREATEOBJECT_ISDATABLOCK;
+              bool isInternal  = flags & Compiler::CREATEOBJECT_ISINTERNAL;
+              bool isSingleton = flags & Compiler::CREATEOBJECT_ISSINGLETON;
+              U32  lineNumber  = 0;
+              
+              S32 failJump = TS2_OP_DEC_sBx(code[ip++]);
+              failJump += ip;
+              
+              U32 targetObjectReg = TS2_OP_DEC_A(i);
+              U32 classNameTargetReg = TS2_OP_DEC_B(i);
+              
+              StringTableEntry klassName = base[classNameTargetReg].getSTEStringValue();//callArgv[ 2 ];
+              StringTableEntry objectName = base[classNameTargetReg+1].getSTEStringValue();//callArgv[ 2 ];
+              
+#ifdef DEBUG_COMPILER
+              Con::printf("Creating object... %s of klass %s", objectName, klassName);
+#endif
+              
+              // objectName = argv[1]...
+              SimObject *currentNewObject = NULL;
+              
+              // Are we creating a datablock? If so, deal with case where we override
+              // an old one.
+              if(isDataBlock)
+              {
+                 // Con::printf("  - is a datablock");
+                 
+                 // Find the old one if any.
+                 SimObject *db = Sim::getDataBlockGroup()->findObject(objectName);
+                 
+                 // Make sure we're not changing types on ourselves...
+                 if(db && dStricmp(db->getClassName(), klassName))
+                 {
+                    Con::errorf(ConsoleLogEntry::General, "Cannot re-declare data block %s with a different class.", objectName);
+                    ip = failJump;
+                    vmbreak;
+                 }
+                 
+                 // If there was one, set the currentNewObject and move on.
+                 if(db)
+                    currentNewObject = db;
+              }
+              
+              if(!currentNewObject)
+              {
+                 // Well, looks like we have to create a new object.
+                 ConsoleObject *object = ConsoleObject::create(klassName);
+                 
+                 // Deal with failure!
+                 if(!object)
+                 {
+                    Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-conobject class %s.", state->currentFrame.code->getFileLine(ip-1), klassName);
+                    ip = failJump;
+                    vmbreak;
+                 }
+                 
+                 // Do special datablock init if appropros
+                 if(isDataBlock)
+                 {
+                    SimDataBlock *dataBlock = dynamic_cast<SimDataBlock *>(object);
+                    if(dataBlock)
+                    {
+                       dataBlock->assignId();
+                    }
+                    else
+                    {
+                       // They tried to make a non-datablock with a datablock keyword!
+                       Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-datablock class %s.", state->currentFrame.code->getFileLine(ip-1), klassName);
+                       
+                       // Clean up...
+                       delete object;
+                       ip = failJump;
+                       vmbreak;
+                    }
+                 }
+                 
+                 // Finally, set currentNewObject to point to the new one.
+                 currentNewObject = dynamic_cast<SimObject *>(object);
+                 
+                 // Deal with the case of a non-SimObject.
+                 if(!currentNewObject)
+                 {
+                    Con::errorf(ConsoleLogEntry::General, "%s: Unable to instantiate non-SimObject class %s.", state->currentFrame.code->getFileLine(ip-1), klassName);
+                    delete object;
+                    ip = failJump;
+                    vmbreak;
+                 }
+                 
+                 // If a name was passed, assign it.
+                 if( objectName[ 0 ] )
+                 {
+                    if( !isInternal )
+                       currentNewObject->assignName( objectName );
+                    else
+                       currentNewObject->setInternalName( objectName );
+                    
+                    // Set the original name
+                    //currentNewObject->setOriginalName( objectName );
+                 }
+                 
+                 // Do the constructor parameters.
+                 if(!currentNewObject->processArguments(numParams, base+classNameTargetReg+2))
+                 {
+                    delete currentNewObject;
+                    currentNewObject = NULL;
+                    ip = failJump;
+                    vmbreak;
+                 }
+                 
+                 // If it's not a datablock, allow people to modify bits of it.
+                 if(!isDataBlock)
+                 {
+                    currentNewObject->setModStaticFields(true);
+                    currentNewObject->setModDynamicFields(true);
+                 }
+                 
+                 ((ConsoleValuePtr*)ra)->setValue(ConsoleSimObjectPtr::fromObject(currentNewObject));
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_FINISH_OBJECT) {
+              // registerObject(A), B.addObject(A), [flags(c)]
+              ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
+              ConsoleValue parentObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              
+              SimObject *currentNewObject;
+              SimGroup *parent;
+              currentNewObject = Sim::findObject<SimObject>(targetObject);
+                 
+              if(currentNewObject->isProperlyAdded() == false)
+              {
+                 bool ret = false;
+                 
+                 Message *msg = dynamic_cast<Message *>(currentNewObject);
+                 if(msg)
+                 {
+                    SimObjectId id = Message::getNextMessageID();
+                    if(id != 0xffffffff)
+                       ret = currentNewObject->registerObject(id);
+                    else
+                       Con::errorf("%s: No more object IDs available for messages", state->currentFrame.code->getFileLine(ip-2));
+                 }
+                 else
+                    ret = currentNewObject->registerObject();
+                 
+                 if(! ret)
+                 {
+                    // This error is usually caused by failing to call Parent::initPersistFields in the class' initPersistFields().
+                    Con::warnf(ConsoleLogEntry::General, "%s: Register object failed for object %s of class %s.", state->currentFrame.code->getFileLine(ip-2), currentNewObject->getName(), currentNewObject->getClassName());
+                    delete currentNewObject;
+                    //ip = failJump;
+                    vmbreak;
+                 }
+              }
+              
+              // Are we dealing with a datablock?
+              SimDataBlock *dataBlock = dynamic_cast<SimDataBlock *>(currentNewObject);
+              static char errorBuffer[256];
+              
+              // If so, preload it.
+              if(dataBlock && !dataBlock->preload(true, errorBuffer))
+              {
+                 Con::errorf(ConsoleLogEntry::General, "%s: preload failed for %s: %s.", state->currentFrame.code->getFileLine(ip-2),
+                             currentNewObject->getName(), errorBuffer);
+                 dataBlock->deleteObject();
+                 //ip = failJump;
+                 vmbreak;
+              }
+              
+              // What group will we be added to, if any?
+              SimGroup *grp = NULL;
+              SimSet   *set = NULL;
+              SimComponent *comp = NULL;
+              bool isMessage = dynamic_cast<Message *>(currentNewObject) != NULL;
+              bool placeAtRoot = parentObject.type == ConsoleValue::TypeInternalNull;
+              
+              if(!placeAtRoot || !currentNewObject->getGroup())
+              {
+                 if(! isMessage)
+                 {
+                    if(! placeAtRoot)
+                    {
+                       // Otherwise just add to the requested group or set.
+                       if(!Sim::findObject(parentObject, grp))
+                          if(!Sim::findObject(parentObject, comp))
+                             Sim::findObject(parentObject, set);
+                    }
+                    
+                    if(placeAtRoot || comp != NULL)
+                    {
+                       // Deal with the instantGroup if we're being put at the root or we're adding to a component.
+                       ConsoleStringValuePtr addGroupName = Con::getVariable("instantGroup");
+                       if(!Sim::findObject(addGroupName.c_str(), grp))
+                          Sim::findObject(RootGroupId, grp);
+                    }
+                    
+                    if(comp)
+                    {
+                       SimComponent *newComp = dynamic_cast<SimComponent *>(currentNewObject);
+                       if(newComp)
+                       {
+                          if(! comp->addComponent(newComp))
+                             Con::errorf("%s: Unable to add component %s, template not loaded?", state->currentFrame.code->getFileLine(ip-2), currentNewObject->getName() ? currentNewObject->getName() : currentNewObject->getIdString());
+                       }
+                    }
+                 }
+                 
+                 // If we didn't get a group, then make sure we have a pointer to
+                 // the rootgroup.
+                 if(!grp)
+                    Sim::findObject(RootGroupId, grp);
+                 
+                 // add to the parent group
+                 grp->addObject(currentNewObject);
+                 
+                 // add to any set we might be in
+                 if(set)
+                    set->addObject(currentNewObject);
+              }
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_DELETE_OBJECT) {
+              // delete A
+              Con::printf("[%i] OP_DELETE_OBJECT R%i", ip-1, TS2_OP_DEC_A(i));
+              vmbreak;
+           }
+           
+           //Con::printf(#_op "[%i] -> %i", ip-1,  targetRegTmp);
+#define TS2_INT_OP(_op, _operand) \
+           vmcase(_op) { \
+              acc.value.ival = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getIntValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getIntValue()); \
+              ((ConsoleValuePtr*)ra)->setValue(acc); \
+              vmbreak; \
+           }
+           
+               //Con::printf(#_op "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+#define TS2_FLOAT_OP(_op, _operand) \
+            vmcase(_op) { \
+                acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue()); \
+                ((ConsoleValuePtr*)ra)->setValue(acc); \
+                vmbreak; \
+            }
+            
+           //TS2_FLOAT_OP(Compiler::OP_ADD, +)
+           vmcase(Compiler::OP_ADD) {
+              //Con::printf("Compiler::OP_ADD" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() + TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
+              ((ConsoleValuePtr*)ra)->setValue(acc);
+              vmbreak;
+           }
+           
+           //TS2_FLOAT_OP(Compiler::OP_SUB, -)
+           vmcase(Compiler::OP_SUB) {
+              //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() - TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
+              *ra = acc;
+              vmbreak;
+           }
+           
+           
+            TS2_FLOAT_OP(Compiler::OP_MUL, *)
+            TS2_FLOAT_OP(Compiler::OP_DIV, /)
+            TS2_INT_OP(Compiler::OP_MOD, %)
+           
+           vmcase(Compiler::OP_POW) {
+              //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.fval = mPow(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue(), TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
+              *ra = acc;
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_UMN) {
+              //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.fval = -(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue());
+              *ra = acc;
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_NOT) {
+              //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.fval = !(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue());
+              *ra = acc;
+              vmbreak;
+           }
+           
+            TS2_INT_OP(Compiler::OP_XOR, ^)
+            TS2_INT_OP(Compiler::OP_SHL, <<)
+            TS2_INT_OP(Compiler::OP_SHR, >>)
+            TS2_INT_OP(Compiler::OP_BITAND, &)
+            TS2_INT_OP(Compiler::OP_BITOR, |)
+           
+           
+           vmcase(Compiler::OP_ONESCOMPLEMENT) {
+              //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+              acc.value.ival = ~((U64)(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue()));
+              *ra = iacc;
+              vmbreak;
+           }
+            
+            
+            vmcase(Compiler::OP_CONCAT) {
+               
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_CONCAT %i..%i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+               
+                // A := B...C
+                end = TS2_OP_DEC_C(i);
+                for (U32 j=TS2_OP_DEC_B(i); j<=end; j++)
+                {
+                   STR.setStringValue(base[j].getTempStringValue());
+                   STR.advance();
+                }
+                STR.rewindTerminate();
+                for (U32 j=TS2_OP_DEC_B(i)+1; j<=end; j++)
+                {
+                   STR.rewind();
+                }
+                *((ConsoleValuePtr*)ra) = ConsoleStringValue::fromString(STR.getStringValue());
+                vmbreak;
+            }
+            
+            vmcase(Compiler::OP_JMP) {
+               //U32 rawIp = TS2_OP_DEC_Bx(i);
+               //S32 ipAddr = TS2_OP_DEC_sBx(i);
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_JMP %i", ip-1, ipAddr);
+#endif
+                ip += TS2_OP_DEC_sBx(i);
+                vmbreak;
+            }
+           
+           vmcase(Compiler::OP_LT) {
+              ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              U32 cmpValue = TS2_OP_DEC_A(i);
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_LT %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+              if ((v1.getFloatValue() < v2.getFloatValue()) != TS2_OP_DEC_A(i))
+              {
+                 // skip JMP (i.e. follow true branch)
+                 ip++;
+              }
+              else
+              {
+                 // Perform next JMP
+                 S32 relJmp = TS2_OP_DEC_sBx(code[ip])+1;
+                 ip += relJmp;
+              }
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_LE) {
+              ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              U32 cmpValue = TS2_OP_DEC_A(i);
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_LE %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+              
+              if ((v1.getFloatValue() <= v2.getFloatValue()) != TS2_OP_DEC_A(i))
+              {
+                 // skip JMP (i.e. follow true branch)
+                 ip++;
+              }
+              else
+              {
+                 // Perform next JMP
+                 ip += TS2_OP_DEC_sBx(code[ip])+1;
+              }
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_EQ) {
+              ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_EQ %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+              
+              if ((v1.getFloatValue() == v2.getFloatValue()) != TS2_OP_DEC_A(i))
+              {
+                 // skip JMP (i.e. follow true branch)
+                 ip++;
+              }
+              else
+              {
+                 // Perform next JMP
+                 ip += TS2_OP_DEC_sBx(code[ip])+1;
+              }
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_EQ_STR) {
+              ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_EQ_STR %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+              
+              if (ts2_eq_str(&v1, &v2) != TS2_OP_DEC_A(i))
+              {
+                 // skip JMP (i.e. follow true branch)
+                 ip++;
+              }
+              else
+              {
+                 // Perform next JMP
+                 ip += TS2_OP_DEC_sBx(code[ip])+1;
+              }
+              vmbreak;
+           }
+           
+            vmcase(Compiler::OP_CALL) {
+                // [abc] [a := a(a[...b params])[...c return params]]
+                U32 returnStart = TS2_OP_DEC_A(i);
+                U32 numParams = TS2_OP_DEC_B(i);
+                U32 numReturn = TS2_OP_DEC_C(i);
+               
+               
+#ifdef TS2_VM_DEBUG
+               Con::printf("[%i] OP_CALL %i %i %i", ip-1, returnStart, numParams, numReturn);
+#endif
+               
+                if (base[returnStart].type != ConsoleValue::TypeInternalNamespaceEntry)
+                {
+#ifdef COMPILER_DEBUG
+                    Con::errorf("Invalid namespace entry!");
+#endif
+                    base[returnStart].setNull();
+                    continue;
+                }
+                
+                Namespace::Entry *nsEntry = static_cast<Namespace::Entry*>(base[returnStart].value.ptrValue);
+                
+                // Now we have to call it!
+                S32 nsType = -1;
+                S32 nsMinArgs = 0;
+                S32 nsMaxArgs = 0;
+                Namespace::Entry::CallbackUnion *nsCb = NULL;
+                const char *nsUsage = NULL;
+                if (nsEntry)
+                {
+                    nsType = nsEntry->mType;
+                    nsMinArgs = nsEntry->mMinArgs;
+                    nsMaxArgs = nsEntry->mMaxArgs;
+                    nsCb = &nsEntry->cb;
+                    nsUsage = nsEntry->mUsage;
+                }
+               
+                {
+                    const char *nsName = "";
+                    if((nsEntry->mMinArgs && S32(numParams+1) < nsEntry->mMinArgs) || (nsEntry->mMaxArgs && S32(numParams+1) > nsEntry->mMaxArgs))
+                    {
+                        Con::warnf(ConsoleLogEntry::Script, "%s: %s::%s - wrong number of arguments.", state->currentFrame.code->getFileLine(ip), nsName, nsEntry->mFunctionName);
+                        Con::warnf(ConsoleLogEntry::Script, "%s: usage: %s", state->currentFrame.code->getFileLine(ip), nsEntry->mUsage);
+                    }
+                    else
+                    {
+                        // TOFIX
+                        SimObject *thisObject = numParams > 0 ? base[returnStart+1].getSimObject() : NULL;
+                       
+                        state->currentFrame.returnReg = returnStart;
+                        state->currentFrame.savedIP = ip;
+                       
+                        switch(nsEntry->mType)
+                        {
+                           case Namespace::Entry::ScriptFunctionType:
+                           {
+                              CodeBlockFunction *newFunc = nsEntry->mCode->functions[nsEntry->mFunctionOffset];
+                              state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
+                              
+                              // Set appropriate state based on current frame
+                              ip = state->currentFrame.savedIP;
+                              konst = state->currentFrame.constants;
+                              konstBase = konst;
+                              code = state->currentFrame.code->code;
+                              base = state->stack.address() + state->currentFrame.stackTop;
+                           }
+                           break;
+                            case Namespace::Entry::StringCallbackType:
+                            {
+                                ConsoleStringValuePtr ret = nsEntry->cb.mStringCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                
+                                base[returnStart].setValue(ret.value);
+                                vmbreak;
+                            }
+                            case Namespace::Entry::IntCallbackType:
+                            {
+                                S32 result = nsEntry->cb.mIntCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                base[returnStart].setValue(result);
+                                vmbreak;
+                            }
+                            case Namespace::Entry::FloatCallbackType:
+                            {
+                                F64 result = nsEntry->cb.mFloatCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                base[returnStart].setValue((F32)result);
+                                vmbreak;
+                            }
+                            case Namespace::Entry::VoidCallbackType:
+                            {
+                                nsEntry->cb.mVoidCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                
+                                base[returnStart].setNull();
+                                vmbreak;
+                            }
+                           case Namespace::Entry::ValueCallbackType:
+                           {
+                              ConsoleValuePtr result = nsEntry->cb.mValueCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                 
+                                 base[returnStart].setValue(result);
+                                 break;
+                           }
+                            case Namespace::Entry::BoolCallbackType:
+                            {
+                                bool result = nsEntry->cb.mBoolCallbackFunc(thisObject, numParams+1, base+returnStart);
+                                
+                                base[returnStart].setValue(result ? 1 : 0);
+                                vmbreak;
+                            }
+                        }
+                    }
+                }
+               
+                vmbreak;
+            }
+           
+           vmcase(Compiler::OP_BINDNSFUNC) {
+              U32 defStart = TS2_OP_DEC_A(i);
+              U32 funcIdx = TS2_OP_DEC_B(i);
+              U32 dummy = TS2_OP_DEC_C(i);
+              CodeBlockFunction *func = state->currentFrame.code->functions[funcIdx];
+           
+              StringTableEntry fnPackage    = base[defStart].getSTEStringValue();
+              StringTableEntry fnNamespace  = base[defStart+1].getSTEStringValue();
+              StringTableEntry fnName       = base[defStart+2].getSTEStringValue();
+              
+              Namespace::unlinkPackages();
+              Namespace *ns = Namespace::find(fnNamespace, fnPackage);
+              ns->addFunction(fnName, state->currentFrame.code, funcIdx, NULL );// TODO: docblock
+              /*if( curNSDocBlock )
+              {
+                 if( fnNamespace == StringTable->lookup( nsDocBlockClass ) )
+                 {
+                    char *usageStr = dStrdup( curNSDocBlock );
+                    usageStr[dStrlen(usageStr)] = '\0';
+                    ns->mUsage = usageStr;
+                    ns->mCleanUpUsage = true;
+                    curNSDocBlock = NULL;
+                 }
+              }*/
+              Namespace::relinkPackages();
+              
+              //Con::printf("Adding function %s::%s (%d)", fnNamespace, fnName, func->ip);
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_COPYFIELDS) {
+              ConsoleValue destObject = base[TS2_OP_DEC_A(i)];
+              ConsoleValue srcObject = base[TS2_OP_DEC_B(i)];
+              
+              
+              SimObject *dstObj = Sim::findObject<SimObject>(destObject);
+              SimObject *srcObj = Sim::findObject<SimObject>(srcObject);
+              
+              if (dstObj && srcObj)
+              {
+                 dstObj->assignFieldsFrom(srcObj);
+              }
+              else
+              {
+                 if (srcObj)
+                    Con::warnf("CopyFields: couldn't find destination object %s", destObject.getTempStringValue());
+                 else
+                    Con::warnf("CopyFields: couldn't src object %s", srcObject.getTempStringValue());
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_ITR_GET) {
+              // a := b.itr(c)
+              
+              ConsoleValue itrObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue itrValue = base[TS2_OP_DEC_C(i)];
+              
+              if (itrObject.type > ConsoleValue::TypeReferenceCounted)
+              {
+                 if (!itrObject.value.refValue->advanceIterator(itrValue, *ra))
+                 {
+                    ip += TS2_OP_DEC_sBx(code[ip])+1; // iterator finished
+                 }
+                 else
+                 {
+                    ip++; // skip JMP
+                 }
+              }
+              else
+              {
+                 // Fallback to convert to reference
+                 SimSet *itrObj = Sim::findObject<SimSet>(itrObject);
+                 
+                 if (itrObj)
+                 {
+                    S32 itrIndex = 0;
+                    S32 maxItr = itrObj->size();
+                    itrIndex = itrValue.getIntValue();
+                    
+                    // Start iterator
+                    if (itrIndex <= 0)
+                    {
+                       itrIndex = 1;
+                    }
+                    
+                    if (itrIndex > maxItr)
+                    {
+                       ip += TS2_OP_DEC_sBx(code[ip])+1; // exit
+                    }
+                    else
+                    {
+                       base[TS2_OP_DEC_A(i)].setValue(ConsoleSimObjectPtr::fromObject(itrObj->at(itrIndex-1)));
+                       itrIndex++;
+                       
+                       iacc.value.ival = itrIndex;
+                       base[TS2_OP_DEC_C(i)].setValue(iacc);
+                       
+                       ip++; // Skip JMP
+                    }
+                 }
+                 else
+                 {
+                    Con::warnf("Couldn't find iterator object.");
+                    ip += TS2_OP_DEC_sBx(code[ip])+1; // exit
+                 }
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_ITR_SGET) {
+              U32 outValue = TS2_OP_DEC_A(i);
+              U32 outItr = TS2_OP_DEC_C(i);
+              
+              ConsoleValue itrObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValue itrValue = base[outValue];
+              ConsoleValue itrIteratorValue = base[outItr];
+              
+              {
+                 const char *str = itrObject.getTempStringValue();
+                 
+                 if (str)
+                 {
+                    S32 itrIndex = 0;
+                    S32 maxItr = dStrlen(str);
+                    itrIndex = itrIteratorValue.getIntValue();
+                    
+                    // Start iterator
+                    if (itrIndex <= 0)
+                    {
+                       itrIndex = 1;
+                    }
+                    
+                    if (itrIndex > maxItr)
+                    {
+                       ip += TS2_OP_DEC_sBx(code[ip])+1; // exit
+                    }
+                    else
+                    {
+                       S32 startIndex = itrIndex-1;
+                       S32 endIndex = startIndex;
+                       
+                       if( !dIsspace( str[ endIndex ] ) )
+                          do ++ endIndex;
+                       while( str[ endIndex ] && !dIsspace( str[ endIndex ] ) );
+                       
+                       //itr->setValue(ConsoleSimObjectPtr::fromObject(itr[itrIndex-1]));
+                       
+                       if( endIndex != startIndex || (str[endIndex]) )
+                       {
+                          char tempStr[4096];
+                          dStrncpy(tempStr, str+startIndex, endIndex-startIndex);
+                          tempStr[endIndex-startIndex] = '\0';
+                          
+                          base[outValue].setValue(ConsoleStringValue::fromString(tempStr));
+                       }
+                       else
+                       {
+                          base[outValue].setNull();
+                       }
+                       
+                       // Skip separator.
+                       if( str[ endIndex ] != '\0' )
+                       {
+                          ++endIndex;
+                       }
+                       
+                       iacc.value.ival = endIndex+1;
+                       base[outItr].setValue(iacc);
+                       
+                       ip++; // Skip JMP
+                    }
+                 }
+                 else
+                 {
+                    Con::warnf("Couldn't find iterator object.");
+                    ip += TS2_OP_DEC_sBx(code[ip])+1; // exit
+                 }
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_RETURN) {
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("OP_RETURN %i", ra);
+#endif
+              if (TS2_OP_DEC_A(i) > 0)
+              {
+                 state->yieldValue.setValue(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)));
+              }
+              else
+              {
+                 state->yieldValue.setNull();
+              }
+              
+              state->popFunction();
+              
+              // Set appropriate state based on current frame
+              ip = state->currentFrame.savedIP;
+              konst = state->currentFrame.constants;
+              konstBase = konst;
+              base = state->stack.address() + state->currentFrame.stackTop;
+              base[state->currentFrame.returnReg].setValue(state->yieldValue);
+              code = state->currentFrame.code ? state->currentFrame.code->code : NULL;
+              
+              if (state->currentFrame.isRoot || code == NULL || state->frames.size() < startFrameSize)
+              {
+                 Con::printf("Return from execBlock");
+                 return;
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_BREAK) {
+              state->currentFrame.savedIP = ip;
+              
+              U32 breakLine;
+              U32 instruction;
+              state->currentFrame.code->findBreakLine(ip-1, breakLine, instruction);
+              if(!breakLine)
+                 vmbreak;
+              TelDebugger->executionStopped(state->currentFrame.code, breakLine);
+              
+              // Notify the remote debugger.
+              RemoteDebuggerBase *pRemoteDebugger = RemoteDebuggerBase::getRemoteDebugger();
+              if ( pRemoteDebugger != NULL )
+                 pRemoteDebugger->executionStopped(state->currentFrame.code, breakLine);
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_ASSERT) {
+              
+              ConsoleValue assertMessage = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              AssertISV(ra->getBoolValue(), assertMessage.getTempStringValue());
+              
+              vmbreak;
+           }
+        }
+    }
+    
+    state->currentFrame.savedIP = ip;
+   
+   AssertFatal(state->frames.size() == startFrameSize-1, "Frame size mismatch");
+}
+
+void CodeBlock::execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv)
+{
+    // Copies references to variables in srcEnv's scope into their corresponding position in destEnv
+}
+
+void CodeBlock::execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName)
+{
+    // Prepares an executes a function, copying argv into the stack according to env
+    
+}
+
+ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName)
+{
+   // Push exec state
+   
+   // jamesu - new exec function
+   CodeBlockEvalState *state = &gNewEvalState;
+   CodeBlockFunction *newFunc = functions[ip];
+   
+   // As an optimization we only increment the stack to returnStart, and
+   // blank out any unused vars. This means any register slots after will get
+   // trashed (though there shouldn't be any anyway!).
+   Namespace::Entry *nsEntry = thisNamespace->lookup(StringTable->insert(functionName));
+   
+   if (!nsEntry)
+   {
+      Con::errorf("Missing function %s", functionName);
+      return "";
+   }
+   
+   U32 usedVars = argc > nsEntry->mMaxArgs ? nsEntry->mMaxArgs : argc;
+   
+   if (usedVars < nsEntry->mMinArgs)
+   {
+      Con::errorf("Insufficient parameters passed to function");
+      return "";
+   }
+   
+   state->currentFrame.noCalls = noCalls;
+   state->currentFrame.returnReg = state->getFrameEnd();
+   state->pushFunction(newFunc, nsEntry->mCode, nsEntry, argc);
+   
+   // Copy argv to stack
+   for (U32 i=0; i<argc; i++)
+   {
+      ConsoleValue *base = &state->stack[state->currentFrame.stackTop];
+      (((ConsoleValuePtr*)base)+i)->setValue(argv[i]);
+   }
+   
+   execBlock(state);
+   
+   // pop
+   
+   return state->yieldValue;
+}
+
+void CodeBlock::mergeLocalVars( CodeBlockFunction *src, CodeBlockFunction *dest, Dictionary *env, bool pruneEnv )
+{
+}
+
+StringTableEntry CodeBlock::getDSOPath(const char *scriptPath)
+{
+   const char *slash = dStrrchr(scriptPath, '/');
+   return StringTable->insertn(scriptPath, (U32)(slash - scriptPath), true);
+}
+
+bool CodeBlock::compile(const char *filename)
+{
+   TORQUE_UNUSED( argc );
+   char nameBuffer[512];
+   char *script = NULL;
+   U32 scriptSize = 0;
+   
+   FileTime comModifyTime, scrModifyTime;
+   
+   char pathBuffer[4096];
+   Con::expandPath(pathBuffer, sizeof(pathBuffer), filename);
+   
+   // Figure out where to put DSOs
+   StringTableEntry dsoPath = getDSOPath(pathBuffer);
+   
+   // If the script file extention is '.ed.cs' then compile it to a different compiled extention
+   bool isEditorScript = false;
+   const char *ext = dStrrchr( pathBuffer, '.' );
+   if( ext && ( dStricmp( ext, ".cs" ) == 0 ) )
+   {
+      const char *ext2 = ext - 3;
+      if( dStricmp( ext2, ".ed.cs" ) == 0 )
+         isEditorScript = true;
+   }
+   else if( ext && ( dStricmp( ext, ".gui" ) == 0 ) )
+   {
+      const char *ext2 = ext - 3;
+      if( dStricmp( ext2, ".ed.gui" ) == 0 )
+         isEditorScript = true;
+   }
+   
+   const char *filenameOnly = dStrrchr(pathBuffer, '/');
+   if(filenameOnly)
+      ++filenameOnly;
+   else
+      filenameOnly = pathBuffer;
+   
+   if( isEditorScript )
+      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".edso", NULL);
+   else
+      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".dso", NULL);
+   
+   ResourceObject *rScr = ResourceManager->find(pathBuffer);
+   ResourceObject *rCom = ResourceManager->find(nameBuffer);
+   
+   if(rCom)
+      rCom->getFileTimes(NULL, &comModifyTime);
+   if(rScr)
+      rScr->getFileTimes(NULL, &scrModifyTime);
+   
+   Stream *s = ResourceManager->openStream(pathBuffer);
+   if(s)
+   {
+      scriptSize = ResourceManager->getSize(pathBuffer);
+      script = new char [scriptSize+1];
+      s->read(scriptSize, script);
+      ResourceManager->closeStream(s);
+      script[scriptSize] = 0;
+   }
+   
+   if (!scriptSize || !script)
+   {
+      delete [] script;
+      Con::errorf(ConsoleLogEntry::Script, "compile: invalid script file %s.", pathBuffer);
+      return false;
+   }
+   // compile this baddie.
+   // -Mat reducing console noise
+#if defined(TORQUE_DEBUG)
+   Con::printf("Compiling %s...", pathBuffer);
+#endif
+   CodeBlock *code = new CodeBlock();
+   code->compile(nameBuffer, pathBuffer, script);
+   delete code;
+   code = NULL;
+   
+   delete[] script;
+   return true;
+}
+
 
 //------------------------------------------------------------

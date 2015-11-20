@@ -94,33 +94,33 @@ public:
     inline void setFieldValue( const char* pFieldName, const ColorI& fieldValue )
     {
         // Fetch the field value.
-        const char* pFieldValue = Con::getData( TypeColorI, &const_cast<ColorI&>(fieldValue), 0 );
+        ConsoleStringValuePtr pFieldValue = Con::getData( TypeColorI, &const_cast<ColorI&>(fieldValue), 0 );
 
         // Did we get a field value?
-        if ( pFieldValue == NULL )
+        if ( pFieldValue.isNull() )
         {
             // No, so warn.
             Con::warnf( "Taml: Failed to add node field name '%s' with ColorI value.", pFieldName );
-            pFieldValue = StringTable->EmptyString;
+            pFieldValue.setNull();
         }
 
-        set( pFieldName, pFieldValue );
+        set( pFieldName, pFieldValue.c_str() );
     }
 
     inline void setFieldValue( const char* pFieldName, const ColorF& fieldValue )
     {
         // Fetch the field value.
-        const char* pFieldValue = Con::getData( TypeColorF, &const_cast<ColorF&>(fieldValue), 0 );
+        ConsoleStringValuePtr pFieldValue = Con::getData( TypeColorF, &const_cast<ColorF&>(fieldValue), 0 );
 
         // Did we get a field value?
-        if ( pFieldValue == NULL )
+        if ( pFieldValue.isNull() )
         {
             // No, so warn.
-            Con::warnf( "Taml: Failed to add node field name '%s' with ColorF value.", pFieldName );
-            pFieldValue = StringTable->EmptyString;
+			   Con::warnf( "Taml: Failed to add node field name '%s' with ColorF value.", pFieldName );
+			   pFieldValue.setNull();
         }
 
-        set( pFieldName, pFieldValue );
+        set( pFieldName, pFieldValue.c_str() );
     }
 
     inline void setFieldValue( const char* pFieldName, const Point2I& fieldValue )
@@ -182,8 +182,7 @@ public:
         fieldValue.set( 1.0f, 1.0f, 1.0f, 1.0f );
 
         // Set color.
-        const char* argv = (char*)mFieldValue;
-        Con::setData( TypeColorF, &fieldValue, 0, 1, &argv );
+        Con::setData( TypeColorF, &fieldValue, 0, mFieldValue );
     }
 
     inline void getFieldValue( ColorI& fieldValue ) const
@@ -191,8 +190,7 @@ public:
         fieldValue.set( 255, 255, 255, 255 );
 
         // Set color.
-        const char* argv = (char*)mFieldValue;
-        Con::setData( TypeColorI, &fieldValue, 0, 1, &argv );
+        Con::setData( TypeColorI, &fieldValue, 0, mFieldValue );
     }
 
     inline void getFieldValue( Point2I& fieldValue ) const

@@ -39,7 +39,8 @@ bool TamlXmlWriter::write( FileStream& stream, const TamlWriteNode* pTamlWriteNo
     TiXmlElement* pRootElement = compileElement( pTamlWriteNode );
 
     // Fetch any TAML Schema file reference.
-    const char* pTamlSchemaFile = Con::getVariable( TAML_SCHEMA_VARIABLE );
+    ConsoleStringValuePtr pTamlSchemaFileV = Con::getVariable( TAML_SCHEMA_VARIABLE );
+    const char* pTamlSchemaFile = pTamlSchemaFileV.c_str();
 
     // Do we have a schema file reference?
     if ( pTamlSchemaFile != NULL && *pTamlSchemaFile != 0 )

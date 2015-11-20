@@ -163,6 +163,7 @@ class Vector
    void erase_fast(U32);
    void erase_fast(iterator);
    void clear();
+   void clearAndReset();
    void compact();
    void sort(compare_func f);
    T& first();
@@ -173,6 +174,20 @@ class Vector
    void set(void * addr, U32 sz);
 
    void merge(const Vector& p);
+    
+   U32 indexOf(T& value)
+    {
+        U32 sz = size();
+        for (U32 i=0; i<sz; i++)
+        {
+            if (*(begin() + i) == value)
+            {
+                return i;
+            }
+        }
+        
+        return (U32)-1;
+    }
 
    /// @}
 };
@@ -401,6 +416,15 @@ template<class T> inline const T& Vector<T>::last() const
 template<class T> inline void Vector<T>::clear()
 {
    mElementCount = 0;
+}
+
+template<class T> inline void Vector<T>::clearAndReset()
+{
+    T v;
+    for (U32 i=0; i<mElementCount; i++)
+    {
+        mArray[i] = v;
+    }
 }
 
 template<class T> inline void Vector<T>::compact()

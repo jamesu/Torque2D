@@ -265,7 +265,7 @@ void ShapeVector::renderPolygonShape(U32 vertexCount)
                 (GLfloat)(mPolygonLocalList[n == vertexCount ? 0 : n].y),
             };
 
-            glVertexPointer(2, GL_FLOAT, 0, verts );			
+            glVertexPointer(2, GL_FLOAT, 0, verts );         
             glDrawArrays(GL_LINE_LOOP, 0, 2);//draw last two
         }
 

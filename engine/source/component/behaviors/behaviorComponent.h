@@ -78,7 +78,7 @@ public:
     typeInstanceConnectionHash mBehaviorConnections;
 
 protected:
-    virtual const char* _callMethod( U32 argc, const char *argv[], bool callThis = true );
+    virtual ConsoleValuePtr _callMethod( U32 argc, ConsoleValuePtr argv[], bool callThis = true );
 
     /// Taml callbacks.
     virtual void onTamlCustomWrite( TamlCustomNodes& customNodes );
@@ -120,7 +120,7 @@ public:
 
     /// DynamicConsoleMethodComponent Overrides
     virtual bool handlesConsoleMethod( const char *fname, S32 *routingId );
-    virtual const char* callOnBehaviors( U32 argc, const char *argv[] );
+    virtual ConsoleValuePtr callOnBehaviors( U32 argc, ConsoleValuePtr argv[] );
 
     /// SimComponent overrides
     virtual void write( Stream &stream, U32 tabStop, U32 flags = 0 );

@@ -31,6 +31,7 @@
 #include "console/consoleInternal.h"
 #include "debug/profiler.h"
 #include "console/ConsoleTypeValidators.h"
+#include "console/consoleSerialization.h"
 #include "memory/frameAllocator.h"
 
 // Script bindings.
@@ -52,6 +53,20 @@ namespace Sim
    //groups created on the client
    ImplementNamedGroup(ClientConnectionGroup)
    ImplementNamedGroup(ChunkFileGroup)
-}   
+}
+
+
+void ConsoleSimObjectPtr::read(Stream &s, ConsoleSerializationState &state)
+{
+	S32 idx = -1;
+	s.read(&idx);
+	value = state.getSavedConsoleObject(idx);
+}
+
+void ConsoleSimObjectPtr::write(Stream &s, ConsoleSerializationState &state)
+{
+	S32 idx = state.getSavedConsoleObjectIDX(value);
+	s.write(idx);
+}
 
 //-----------------------------------------------------------------------------

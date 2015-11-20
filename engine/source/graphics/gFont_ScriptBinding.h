@@ -21,8 +21,8 @@
 //-----------------------------------------------------------------------------
 
 /*! @defgroup FontFunctions Font
-	@ingroup TorqueScriptFunctions
-	@{
+   @ingroup TorqueScriptFunctions
+   @{
 */
 
 /*! 
@@ -34,17 +34,18 @@
 */
 ConsoleFunctionWithDocs(populateFontCacheString, ConsoleVoid, 4, 4, (faceName, size, string))
 {
-   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), Con::getVariable("$GUI::fontCacheDirectory"));
+   ConsoleStringValuePtr cacheDir = Con::getVariable("$GUI::fontCacheDirectory");
+   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), cacheDir.c_str());
 
    if(f.isNull())
    {
-      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
    if(!f->hasPlatformFont())
    {
-      Con::errorf("populateFontCacheString - font '%s %d' has no platform font! Cannot generate more characters.", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheString - font '%s %d' has no platform font! Cannot generate more characters.", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
@@ -63,11 +64,12 @@ ConsoleFunctionWithDocs(populateFontCacheString, ConsoleVoid, 4, 4, (faceName, s
 */
 ConsoleFunctionWithDocs(populateFontCacheRange, ConsoleVoid, 5, 5, (faceName, size, rangeStart, rangeEnd))
 {
-   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), Con::getVariable("$GUI::fontCacheDirectory"));
+   ConsoleStringValuePtr cacheDir = Con::getVariable("$GUI::fontCacheDirectory");
+   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), cacheDir.c_str());
 
    if(f.isNull())
    {
-      Con::errorf("populateFontCacheRange - could not load font '%s %d'!", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheRange - could not load font '%s %d'!", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
@@ -82,7 +84,7 @@ ConsoleFunctionWithDocs(populateFontCacheRange, ConsoleVoid, 5, 5, (faceName, si
 
    if(!f->hasPlatformFont())
    {
-      Con::errorf("populateFontCacheRange - font '%s %d' has no platform font! Cannot generate more characters.", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheRange - font '%s %d' has no platform font! Cannot generate more characters.", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
@@ -176,7 +178,7 @@ ConsoleFunctionWithDocs(populateAllFontCacheString, ConsoleVoid, 2, 2, (string i
    FindMatch match("*.uft", 4096);
    ResourceManager->findMatches(&match);
 
-   Con::printf("Populating font cache with string '%s' (%d fonts found)", argv[1], match.numMatches());
+   Con::printf("Populating font cache with string '%s' (%d fonts found)", argv[1].getTempStringValue(), match.numMatches());
 
    for (U32 i = 0; i < (U32)match.numMatches(); i++)
    {
@@ -274,11 +276,12 @@ ConsoleFunctionWithDocs(exportCachedFont, ConsoleVoid, 6, 6, (fontName, size, fi
    S32 kerning    = dAtoi(argv[5]);
 
    // Tell the font to export itself.
-   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), Con::getVariable("$GUI::fontCacheDirectory"));
+   ConsoleStringValuePtr cacheDir = Con::getVariable("$GUI::fontCacheDirectory");
+   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), cacheDir.c_str());
 
    if(f.isNull())
    {
-      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
@@ -303,11 +306,12 @@ ConsoleFunctionWithDocs(importCachedFont, ConsoleVoid, 6, 6, (fontName, size, fi
    S32 kerning    = dAtoi(argv[5]);
 
    // Tell the font to import itself.
-   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), Con::getVariable("$GUI::fontCacheDirectory"));
+   ConsoleStringValuePtr cacheDir = Con::getVariable("$GUI::fontCacheDirectory");
+   Resource<GFont> f = GFont::create(argv[1], dAtoi(argv[2]), cacheDir.c_str());
 
    if(f.isNull())
    {
-      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1], dAtoi(argv[2]));
+      Con::errorf("populateFontCacheString - could not load font '%s %d'!", argv[1].getTempStringValue(), dAtoi(argv[2]));
       return;
    }
 
@@ -330,7 +334,8 @@ ConsoleFunctionWithDocs(duplicateCachedFont, ConsoleVoid, 4, 4, (oldFontName, ol
    GFont::getFontCacheFilename(argv[3], dAtoi(argv[2]), 256, newFontFile);
 
    // Load the original font.
-   Resource<GFont> font = GFont::create(argv[1], dAtoi(argv[2]), Con::getVariable("$GUI::fontCacheDirectory"));
+   ConsoleStringValuePtr cacheDir = Con::getVariable("$GUI::fontCacheDirectory");
+   Resource<GFont> font = GFont::create(argv[1], dAtoi(argv[2]), cacheDir.c_str());
 
    // Deal with inexplicably missing or failed to load fonts.
    if (font.isNull())

@@ -102,7 +102,7 @@ ConsoleMethodWithDocs(UndoManager, getNextUndoName, ConsoleString, 2, 2, ())
 {
    StringTableEntry name = object->getNextUndoName();
    if(!name)
-      return NULL;
+      return "";
    char *ret = Con::getReturnBuffer(dStrlen(name) + 1);
    dStrcpy(ret, name);
    return ret;
@@ -115,7 +115,7 @@ ConsoleMethodWithDocs(UndoManager, getNextRedoName, ConsoleString, 2, 2, ())
 {
    StringTableEntry name = object->getNextRedoName();
    if(!name)
-      return NULL;
+      return "";
    char *ret = Con::getReturnBuffer(dStrlen(name) + 1);
    dStrcpy(ret, name);
    return ret;
