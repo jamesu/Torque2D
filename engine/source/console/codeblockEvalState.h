@@ -56,9 +56,11 @@ public:
    Vector<InternalState> frames;
 
    bool traceOn;
+   S32 execDepth;
+   S32 journalDepth;
    /// }
     
-   CodeBlockEvalState()
+   CodeBlockEvalState() : execDepth(0), journalDepth(0), traceOn(false)
    {
       globalVars = new Dictionary(this, NULL);
    }

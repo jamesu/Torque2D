@@ -69,6 +69,7 @@
 		3266D2D01BFE613100446D93 /* codeblockEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */; };
 		3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */; };
 		3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CF1BFE613100446D93 /* consoleValue.cc */; };
+		32BE57A31C00965A0093E2A3 /* codeblockUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */; };
 		86063A251654180000362D83 /* platformOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 86063A241654180000362D83 /* platformOSX.mm */; };
 		8609FE2F16556DD2004662ED /* osxSemaphore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE2E16556DD2004662ED /* osxSemaphore.mm */; };
 		8609FE3116556E5A004662ED /* osxThread.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE3016556E5A004662ED /* osxThread.mm */; };
@@ -656,6 +657,8 @@
 		32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleCallbackHelper.h; sourceTree = "<group>"; };
 		32BA90FB1BE6DF7A0041D293 /* consoleValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleValue.h; sourceTree = "<group>"; };
 		32BA90FC1BEC20930041D293 /* consoleSerialization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleSerialization.h; sourceTree = "<group>"; };
+		32BE57A11C00960B0093E2A3 /* codeblockUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockUtil.h; sourceTree = "<group>"; };
+		32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codeblockUtil.cpp; sourceTree = "<group>"; };
 		86063A231654180000362D83 /* platformOSX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platformOSX.h; sourceTree = "<group>"; };
 		86063A241654180000362D83 /* platformOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = platformOSX.mm; sourceTree = "<group>"; };
 		8609FE2E16556DD2004662ED /* osxSemaphore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = osxSemaphore.mm; sourceTree = "<group>"; };
@@ -2497,6 +2500,8 @@
 				86BC82D516518DF400D96ADF /* consoleLogger.h */,
 				86BC82D616518DF400D96ADF /* consoleObject.h */,
 				86BC82D816518DF400D96ADF /* consoleTypes.h */,
+				32BE57A11C00960B0093E2A3 /* codeblockUtil.h */,
+				32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */,
 			);
 			name = console;
 			path = ../../../source/console;
@@ -3676,6 +3681,7 @@
 				8609FE361655716E004662ED /* osxPopupMenu.mm in Sources */,
 				8609FE38165572EC004662ED /* osxFont.mm in Sources */,
 				8652C279165586520052D0CB /* osxAudio.mm in Sources */,
+				32BE57A31C00965A0093E2A3 /* codeblockUtil.cpp in Sources */,
 				86D76F78165683240046D71F /* osxOutlineGL.cc in Sources */,
 				2ABF5C8F16569A0C00BBBF1D /* osxMutex.mm in Sources */,
 				8694ADC81656B06B0080ABAC /* osxEvents.mm in Sources */,

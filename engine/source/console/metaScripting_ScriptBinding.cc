@@ -28,6 +28,7 @@
 #include "io/resource/resourceManager.h"
 #include "io/fileStream.h"
 #include "console/compiler.h"
+#include "console/codeblockUtil.h"
 
 #if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_OSX)
 #include <ifaddrs.h>
@@ -36,8 +37,6 @@
 
 // Buffer for expanding script filenames.
 static char pathBuffer[1024];
-
-static U32 execDepth = 0;
 
 extern S32 QSORT_CALLBACK ACRCompare(const void *aptr, const void *bptr);
 
@@ -82,7 +81,7 @@ ConsoleFunctionWithDocs(getDSOPath, ConsoleString, 2, 2, (scriptFileName))
 ConsoleFunctionWithDocs(compile, ConsoleBool, 2, 2, ( fileName ))
 {
    TORQUE_UNUSED( argc );
-   return CodeBlock::compile(argv[1]);
+   return CodeblockUtil::compile(argv[1]);
 }
 
 /*! 
@@ -99,7 +98,7 @@ ConsoleFunctionWithDocs(compilePath, ConsoleString, 2, 2, ( path ))
    
     while ( (match = ResourceManager->findMatch( pathBuffer, &actualPath, match )) )
     {
-       if ( !CodeBlock::compile( actualPath ) )
+       if ( !CodeblockUtil::compile( actualPath ) )
             failedScripts++;
         
         totalScripts++;
@@ -110,7 +109,7 @@ ConsoleFunctionWithDocs(compilePath, ConsoleString, 2, 2, ( path ))
     return result;
 }
 
-static bool scriptExecutionEcho = true;
+bool scriptExecutionEcho = true;
 /*! Whether to echo script file execution or not.
 */
 ConsoleFunctionWithDocs(setScriptExecEcho, ConsoleVoid, 2, 2, (echo?))
@@ -126,409 +125,12 @@ ConsoleFunctionWithDocs(setScriptExecEcho, ConsoleVoid, 2, 2, (echo?))
     @return Returns true if the file compiled and executed w/o errors, false otherwise.
     @sa compile
 */
+#undef TORQUE_ALLOW_DSO_GENERATION
 ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journalScript ]?))
 {
-   execDepth++;
-
-#ifdef TORQUE_ALLOW_JOURNALING
-   bool journal = false;
-
-   if(journalDepth >= execDepth)
-      journalDepth = execDepth + 1;
-   else
-      journal = true;
-#endif //TORQUE_ALLOW_JOURNALING
-
-   bool noCalls = false;
-   bool ret = false;
-
-   if(argc >= 3 && dAtoi(argv[2]))
-      noCalls = true;
-
-#ifdef TORQUE_ALLOW_JOURNALING
-   if(argc >= 4 && dAtoi(argv[3]) && !journal)
-   {
-      journal = true;
-      journalDepth = execDepth;
-   }
-#endif //TORQUE_ALLOW_JOURNALING
-
-   // Determine the filename we actually want...
-   Con::expandPath(pathBuffer, sizeof(pathBuffer), argv[1]);
-
-   // Figure out where to put DSOs
-   StringTableEntry dsoPath = CodeBlock::getDSOPath(pathBuffer);
-
-   const char *ext = dStrrchr(pathBuffer, '.');
-
-   if(!ext)
-   {
-      // We need an extension!
-      Con::errorf(ConsoleLogEntry::Script, "exec: invalid script file name %s.", pathBuffer);
-      execDepth--;
-      return false;
-   }
-
-   // Check Editor Extensions
-   bool isEditorScript = false;
-
-#ifdef TORQUE_ALLOW_DSO_GENERATION
-   // If the script file extension is '.ed.cs' then compile it to a different compiled extension
-   if( dStricmp( ext, ".cs" ) == 0 )
-   {
-      const char* ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.cs" ) == 0 )
-         isEditorScript = true;
-   }
-   else if( dStricmp( ext, ".gui" ) == 0 )
-   {
-      const char* ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.gui" ) == 0 )
-         isEditorScript = true;
-   }
-#endif //TORQUE_ALLOW_DSO_GENERATION
-
-   // rdbhack: if we can't find the script file in the game directory, look for it
-   //   in the Application Data directory. This makes it possible to keep the user
-   //   ignorant of where the files are actually saving to, thus eliminating the need
-   //   for the script functions: execPrefs, getUserDataDirectory, etc.
-   //
-   //   This works because we know that script files located in the prefs path will 
-   //   not have compiled versions (it checks for this further down). Otherwise this
-   //   would be a big problem!
-   
-   StringTableEntry scriptFileName = StringTable->EmptyString;
-
-
-//Luma : This is redundant, we wont be building dso's on the device - 
-//plus saving dso to the user directory when attempting build for the
-//release tests on iPhone is irrelevant.
-#ifdef TORQUE_ALLOW_DSO_GENERATION
-
-   if(!ResourceManager->find(pathBuffer))
-   {
-      // NOTE: this code is pretty much a duplication of code much further down in this
-      //       function...
-
-      // our work just got a little harder.. if we couldn't find the .cs, then we need to
-      // also look for the .dso BEFORE we can try the prefs path.. UGH
-      const char *filenameOnly = dStrrchr(pathBuffer, '/');
-      if(filenameOnly)
-         ++filenameOnly;
-      else
-         filenameOnly = pathBuffer;
-
-      // we could skip this step and rid ourselves of a bunch of nonsense but we can't be
-      // certain the dso path is the same as the path given to use in scriptFileNameBuffer
-      char pathAndFilename[1024]; 
-      Platform::makeFullPathName(filenameOnly, pathAndFilename, sizeof(pathAndFilename), dsoPath);
-
-      char nameBuffer[1024];
-      if( isEditorScript ) // this should never be the case since we are a PLAYER not a TOOL, but you never know
-         dStrcpyl(nameBuffer, sizeof(nameBuffer), pathAndFilename, ".edso", NULL);
-      else
-         dStrcpyl(nameBuffer, sizeof(nameBuffer), pathAndFilename, ".dso", NULL);
-
-      if(!ResourceManager->find(nameBuffer))
-         scriptFileName = Platform::getPrefsPath(Platform::stripBasePath(pathBuffer));
-      else
-         scriptFileName = StringTable->insert(pathBuffer);
-   }
-   else
-      scriptFileName = StringTable->insert(pathBuffer);
-#else //TORQUE_ALLOW_DSO_GENERATION
-
-    //Luma : Just insert the file name.
-    scriptFileName = StringTable->insert(pathBuffer);
-
-#endif //TORQUE_ALLOW_DSO_GENERATION
-
-    //Luma : Something screwed up so get out early
-   if(scriptFileName == NULL || *scriptFileName == 0)
-   {
-      execDepth--;
-      return false;
-   }
-
-#ifdef TORQUE_ALLOW_JOURNALING
-   
-   bool compiled = dStricmp(ext, ".mis") && !journal && !Con::getBoolVariable("Scripts::ignoreDSOs");
-#else
-   bool compiled = dStricmp(ext, ".mis")  && !Con::getBoolVariable("Scripts::ignoreDSOs");
-#endif //TORQUE_ALLOW_JOURNALING
-
-   // [tom, 12/5/2006] stripBasePath() messes up if the filename is not in the exe
-   // path, current directory or prefs path. Thus, getDSOFilename() will also mess
-   // up and so this allows the scripts to still load but without a DSO.
-   if(Platform::isFullPath(Platform::stripBasePath(pathBuffer)))
-      compiled = false;
-
-   // [tom, 11/17/2006] It seems to make sense to not compile scripts that are in the
-   // prefs directory. However, getDSOPath() can handle this situation and will put
-   // the dso along with the script to avoid name clashes with tools/game dsos.
-#ifdef TORQUE_ALLOW_DSO_GENERATION
-    // Is this a file we should compile? (anything in the prefs path should not be compiled)
-    StringTableEntry prefsPath = Platform::getPrefsPath();
-
-   if( dStrlen(prefsPath) > 0 && dStrnicmp(scriptFileName, prefsPath, dStrlen(prefsPath)) == 0)
-      compiled = false;
-#endif //TORQUE_ALLOW_DSO_GENERATION
-
-   // If we're in a journaling mode, then we will read the script
-   // from the journal file.
-#ifdef TORQUE_ALLOW_JOURNALING
-   if(journal && Game->isJournalReading())
-   {
-      char fileNameBuf[256];
-      bool fileRead;
-      U32 fileSize;
-
-      Game->getJournalStream()->readString(fileNameBuf);
-      Game->getJournalStream()->read(&fileRead);
-      if(!fileRead)
-      {
-         Con::errorf(ConsoleLogEntry::Script, "Journal script read (failed) for %s", fileNameBuf);
-         execDepth--;
-         return false;
-      }
-      Game->journalRead(&fileSize);
-      char *script = new char[fileSize + 1];
-      Game->journalRead(fileSize, script);
-      script[fileSize] = 0;
-      Con::printf("Executing (journal-read) %s.", scriptFileName);
-      CodeBlock *newCodeBlock = new CodeBlock();
-      newCodeBlock->compileExec(scriptFileName, script, noCalls, 0);
-      delete [] script;
-
-      execDepth--;
-      return true;
-   }
-#endif //TORQUE_ALLOW_JOURNALING
-
-   // Ok, we let's try to load and compile the script.
-   ResourceObject *rScr = ResourceManager->find(scriptFileName);
-   ResourceObject *rCom = NULL;
-
-   char nameBuffer[512];
-   char* script = NULL;
-   U32 scriptSize = 0;
-   U32 version;
-
-   Stream *compiledStream = NULL;
-   FileTime comModifyTime, scrModifyTime;
-
-   // Check here for .edso
-   //bool edso = false;
-   //if( dStricmp( ext, ".edso" ) == 0  && rScr )
-   //{
-   //   edso = true;
-   //   rCom = rScr;
-   //   rScr = NULL;
-
-   //   rCom->getFileTimes( NULL, &comModifyTime );
-   //   dStrcpy( nameBuffer, scriptFileName );
-   //}
-
-   // If we're supposed to be compiling this file, check to see if there's a DSO
-   if(compiled /*&& !edso*/)
-   {
-      const char *filenameOnly = dStrrchr(scriptFileName, '/');
-      if(filenameOnly)
-         ++filenameOnly; //remove the / at the front
-      else
-         filenameOnly = scriptFileName;
-
-      char pathAndFilename[1024];
-      Platform::makeFullPathName(filenameOnly, pathAndFilename, sizeof(pathAndFilename), dsoPath);
-
-      if( isEditorScript )
-         dStrcpyl(nameBuffer, sizeof(nameBuffer), pathAndFilename, ".edso", NULL);
-      else
-         dStrcpyl(nameBuffer, sizeof(nameBuffer), pathAndFilename, ".dso", NULL);
-
-      rCom = ResourceManager->find(nameBuffer);
-
-      if(rCom)
-         rCom->getFileTimes(NULL, &comModifyTime);
-      if(rScr)
-         rScr->getFileTimes(NULL, &scrModifyTime);
-   }
-
-   // Let's do a sanity check to complain about DSOs in the future.
-   //
-   // MM:   This doesn't seem to be working correctly for now so let's just not issue
-   //      the warning until someone knows how to resolve it.
-   //
-   //if(compiled && rCom && rScr && Platform::compareFileTimes(comModifyTime, scrModifyTime) < 0)
-   //{
-   //Con::warnf("exec: Warning! Found a DSO from the future! (%s)", nameBuffer);
-   //}
-
-    // If we had a DSO, let's check to see if we should be reading from it.
-    if((compiled && rCom) && (!rScr || Platform::compareFileTimes(comModifyTime, scrModifyTime) >= 0))
-    {
-      compiledStream = ResourceManager->openStream(nameBuffer);
-      if (compiledStream)
-      {
-         // Check the version!
-         compiledStream->read(&version);
-         if(version != DSO_VERSION)
-         {
-            Con::warnf("exec: Found an old DSO (%s, ver %d < %d), ignoring.", nameBuffer, version, DSO_VERSION);
-            ResourceManager->closeStream(compiledStream);
-            compiledStream = NULL;
-         }
-      }
-    }
-
-#ifdef TORQUE_ALLOW_JOURNALING
-   // If we're journalling, let's write some info out.
-   if(journal && Game->isJournalWriting())
-      Game->getJournalStream()->writeString(scriptFileName);
-#endif //TORQUE_ALLOW_JOURNALING
-
-   if(rScr && !compiledStream)
-   {
-      // If we have source but no compiled version, then we need to compile
-      // (and journal as we do so, if that's required).
-
-       //Con::errorf( "No DSO found! : %s", scriptFileName );
-       
-      Stream *s = ResourceManager->openStream(scriptFileName);
-       
-#ifdef   TORQUE_ALLOW_JOURNALING
-      if(journal && Game->isJournalWriting())
-         Game->getJournalStream()->write(bool(s != NULL));
-#endif   //TORQUE_ALLOW_JOURNALING
-
-      if(s)
-      {
-         scriptSize = ResourceManager->getSize(scriptFileName);
-         script = new char [scriptSize+1];
-         s->read(scriptSize, script);
-
-#ifdef   TORQUE_ALLOW_JOURNALING
-         if(journal && Game->isJournalWriting())
-         {
-            Game->journalWrite(scriptSize);
-            Game->journalWrite(scriptSize, script);
-         }
-#endif   //TORQUE_ALLOW_JOURNALING
-         ResourceManager->closeStream(s);
-         script[scriptSize] = 0;
-      }
-
-      if (!scriptSize || !script)
-      {
-         delete [] script;
-         Con::errorf(ConsoleLogEntry::Script, "exec: invalid script file %s.", scriptFileName);
-         execDepth--;
-         return false;
-      }
-
-//Luma: Sven -
-// no dsos in the editor, seems to fail with so many console changes and version crap. Leaving it to
-// work with cs files as is, as they are included with the source either way.
-
-//Also, no DSO generation on iPhone
-#if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_ANDROID) || defined(TORQUE_OS_EMSCRIPTEN)
-      if(false) 
-#else
-      if(compiled)
-#endif
-      {
-         // compile this baddie.
-         #if defined(TORQUE_DEBUG)
-         Con::printf("Compiling %s...", scriptFileName);
-         #endif
-         CodeBlock *code = new CodeBlock();
-         code->compile(nameBuffer, scriptFileName, script);
-         delete code;
-         code = NULL;
-
-         compiledStream = ResourceManager->openStream(nameBuffer);
-         if(compiledStream)
-         {
-            compiledStream->read(&version);
-         }
-         else
-         {
-            // We have to exit out here, as otherwise we get double error reports.
-            delete [] script;
-            execDepth--;
-            return false;
-         }
-      }
-   }
-   else
-   {
-#ifdef   TORQUE_ALLOW_JOURNALING
-      if(journal && Game->isJournalWriting())
-         Game->getJournalStream()->write(bool(false));
-#endif   //TORQUE_ALLOW_JOURNALING
-   }
-    
-    //Luma : Load compiled script here
-   if(compiledStream)
-   {
-      // Delete the script object first to limit memory used
-      // during recursive execs.
-      delete [] script;
-      script = 0;
-
-      // We're all compiled, so let's run it.
-      
-      //Luma: Profile script executions 
-      F32 st1 = (F32)Platform::getRealMilliseconds();
-
-      CodeBlock *code = new CodeBlock;
-      code->read(scriptFileName, *compiledStream);
-      ResourceManager->closeStream(compiledStream);
-      code->exec(0, scriptFileName, NULL, 0, NULL, noCalls, NULL);
-
-        F32 et1 = (F32)Platform::getRealMilliseconds();
-        
-        F32 etf = et1 - st1;
-
-        if ( scriptExecutionEcho )
-            Con::printf("Loaded compiled script %s. Took %.0f ms", scriptFileName, etf);
-
-      ret = true;
-   }
-   else if(rScr) //Luma : Load normal cs file here.
-   {
-         // No compiled script,  let's just try executing it
-         // directly... this is either a mission file, or maybe
-         // we're on a readonly volume.
-        
-         CodeBlock *newCodeBlock = new CodeBlock();
-         StringTableEntry name = StringTable->insert(scriptFileName);
-
-      
-      //Luma: Profile script executions 
-         F32 st1 = (F32)Platform::getRealMilliseconds();
-         
-         newCodeBlock->compileExec(name, script, noCalls, 0);
-
-         F32 et1 = (F32)Platform::getRealMilliseconds();
-
-         F32 etf = et1 - st1;
-         
-        if ( scriptExecutionEcho )
-            Con::printf("Executed %s. Took %.0f ms", scriptFileName, etf);
-
-         ret = true;
-   }
-   else
-   {
-      // Don't have anything.
-      Con::warnf(ConsoleLogEntry::Script, "Missing file: %s!", pathBuffer);
-      ret = false;
-   }
-
-   delete [] script;
-   execDepth--;
-   return ret;
+   bool journalScript = argc > 3 ? dAtob(argv[3]) : true;
+   bool noCalls = argc > 2 ? dAtob(argv[2]) : false;
+   return CodeblockUtil::execFile(argv[1], noCalls, journalScript, true);
 }
 
 /*! Use the eval function to execute any valid script statement.

@@ -355,7 +355,7 @@ void Namespace::addFunction(StringTableEntry name, CodeBlock *cb, U32 functionOf
    ent->mCode = cb;
    ent->mFunctionOffset = functionOffset;
    ent->mMinArgs = 0;
-   ent->mMaxArgs = cb->functions[functionOffset]->numArgs+1; // includes function name
+   ent->mMaxArgs = cb->mFunctions[functionOffset]->numArgs+1; // includes function name
    ent->mCode->incRefCount();
    ent->mType = Entry::ScriptFunctionType;
 }

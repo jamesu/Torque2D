@@ -1495,7 +1495,12 @@ bool expandPath( char* pDstPath, U32 size, const char* pSrcPath, const char* pWo
     if ( leadingToken == '.' )
     {
         // Fetch the code-block file-path.
-        const StringTableEntry codeblockFullPath = CodeBlock::getCurrentCodeBlockFullPath();
+       StringTableEntry codeblockFullPath = NULL;
+       CodeBlockEvalState *state = &gNewEvalState;
+       if (state->currentFrame.code)
+       {
+          codeblockFullPath = state->currentFrame.code->fullPath;
+       }
 
         // Do we have a code block full path?
         if( codeblockFullPath == NULL )

@@ -30,10 +30,7 @@
 #include "console/codeblockEvalState.h"
 
 #include "debug/telnetDebugger.h"
-
-#ifndef _REMOTE_DEBUGGER_BASE_H_
 #include "debug/remote/RemoteDebuggerBase.h"
-#endif
 
 using namespace Compiler;
 
@@ -48,6 +45,11 @@ CodeBlockFunction* CodeBlock::smCurrentFunction = NULL;
 CodeBlockFunction* CodeBlock::smCurrentCodeblockFunction = NULL;
 
 CodeBlockEvalState gNewEvalState;
+
+
+extern void CMDSetScanBuffer(const char *sb, const char *fn);
+extern void CMD_reset();
+extern S32 CMDparse();
 
 //-------------------------------------------------------------------------
 
@@ -74,30 +76,6 @@ CodeBlock::~CodeBlock()
 }
 
 //-------------------------------------------------------------------------
-
-StringTableEntry CodeBlock::getCurrentCodeBlockName()
-{
-    if (CodeBlock::getCurrentBlock())
-        return CodeBlock::getCurrentBlock()->name;
-    else
-        return NULL;
-}
-
-StringTableEntry CodeBlock::getCurrentCodeBlockFullPath()
-{
-    if (CodeBlock::getCurrentBlock())
-        return CodeBlock::getCurrentBlock()->fullPath;
-    else
-        return NULL;
-}
-
-StringTableEntry CodeBlock::getCurrentCodeBlockModName()
-{
-    if (CodeBlock::getCurrentBlock())
-        return CodeBlock::getCurrentBlock()->modPath;
-    else
-        return NULL;
-}
 
 CodeBlock *CodeBlock::find(StringTableEntry name)
 {
@@ -342,81 +320,130 @@ void CodeBlock::calcBreakList()
         TelDebugger->addAllBreakpoints( this );
 }
 
-bool CodeBlock::read(StringTableEntry fileName, Stream &st)
+bool CodeBlock::save(Stream &s)
 {
-    const StringTableEntry exePath = Platform::getMainDotCsDir();
-    const StringTableEntry cwd = Platform::getCurrentDirectory();
+   // TODO
+   /*
     
-    name = fileName;
+    FileStream st;
+    if(!ResourceManager->openFileForWrite(st, codeFileName))
+    return false;
+    st.write(DSO_VERSION);
     
-    if(fileName)
+    ConsoleSerializationState serializationState;
+    st.write(outConstants.size());
+    ConsoleValuePtr::writeStack(st, serializationState, outConstants);
+    
+    st.write(mFunctions.size());
+    st.write(codeSize);
+    st.write(lineBreakPairCount);
+    
+    for (U32 i=0; i<functions.size(); i++)
     {
-        fullPath = NULL;
-        
-        if(Platform::isFullPath(fileName))
-            fullPath = fileName;
-        
-        if(dStrnicmp(exePath, fileName, dStrlen(exePath)) == 0)
-            name = StringTable->insert(fileName + dStrlen(exePath) + 1, true);
-        else if(dStrnicmp(cwd, fileName, dStrlen(cwd)) == 0)
-            name = StringTable->insert(fileName + dStrlen(cwd) + 1, true);
-        
-        if(fullPath == NULL)
-        {
-            char buf[1024];
-            fullPath = StringTable->insert(Platform::makeFullPathName(fileName, buf, sizeof(buf)), true);
-        }
-        
-        modPath = Con::getModNameFromPath(fileName);
+    CodeBlockFunction* func = functions[i];
+    func->write(st, serializationState);
     }
     
-    //
-    addToCodeList();
+    st.write(sizeof(U32) * codeSize, code);
     
-    U32 globalSize,size,i;
+    */
    
-    U32 codeLength;
-    st.read(&codeLength);
-    st.read(&lineBreakPairCount);
-    
-    U32 totSize = codeLength + lineBreakPairCount * 2;
-    code = new U32[totSize];
-   
-    st.read(codeLength * sizeof(U32), code);
-   
-   
-    ConsoleSerializationState serializationState;
-    ConsoleValuePtr::readStack(st, serializationState, constants);
-    
-    for(i = codeLength; i < totSize; i++)
-        st.read(&code[i]);
-    
-    lineBreakPairs = code + codeLength;
-    
-    if(lineBreakPairCount)
-        calcBreakList();
-    
-    return true;
+   return false;
 }
 
-extern void CMDSetScanBuffer(const char *sb, const char *fn);
-extern void CMD_reset();
-extern S32 CMDparse();
+void CodeBlock::setFilename(const char *fileName)
+{
+   const StringTableEntry exePath = Platform::getMainDotCsDir();
+   const StringTableEntry cwd = Platform::getCurrentDirectory();
+   
+   name = fileName;
+   modPath = NULL;
+   fullPath = NULL;
+   mRoot = StringTable->EmptyString;
+   
+   if(fileName)
+   {
+      fullPath = NULL;
+      
+      if(Platform::isFullPath(fileName))
+         fullPath = fileName;
+      
+      if(dStrnicmp(exePath, fileName, dStrlen(exePath)) == 0)
+         name = StringTable->insert(fileName + dStrlen(exePath) + 1, true);
+      else if(dStrnicmp(cwd, fileName, dStrlen(cwd)) == 0)
+         name = StringTable->insert(fileName + dStrlen(cwd) + 1, true);
+      
+      if(fullPath == NULL)
+      {
+         char buf[1024];
+         fullPath = StringTable->insert(Platform::makeFullPathName(fileName, buf, sizeof(buf)), true);
+      }
+      
+      modPath = Con::getModNameFromPath(fileName);
+   }
+   
+   if (name)
+   {
+      if (const char *slash = dStrchr(this->name, '/'))
+      {
+         char root[512];
+         dStrncpy(root, this->name, slash-this->name);
+         root[slash-this->name] = 0;
+         mRoot = StringTable->insert(root);
+      }
+   }
+   
+}
 
-bool CodeBlock::compile(const char *codeFileName, StringTableEntry fileName, const char *script)
+bool CodeBlock::read(Stream &s, const char *fileName)
+{
+   setFilename(fileName);
+   
+   //
+   addToCodeList();
+   
+   U32 codeLength;
+   s.read(&codeLength);
+   s.read(&lineBreakPairCount);
+   
+   U32 totSize = codeLength + lineBreakPairCount * 2;
+   code = new U32[totSize];
+   
+   s.read(codeLength * sizeof(U32), code);
+   
+   ConsoleSerializationState serializationState;
+   ConsoleValuePtr::readStack(s, serializationState, mConstants);
+   
+   for(U32 i = codeLength; i < totSize; i++)
+      s.read(&code[i]);
+   
+   lineBreakPairs = code + codeLength;
+   
+   if(lineBreakPairCount)
+      calcBreakList();
+   
+   return true;
+}
+
+bool CodeBlock::compile(const char *fileName, const char *script)
 {
    AssertFatal(Con::isMainThread(), "Compiling code on a secondary thread");
    
-   gSyntaxError = false;
-   
    consoleAllocReset();
    
+   setFilename(fileName);
+   
+   //
+   
+   if(name)
+      addToCodeList();
+   
+   gSyntaxError = false;
    gStatementList = NULL;
    gCodeblockFunctionList = NULL;
    
    gCurrentLocalVariables = NULL;
    gLocalVariableStackIdx = 0;
-
    
    // Now do some parsing.
    CMDSetScanBuffer(script, fileName);
@@ -425,14 +452,8 @@ bool CodeBlock::compile(const char *codeFileName, StringTableEntry fileName, con
    
    if(gSyntaxError || !gStatementList)
    {
-      consoleAllocReset();
       return false;
    }
-   
-   FileStream st;
-   if(!ResourceManager->openFileForWrite(st, codeFileName))
-      return false;
-   st.write(DSO_VERSION);
    
    resetTables();
    
@@ -441,11 +462,12 @@ bool CodeBlock::compile(const char *codeFileName, StringTableEntry fileName, con
    CodeBlock::smCurrentCodeBlock = this;
    CodeBlock::smCurrentCodeblockFunction = new CodeBlockFunction;
    CodeBlock::smCurrentCodeblockFunction->ip = 0;
-   functions.push_back(smCurrentCodeblockFunction);
-   Compiler::CompilerConstantsTable constants;
-   constants.reset();
+   mFunctions.push_back(smCurrentCodeblockFunction);
    
    CodeStream codeStream;
+   Compiler::CompilerConstantsTable constants;
+   
+   constants.reset();
    codeStream.setConstantsTable(&constants);
    
    // Add actual local variables for the codeblock scope
@@ -460,186 +482,43 @@ bool CodeBlock::compile(const char *codeFileName, StringTableEntry fileName, con
    
    U32 lastIp = compileBlock(gStatementList, codeStream, 0);
    codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
-   CodeBlock::smCurrentCodeBlock = NULL;
    
-   functions[0]->name = StringTable->insert("");
-   functions[0]->numArgs = 0;
-   functions[0]->maxStack = codeStream.getMaxStack();
-   functions[0]->stmt = NULL;
+   mFunctions[0]->name = StringTable->insert("");
+   mFunctions[0]->numArgs = 0;
+   mFunctions[0]->maxStack = codeStream.getMaxStack();
+   mFunctions[0]->stmt = NULL;
    
    // Append additional functions in the order they are defined at the end
    codeStream.mLastKonstPage = 0; // reset konst page, it's always 0 at the start
-   for (U32 i=1; i<functions.size(); i++)
+   for (U32 i=1; i<mFunctions.size(); i++)
    {
-      functions[i]->ip = codeStream.tell();
-      CodeBlock::smCurrentFunction = functions[i];
-      functions[i]->stmt->compileFunction(codeStream, codeStream.tell());
+      mFunctions[i]->ip = codeStream.tell();
+      CodeBlock::smCurrentFunction = mFunctions[i];
+      mFunctions[i]->stmt->compileFunction(codeStream, codeStream.tell());
    }
    
    lineBreakPairCount = codeStream.getNumLineBreaks();
    
-   Vector<ConsoleValuePtr> outConstants;
-   constants.build(outConstants);
-   
+   constants.build(mConstants);
    codeStream.emitCodeStream(&codeSize, &code, &lineBreakPairs);
    
-   ConsoleSerializationState serializationState;
-   st.write(outConstants.size());
-   ConsoleValuePtr::writeStack(st, serializationState, outConstants);
-   
-   st.write(functions.size());
-   st.write(codeSize);
-   st.write(lineBreakPairCount);
-   
-   for (U32 i=0; i<functions.size(); i++)
-   {
-      CodeBlockFunction* func = functions[i];
-      func->write(st, serializationState);
-   }
-   
-   st.write(sizeof(U32) * codeSize, code);
-   
+   smCurrentCodeBlock = NULL;
    consoleAllocReset();
-   st.close();
+   
+   if(lineBreakPairCount && fileName)
+      calcBreakList();
    
    return true;
 }
 
-void testStackWrite();
-
-ConsoleValuePtr CodeBlock::compileExec(StringTableEntry fileName, const char *script, bool noCalls, S32 setFrame)
+ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
 {
-    AssertFatal(Con::isMainThread(), "Compiling code on a secondary thread");
-    
-    consoleAllocReset();
-    
-    name = fileName;
-    
-    if(fileName)
-    {
-        const StringTableEntry exePath = Platform::getMainDotCsDir();
-        const StringTableEntry cwd = Platform::getCurrentDirectory();
-        
-        fullPath = NULL;
-        
-        if(Platform::isFullPath(fileName))
-            fullPath = fileName;
-        
-        if(dStrnicmp(exePath, fileName, dStrlen(exePath)) == 0)
-            name = StringTable->insert(fileName + dStrlen(exePath) + 1, true);
-        else if(dStrnicmp(cwd, fileName, dStrlen(cwd)) == 0)
-            name = StringTable->insert(fileName + dStrlen(cwd) + 1, true);
-        
-        if(fullPath == NULL)
-        {
-            char buf[1024];
-            fullPath = StringTable->insert(Platform::makeFullPathName(fileName, buf, sizeof(buf)), true);
-        }
-        
-        modPath = Con::getModNameFromPath(fileName);
-    }
-    
-    //
-    if (name)
-    {
-        if (const char *slash = dStrchr(this->name, '/'))
-        {
-            char root[512];
-            dStrncpy(root, this->name, slash-this->name);
-            root[slash-this->name] = 0;
-            mRoot = StringTable->insert(root);
-        }
-    }
-    
-    if(name)
-        addToCodeList();
-    
-    gStatementList = NULL;
-    gCodeblockFunctionList = NULL;
+   // jamesu - new exec function
    
+   CodeBlockFunction* newFunction = mFunctions[0];
    
-   gCurrentLocalVariables = NULL;
-   gLocalVariableStackIdx = 0;
-   
-   // Now do some parsing.
-   CMDSetScanBuffer(script, fileName);
-   CMD_reset();
-   CMDparse();
-   
-    if(!gStatementList)
-    {
-        delete this;
-        return "";
-    }
-    
-    resetTables();
-    
-    smInFunction = false;
-   
-    CodeBlock::smCurrentCodeBlock = this;
-    CodeBlock::smCurrentCodeblockFunction = new CodeBlockFunction;
-    CodeBlock::smCurrentCodeblockFunction->ip = 0;
-    functions.push_back(smCurrentCodeblockFunction);
-    Compiler::CompilerConstantsTable constants;
-   constants.reset();
-    
-    CodeStream codeStream;
-   
-    codeStream.setConstantsTable(&constants);
-   
-   
-   // Add actual local variables for the codeblock scope
-   AssertFatal(gLocalVariableStackIdx == 0, "Unbalanced variable stack");
-   if (gLocalVariableStackIdx == 0)
-   {
-      for (ReferencedVariableNode* walk = gCurrentLocalVariables; walk; walk = walk->next)
-      {
-         codeStream.addLocalVariable(walk->varName);
-      }
-   }
-   
-    U32 lastIp = compileBlock(gStatementList, codeStream, 0);
-    codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
-   
-   functions[0]->name = StringTable->insert("");
-   functions[0]->numArgs = 0;
-   functions[0]->maxStack = codeStream.getMaxStack();
-   functions[0]->stmt = NULL;
-   
-   // Append additional functions in the order they are defined at the end
-   codeStream.mLastKonstPage = 0; // reset konst page, it's always 0 at the start
-   for (U32 i=1; i<functions.size(); i++)
-   {
-      functions[i]->ip = codeStream.tell();
-      CodeBlock::smCurrentFunction = functions[i];
-      functions[i]->stmt->compileFunction(codeStream, codeStream.tell());
-   }
-    
-    lineBreakPairCount = codeStream.getNumLineBreaks();
-    
-    Vector<ConsoleValuePtr> outConstants;
-    constants.build(outConstants);
-   
-    codeStream.emitCodeStream(&codeSize, &code, &lineBreakPairs);
-    
-    consoleAllocReset();
-    
-    if(lineBreakPairCount && fileName)
-        calcBreakList();
-    
-    if(lastIp+1 != codeSize)
-        Con::warnf(ConsoleLogEntry::General, "precompile size mismatch, precompile: %d compile: %d", codeSize, lastIp);
-    
-    
-    // jamesu - new exec function
-   
-   CodeBlockFunction* newFunction = functions[0];
-   
-   gNewEvalState.currentFrame.globalVars = gNewEvalState.globalVars;
-   gNewEvalState.currentFrame.constants = outConstants.address();
-   gNewEvalState.currentFrame.code = NULL;
    gNewEvalState.pushFunction(newFunction, this, NULL, 0);
-   
+   gNewEvalState.currentFrame.globalVars = gNewEvalState.globalVars;
    
    U32 currentTop = gNewEvalState.currentFrame.stackTop;
    // Reset local stack for function
@@ -649,47 +528,57 @@ ConsoleValuePtr CodeBlock::compileExec(StringTableEntry fileName, const char *sc
    }
    
    /*
-   
-   CodeBlockFunction* oldFunction = gNewEvalState.function;
-   CodeBlockFunction* newFunction = functions[0];
-   
-   // Merge in exec block
-   if (newFunction)
-   {
-      mergeLocalVars(oldFunction, newFunction, false);
-   }
-   
+    
+    CodeBlockFunction* oldFunction = gNewEvalState.function;
+    CodeBlockFunction* newFunction = functions[0];
+    
+    // Merge in exec block
+    if (newFunction)
+    {
+    mergeLocalVars(oldFunction, newFunction, false);
+    }
+    
     S32 currentTop = gNewEvalState.stackTop;
     U32 currentIP = gNewEvalState.savedIP;
     ConsoleValue* currentConstants = gNewEvalState.constants;
-   const char* filename = currentFilename;
-   
+    const char* filename = currentFilename;
+    
     gNewEvalState.filename = fileName;
     gNewEvalState.globalVars = &gEvalState.globalVars;
-   
+    
     // Reset local stack for function
     for (U32 i=currentTop; i<currentTop+newFunction->maxStack; i++)
     {
-       ((ConsoleValuePtr*)(gNewEvalState.stack.address()+i))->setNull();
+    ((ConsoleValuePtr*)(gNewEvalState.stack.address()+i))->setNull();
     }
-   
+    
     gNewEvalState.constants = outConstants.address();
     gNewEvalState.stackTop = currentTop;
     gNewEvalState.function = functions[0];
-   */
+    */
    
-    CodeBlock::smCurrentCodeBlock = NULL;
+   CodeBlock::smCurrentCodeBlock = NULL;
    
-    CodeBlock::execBlock(&gNewEvalState);
+   CodeBlock::execBlock(&gNewEvalState);
    
    /*
     // Merge in exec block
     if (oldFunction)
     {
-       mergeLocalVars(newFunction, oldFunction, true);
+    mergeLocalVars(newFunction, oldFunction, true);
     }*/
    
-    return gNewEvalState.yieldValue;
+   return gNewEvalState.yieldValue;
+}
+
+ConsoleValuePtr CodeBlock::compileExec(StringTableEntry fileName, const char *script, bool noCalls, S32 setFrame)
+{
+   if (!compile(fileName, script))
+   {
+      return ConsoleValuePtr();
+   }
+   
+   return execRoot(noCalls, setFrame);
 }
 
 //-------------------------------------------------------------------------

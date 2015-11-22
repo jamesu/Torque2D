@@ -65,7 +65,12 @@ SimObject::SimObject( const U8 namespaceLinkMask ) : mNSLinkMask( namespaceLinkM
     mCanSaveFieldDictionary  = true;
     mClassName               = NULL;
     mSuperClassName          = NULL;
-    mProgenitorFile          = CodeBlock::getCurrentCodeBlockFullPath();
+    mProgenitorFile          = NULL;
+    CodeBlockEvalState *state = &gNewEvalState;
+    if (state->currentFrame.code)
+    {
+       mProgenitorFile = state->currentFrame.code->fullPath;
+    }
     mPeriodicTimerID         = 0;
 }
 

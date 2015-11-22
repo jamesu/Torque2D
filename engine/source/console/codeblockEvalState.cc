@@ -37,6 +37,10 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    currentFrame.filename = code->modPath;
    currentFrame.savedIP = function->ip;
    currentFrame.code   = CodeBlock::smCurrentCodeBlock = code;
+   currentFrame.constants = code->mConstants.address();
+   currentFrame.constantTop = 0; // resets to page 0 for new functions
+   
+   //Con::printf("Pushing codeblock %s", currentFrame.code->fullPath);
    
    if (entry)
    {
@@ -125,8 +129,11 @@ void CodeBlockEvalState::popFunction()
 {
    AssertFatal(frames.size() > 0, "Stack misbalance");
    
+   //Con::printf("Popping codeblock %s", currentFrame.code->fullPath);
+   
    currentFrame = frames[frames.size()-1];
    frames.pop_back();
+   //Con::printf("Codeblock now %s", currentFrame.code->fullPath);
    
    CodeBlock::smCurrentCodeBlock = currentFrame.code;
    

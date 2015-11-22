@@ -126,7 +126,7 @@ namespace Con
 
 void CodeBlock::getFunctionArgs(char buffer[1024], U32 ip)
 {
-   CodeBlockFunction *func = functions[ip];
+   CodeBlockFunction *func = mFunctions[ip];
    U32 fnArgc = func->numArgs;
    buffer[0] = 0;
    for(U32 i = 0; i < fnArgc; i++)
@@ -363,19 +363,30 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
                vmbreak;
             }
             
-            
             _TS2_FLOAT_OP(Compiler::OP_MUL, *)
             _TS2_FLOAT_OP(Compiler::OP_DIV, /)
             _TS2_INT_OP(Compiler::OP_MOD, %)
-            //_TS2_FLOAT_OP(Compiler::OP_POW, +)
-            //_TS2_FLOAT_OP(Compiler::OP_UMN, -)
-            //_TS2_MATH_OP(Compiler::OP_NOT, !)
+            
+            vmcase(Compiler::OP_POW) {
+               Con::printf("Compiler::POW (%s ** %s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_UMN) {
+               Con::printf("Compiler::UMN (-%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_NOT) {
+               Con::printf("Compiler::NOT (!%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
             _TS2_INT_OP(Compiler::OP_XOR, ^)
             _TS2_INT_OP(Compiler::OP_SHL, <<)
             _TS2_INT_OP(Compiler::OP_SHR, >>)
             _TS2_INT_OP(Compiler::OP_BITAND, &)
             _TS2_INT_OP(Compiler::OP_BITOR, |)
-            //_TS2_INT_OP(Compiler::OP_ONESCOMPLEMENT, ~)
             
             vmcase(Compiler::OP_ONESCOMPLEMENT) {
                targetRegTmp = TS2_OP_DEC_A(i);
@@ -606,6 +617,10 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
             vmcase(Compiler::OP_SETFIELD) {
               // a := object(b).slot(c)
                const U32 tname = TS2_OP_DEC_A(i);
+               if (tname > 128)
+               {
+                  int fucked = 1;
+               }
                const U32 nvalue = TS2_OP_DEC_C(i);
                ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
                ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
@@ -1315,18 +1330,19 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                        
                         state->currentFrame.returnReg = returnStart;
                         state->currentFrame.savedIP = ip;
+                        state->currentFrame.constantTop = (U32)(konst - konstBase);
                        
                         switch(nsEntry->mType)
                         {
                            case Namespace::Entry::ScriptFunctionType:
                            {
-                              CodeBlockFunction *newFunc = nsEntry->mCode->functions[nsEntry->mFunctionOffset];
+                              CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
                               state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
                               
                               // Set appropriate state based on current frame
                               ip = state->currentFrame.savedIP;
-                              konst = state->currentFrame.constants;
-                              konstBase = konst;
+                              konstBase = state->currentFrame.constants;
+                              konst = konstBase + state->currentFrame.constantTop;
                               code = state->currentFrame.code->code;
                               base = state->stack.address() + state->currentFrame.stackTop;
                            }
@@ -1382,7 +1398,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               U32 defStart = TS2_OP_DEC_A(i);
               U32 funcIdx = TS2_OP_DEC_B(i);
               U32 dummy = TS2_OP_DEC_C(i);
-              CodeBlockFunction *func = state->currentFrame.code->functions[funcIdx];
+              CodeBlockFunction *func = state->currentFrame.code->mFunctions[funcIdx];
            
               StringTableEntry fnPackage    = base[defStart].getSTEStringValue();
               StringTableEntry fnNamespace  = base[defStart+1].getSTEStringValue();
@@ -1581,8 +1597,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               
               // Set appropriate state based on current frame
               ip = state->currentFrame.savedIP;
-              konst = state->currentFrame.constants;
-              konstBase = konst;
+              konstBase = state->currentFrame.constants;
+              konst = konstBase + state->currentFrame.constantTop;
               base = state->stack.address() + state->currentFrame.stackTop;
               base[state->currentFrame.returnReg].setValue(state->yieldValue);
               code = state->currentFrame.code ? state->currentFrame.code->code : NULL;
@@ -1646,7 +1662,7 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
    
    // jamesu - new exec function
    CodeBlockEvalState *state = &gNewEvalState;
-   CodeBlockFunction *newFunc = functions[ip];
+   CodeBlockFunction *newFunc = mFunctions[ip];
    
    // As an optimization we only increment the stack to returnStart, and
    // blank out any unused vars. This means any register slots after will get
@@ -1694,86 +1710,5 @@ StringTableEntry CodeBlock::getDSOPath(const char *scriptPath)
    const char *slash = dStrrchr(scriptPath, '/');
    return StringTable->insertn(scriptPath, (U32)(slash - scriptPath), true);
 }
-
-bool CodeBlock::compile(const char *filename)
-{
-   TORQUE_UNUSED( argc );
-   char nameBuffer[512];
-   char *script = NULL;
-   U32 scriptSize = 0;
-   
-   FileTime comModifyTime, scrModifyTime;
-   
-   char pathBuffer[4096];
-   Con::expandPath(pathBuffer, sizeof(pathBuffer), filename);
-   
-   // Figure out where to put DSOs
-   StringTableEntry dsoPath = getDSOPath(pathBuffer);
-   
-   // If the script file extention is '.ed.cs' then compile it to a different compiled extention
-   bool isEditorScript = false;
-   const char *ext = dStrrchr( pathBuffer, '.' );
-   if( ext && ( dStricmp( ext, ".cs" ) == 0 ) )
-   {
-      const char *ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.cs" ) == 0 )
-         isEditorScript = true;
-   }
-   else if( ext && ( dStricmp( ext, ".gui" ) == 0 ) )
-   {
-      const char *ext2 = ext - 3;
-      if( dStricmp( ext2, ".ed.gui" ) == 0 )
-         isEditorScript = true;
-   }
-   
-   const char *filenameOnly = dStrrchr(pathBuffer, '/');
-   if(filenameOnly)
-      ++filenameOnly;
-   else
-      filenameOnly = pathBuffer;
-   
-   if( isEditorScript )
-      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".edso", NULL);
-   else
-      dStrcpyl(nameBuffer, sizeof(nameBuffer), dsoPath, "/", filenameOnly, ".dso", NULL);
-   
-   ResourceObject *rScr = ResourceManager->find(pathBuffer);
-   ResourceObject *rCom = ResourceManager->find(nameBuffer);
-   
-   if(rCom)
-      rCom->getFileTimes(NULL, &comModifyTime);
-   if(rScr)
-      rScr->getFileTimes(NULL, &scrModifyTime);
-   
-   Stream *s = ResourceManager->openStream(pathBuffer);
-   if(s)
-   {
-      scriptSize = ResourceManager->getSize(pathBuffer);
-      script = new char [scriptSize+1];
-      s->read(scriptSize, script);
-      ResourceManager->closeStream(s);
-      script[scriptSize] = 0;
-   }
-   
-   if (!scriptSize || !script)
-   {
-      delete [] script;
-      Con::errorf(ConsoleLogEntry::Script, "compile: invalid script file %s.", pathBuffer);
-      return false;
-   }
-   // compile this baddie.
-   // -Mat reducing console noise
-#if defined(TORQUE_DEBUG)
-   Con::printf("Compiling %s...", pathBuffer);
-#endif
-   CodeBlock *code = new CodeBlock();
-   code->compile(nameBuffer, pathBuffer, script);
-   delete code;
-   code = NULL;
-   
-   delete[] script;
-   return true;
-}
-
 
 //------------------------------------------------------------

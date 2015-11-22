@@ -61,15 +61,12 @@ public:
    {
       return smCodeBlockList;
    }
-
-   static StringTableEntry getCurrentCodeBlockName();
-   static StringTableEntry getCurrentCodeBlockFullPath();
-   static StringTableEntry getCurrentCodeBlockModName();
+   
    static CodeBlock *find(StringTableEntry);
 
    // Info regarding functions
-   Vector<ConsoleValuePtr> constants;
-   Vector<CodeBlockFunction*> functions;
+   Vector<ConsoleValuePtr> mConstants;
+   Vector<CodeBlockFunction*> mFunctions;
 
    CodeBlock();
    ~CodeBlock();
@@ -113,9 +110,17 @@ public:
    void findBreakLine(U32 ip, U32 &line, U32 &instruction);
    void getFunctionArgs(char buffer[1024], U32 offset);
    const char *getFileLine(U32 ip);
-
-   bool read(StringTableEntry fileName, Stream &st);
-   bool compile(const char *dsoName, StringTableEntry fileName, const char *script);
+   
+   void setFilename(const char *fileName);
+   
+   /// Saves codeblock to stream
+   bool save(Stream &s);
+   
+   /// Loads codeblock from stream
+   bool read(Stream &s, const char *filename);
+   
+   /// Performs actual compilation of a source script
+   bool compile(const char *filename, const char *script);
 
    void incRefCount();
    void decRefCount();
@@ -137,6 +142,9 @@ public:
    /// top stack frame is used.
    ConsoleValuePtr compileExec(StringTableEntry fileName, const char *script,
                                bool noCalls, S32 setFrame = -1 );
+   
+   /// Performs actual execution of root script function
+   ConsoleValuePtr execRoot(bool noCalls, S32 setFrame = -1);
 
    /// Executes the existing code in the CodeBlock. The return string is any
    /// result of the code executed, if any, or an empty string.
@@ -159,7 +167,6 @@ public:
    void execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName);
 
    static StringTableEntry getDSOPath(const char *scriptPath);
-   static bool compile(const char *filename);
 };
 
 #endif

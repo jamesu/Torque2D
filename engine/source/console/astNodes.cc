@@ -1032,6 +1032,12 @@ TypeReq CommaCatExprNode::getPreferredType()
 U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
     integer = true;
+   U32 cmpValue = 0;
+   if (type == TypeReqFalseConditional)
+   {
+      type = TypeReqConditional;
+      cmpValue = 1;
+   }
    
    CodeStream::RegisterTarget targetRegister;
    if (type == TypeReqTargetRegister)
@@ -1049,7 +1055,17 @@ U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
    else if(op == '~')
       codeStream.emitOpcodeABCRef(Compiler::OP_ONESCOMPLEMENT, targetRegister.regNum, targetRegister, CodeStream::RegisterTarget());
    
-   if (type == TypeReqTargetRegister)
+   if (type == TypeReqConditional)
+   {
+      // Compare to true
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, targetRegister, (CodeStream::RegisterTarget(trueConst)));
+#ifdef DEBUG_COMPILER
+      Con::printf("IntUnaryExpr conditional check");
+#endif
+      codeStream.popTarget();
+   }
+   else if (type == TypeReqTargetRegister || type == TypeReqNone)
    {
       codeStream.popTarget();
    }
@@ -2188,7 +2204,7 @@ U32 FunctionDeclStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
    
    CodeBlockFunction* func = new CodeBlockFunction;
    func->name = fnName;
-   CodeBlock::smCurrentCodeBlock->functions.push_back(func);
+   CodeBlock::smCurrentCodeBlock->mFunctions.push_back(func);
    func->stmt = this;
    
    // Add a declare instruction so things are linked in at the right time
@@ -2207,7 +2223,7 @@ U32 FunctionDeclStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
    codeStream.emitOpcodeABx(Compiler::OP_LOADK, r2.regNum, codeStream.emitKonstRef(nsIdx));
    codeStream.emitOpcodeABx(Compiler::OP_LOADK, r3.regNum, codeStream.emitKonstRef(funcIdx));
    
-   codeStream.emitOpcodeABC(Compiler::OP_BINDNSFUNC, r1.regNum, CodeBlock::smCurrentCodeBlock->functions.size()-1, 0);
+   codeStream.emitOpcodeABC(Compiler::OP_BINDNSFUNC, r1.regNum, CodeBlock::smCurrentCodeBlock->mFunctions.size()-1, 0);
    
     return ip;
 }

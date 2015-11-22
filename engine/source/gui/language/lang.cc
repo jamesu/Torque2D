@@ -406,8 +406,13 @@ UTF8 *sanitiseVarName(const UTF8 *varName, UTF8 *buffer, U32 bufsize)
 
 UTF8 *getCurrentModVarName(UTF8 *buffer, U32 bufsize)
 {
-	char varName[256];
-	StringTableEntry cbName = CodeBlock::getCurrentCodeBlockName();
+   char varName[256];
+   StringTableEntry cbName = NULL;
+   CodeBlockEvalState *state = &gNewEvalState;
+   if (state->currentFrame.code)
+   {
+      cbName = state->currentFrame.code->name;
+   }
 	
 	const UTF8 *slash = (const UTF8*)dStrchr(cbName, '/');
 	if (slash == NULL)
