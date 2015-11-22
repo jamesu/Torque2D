@@ -90,6 +90,20 @@ ConsoleFunctionWithDocs(getWords, ConsoleString, 3, 4, ( sourceString ,index [,e
    return Con::getReturnBuffer( StringUnit::getUnits(argv[1], dAtoi(argv[2]), endIndex, " \t\n") );
 }
 
+/* Like getWords except makes an array */
+ConsoleFunctionWithDocs(splitWords, ConsoleValuePtr, 2, 2, ( sourceString ) )
+{
+   ConsoleStringValuePtr str = argv[1].getStringValue();
+   ConsoleArrayValue* arr = new ConsoleArrayValue();
+   for (U32 i=0, sz = StringUnit::getUnitCount(str.c_str(), " \t\n"); i<sz; i++)
+   {
+      const char *itrValue = StringUnit::getUnit(str.c_str(), i, " \t\n");
+      arr->mValues.push_back(ConsoleStringValue::fromString(itrValue));
+   }
+   return arr;
+}
+
+
 /*! Use the setWord function to replace an existing word with a new word(s), or to add word(s) to a string..
     @param sourceString A string containing one or more words.
     @param index The index of the word to remove.
