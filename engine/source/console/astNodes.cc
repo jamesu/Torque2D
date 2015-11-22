@@ -1047,6 +1047,10 @@ U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
    else
    {
       targetRegister = codeStream.pushTarget(CodeStream::RegisterTarget(targetRegister));
+      if (!(type == TypeReqNone || type == TypeReqConditional))
+      {
+         codeStream.pushTargetReference(targetRegister); // need to keep this around
+      }
    }
    
    ip = expr->compile(codeStream, ip, TypeReqTargetRegister);
@@ -1063,11 +1067,6 @@ U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 #ifdef DEBUG_COMPILER
       Con::printf("IntUnaryExpr conditional check");
 #endif
-      codeStream.popTarget();
-   }
-   else if (type == TypeReqTargetRegister || type == TypeReqNone)
-   {
-      codeStream.popTarget();
    }
    
    return codeStream.tell();
@@ -2224,6 +2223,10 @@ U32 FunctionDeclStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
    codeStream.emitOpcodeABx(Compiler::OP_LOADK, r3.regNum, codeStream.emitKonstRef(funcIdx));
    
    codeStream.emitOpcodeABC(Compiler::OP_BINDNSFUNC, r1.regNum, CodeBlock::smCurrentCodeBlock->mFunctions.size()-1, 0);
+   
+   codeStream.popTarget();
+   codeStream.popTarget();
+   codeStream.popTarget();
    
     return ip;
 }
