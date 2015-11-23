@@ -1151,6 +1151,7 @@ U32 VarNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
          if (type == TypeReqTargetRegister)
          {
             codeStream.emitOpcodeABC(Compiler::OP_MOVE, codeStream.topTarget().regNum, variableRegister, 0);
+            codeStream.popTarget();
          }
          else if (type == TypeReqConditional)
          {
