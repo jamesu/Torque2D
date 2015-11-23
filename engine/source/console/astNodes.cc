@@ -685,9 +685,6 @@ U32 IntBinaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
          // left == right != false AND
          // left != false, right != false OR
          
-         Compiler::CompilerConstantRef trueValue = codeStream.getConstantsTable()->addInt(1);
-         Compiler::CompilerConstantRef falseValue = codeStream.getConstantsTable()->addInt(0);
-         
          if (operand == Compiler::COND_AND)
          {
             ip = left->compile(codeStream, ip, TypeReqFalseConditional);
@@ -1045,11 +1042,11 @@ TypeReq CommaCatExprNode::getPreferredType()
 U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
     integer = true;
-   U32 cmpValue = 0;
+   U32 cmpValue = 1;
    if (type == TypeReqFalseConditional)
    {
       type = TypeReqConditional;
-      cmpValue = 1;
+      cmpValue = 0;
    }
    
    CodeStream::RegisterTarget targetRegister;
@@ -1074,7 +1071,7 @@ U32 IntUnaryExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
    
    if (type == TypeReqConditional)
    {
-      // Compare to true
+      // We compare with false since true is anything not != 0
       Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
       codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, targetRegister, (CodeStream::RegisterTarget(trueConst)));
 #ifdef DEBUG_COMPILER
