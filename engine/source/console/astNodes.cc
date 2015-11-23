@@ -2025,11 +2025,13 @@ U32 SlotAssignNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
     */
    CompilerConstantRef slotNameConst = codeStream.getConstantsTable()->addString(slotName);
    
-   ip = valueExpr->compile(codeStream, ip, TypeReqVar); // slot value
-   valueTarget = codeStream.topTarget();
-   
    if (arrayExpr)
    {
+      CodeStream::RegisterTarget tempReg = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(tempReg);
+      ip = valueExpr->compile(codeStream, ip, TypeReqTargetRegister); // slot value
+      valueTarget = codeStream.topTarget();
+      
       arrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
       codeStream.pushTargetReference(arrayTarget);
       ip = arrayExpr->compile(codeStream, ip, TypeReqTargetRegister); // []
@@ -2046,6 +2048,9 @@ U32 SlotAssignNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
    }
    else
    {
+      ip = valueExpr->compile(codeStream, ip, TypeReqVar); // slot value
+      valueTarget = codeStream.topTarget();
+      
       if (objectExpr)
       {
          objectTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
