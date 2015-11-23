@@ -1835,10 +1835,10 @@ U32 FuncCallExprNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
       }
       else if (type == TypeReqConditional || type == TypeReqFalseConditional)
       {
-         int cmpValue = 0;
+         int cmpValue = 1;
          if (type == TypeReqFalseConditional)
          {
-            cmpValue = 1;
+            cmpValue = 0;
             type = TypeReqConditional;
          }
          
@@ -2088,56 +2088,122 @@ TypeReq SlotAssignNode::getPreferredType()
 
 U32 SlotAssignOpNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
 {
-    // first eval the expression as its type
-   
-   AssertFatal(false, "Unhandled slot assign op");
-    
-    // if it's an array:
-    // eval array
-    // OP_ADVANCE_STR
-    // evaluate object expr
-    // OP_SETCUROBJECT
-    // OP_SETCURFIELD
-    // fieldName
-    // OP_TERMINATE_REWIND_STR
-    // OP_SETCURFIELDARRAY
-    
-    // else
-    // evaluate object expr
-    // OP_SETCUROBJECT
-    // OP_SETCURFIELD
-    // fieldName
-    
-    // OP_LOADFIELD of appropriate type
-    // operand
-    // OP_SAVEFIELD of appropriate type
-    // convert to return type if necessary.
-    
     getAssignOpTypeOp(op, subType, operand);
-    /* TODO FIX
-    ip = valueExpr->compile(codeStream, ip, subType);
-    if(arrayExpr)
-    {
-        ip = arrayExpr->compile(codeStream, ip, TypeReqString);
-        codeStream.emit(OP_ADVANCE_STR);
-    }
-    ip = objectExpr->compile(codeStream, ip, TypeReqString);
-    codeStream.emit(OP_SETCUROBJECT);
-    codeStream.emit(OP_SETCURFIELD);
-    codeStream.emitSTE(slotName);
-    
-    if(arrayExpr)
-    {
-        codeStream.emit(OP_TERMINATE_REWIND_STR);
-        codeStream.emit(OP_SETCURFIELD_ARRAY);
-    }
-    codeStream.emit((subType == TypeReqFloat) ? OP_LOADFIELD_FLT : OP_LOADFIELD_UINT);
-    codeStream.emit(operand);
-    codeStream.emit((subType == TypeReqFloat) ? OP_SAVEFIELD_FLT : OP_SAVEFIELD_UINT);
-    if(subType != type)
-        codeStream.emit(conversionOp(subType, type));*/
    
-    return codeStream.tell();
+   int cmpValue = 1;
+   
+   if (type == TypeReqFalseConditional)
+   {
+      type = TypeReqConditional;
+      cmpValue = 0;
+   }
+   
+   CodeStream::RegisterTarget objectTarget;
+   CodeStream::RegisterTarget arrayTarget;
+   CodeStream::RegisterTarget valueTarget;
+   
+   AssertFatal(objectExpr != NULL, "No object specified for target");
+   
+   /*
+    
+    OBJ_SETFIELD
+    object(a).slot(b) = value(c)
+    OBJ_SETFIELDA
+    object(a).slot(b).array(c+1)=value(c)
+    
+    OBJ_GETFIELD
+    a := object(b).slot(c)
+    OBJ_GETFIELDA
+    a := object(b).slot(c).array(b+1)
+    
+    */
+   CompilerConstantRef slotNameConst = codeStream.getConstantsTable()->addString(slotName);
+   
+   // Allocate register to store result and value
+   if (type == TypeReqTargetRegister)
+   {
+      valueTarget = codeStream.topTarget();
+   }
+   else
+   {
+      valueTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+   }
+   
+   codeStream.pushTargetReference(valueTarget);
+   ip = valueExpr->compile(codeStream, ip, TypeReqTargetRegister); // slot value
+   
+   if (arrayExpr)
+   {
+      // Need to set to OBJECT ARRAY for OBJ_GETFIELDA
+      if (objectExpr)
+      {
+         objectTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+         codeStream.pushTargetReference(objectTarget);
+         ip = objectExpr->compile(codeStream, ip, TypeReqTargetRegister); // obj prefix
+      }
+      
+      arrayTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.pushTargetReference(arrayTarget);
+      ip = arrayExpr->compile(codeStream, ip, TypeReqTargetRegister); // []
+      
+      // Grab field (OBJECT ARRAY)
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELDA, valueTarget.regNum, objectTarget, slotNameConst);
+      
+      // Move array to the end
+      CodeStream::RegisterTarget tempTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      codeStream.emitOpcodeABC(Compiler::OP_MOVE, tempTarget.regNum, arrayTarget.regNum, 0);
+      
+      // Now we need to perform the operation on it (stored in arrayTarget which is now the value)
+      codeStream.emitOpcodeABCRef(operand, arrayTarget.regNum, tempTarget.regNum, valueTarget.regNum);
+      
+      // Now we can to set the result (VALUE ARRAY)
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELDA, objectTarget.regNum, slotNameConst, arrayTarget);
+      
+      // If we need to keep the value, store it in the target
+      if (type != TypeReqNone)
+      {
+         codeStream.emitOpcodeABC(Compiler::OP_MOVE, valueTarget.regNum, arrayTarget.regNum, 0);
+      }
+      
+      codeStream.popTarget(); // temp
+      codeStream.popTarget(); // array
+      codeStream.popTarget(); // object
+   }
+   else
+   {
+      if (objectExpr)
+      {
+         objectTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+         codeStream.pushTargetReference(objectTarget);
+         ip = objectExpr->compile(codeStream, ip, TypeReqTargetRegister); // obj prefix
+      }
+      
+      CodeStream::RegisterTarget tempTarget = codeStream.pushTarget(CodeStream::RegisterTarget());
+      
+      // Grab field
+      codeStream.emitOpcodeABCRef(Compiler::OP_GETFIELD, tempTarget.regNum, objectTarget, slotNameConst);
+      // Perform op
+      codeStream.emitOpcodeABCRef(operand, valueTarget.regNum, tempTarget.regNum, valueTarget.regNum);
+      // Save in field
+      codeStream.emitOpcodeABCRef(Compiler::OP_SETFIELD, objectTarget.regNum, slotNameConst, valueTarget);
+      
+      codeStream.popTarget(); // temp
+      codeStream.popTarget(); // object
+   }
+   
+   // Pop target if required
+   if (type == TypeReqTargetRegister || type == TypeReqNone)
+   {
+      codeStream.popTarget();
+   }
+   else if (type == TypeReqConditional)
+   {
+      Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, valueTarget, CodeStream::RegisterTarget(trueConst));
+      codeStream.popTarget();
+   }
+   
+   return codeStream.tell();
 }
 
 TypeReq SlotAssignOpNode::getPreferredType()

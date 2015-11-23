@@ -352,14 +352,14 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
             //TS2_FLOAT_OP(Compiler::OP_ADD, +)
             vmcase(Compiler::OP_ADD) {
                targetRegTmp = TS2_OP_DEC_A(i);
-               Con::printf("Compiler::OP_ADD" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               Con::printf("[%i] Compiler::OP_ADD -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
                vmbreak;
             }
             
             //TS2_FLOAT_OP(Compiler::OP_SUB, -)
             vmcase(Compiler::OP_SUB) {
                targetRegTmp = TS2_OP_DEC_A(i);
-               Con::printf("Compiler::OP_SUB" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               Con::printf("[%i] Compiler::OP_SUB -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
                vmbreak;
             }
             
@@ -368,17 +368,17 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
             _TS2_INT_OP(Compiler::OP_MOD, %)
             
             vmcase(Compiler::OP_POW) {
-               Con::printf("[%i] Compiler::POW (%s ** %s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::POW (%s ** %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
             vmcase(Compiler::OP_UMN) {
-               Con::printf("[%i] Compiler::UMN (-%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::UMN (-%s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
             vmcase(Compiler::OP_NOT) {
-               Con::printf("[%i] Compiler::NOT (!%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::NOT (!%s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
@@ -390,7 +390,7 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
             
             vmcase(Compiler::OP_ONESCOMPLEMENT) {
                targetRegTmp = TS2_OP_DEC_A(i);
-               Con::printf("Compiler::OP_ONESCOMPLEMENT" "[%i] -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
+               Con::printf("[%i] Compiler::OP_ONESCOMPLEMENT -> (%s & %s) -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst) , ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), targetRegTmp);
                vmbreak;
             }
             
@@ -619,10 +619,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                const U32 tname = TS2_OP_DEC_A(i);
                const U32 nvalue = TS2_OP_DEC_C(i);
                
-               if (tname > 128)
-               {
-                  int fucked = 1;
-               }
                ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
                ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
                ConsoleValue newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
@@ -1620,7 +1616,9 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               
               if (state->currentFrame.isRoot || code == NULL || state->frames.size() < startFrameSize)
               {
+#ifdef DEBUG_COMPILER
                  Con::printf("Return from execBlock");
+#endif
                  return;
               }
               
