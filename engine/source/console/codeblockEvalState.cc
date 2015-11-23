@@ -20,8 +20,6 @@
 
 void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* code, Namespace::Entry* entry, U32 numParams)
 {
-   ConsoleValuePtr *const base = stack.address() + currentFrame.stackTop;
-   
    if (frames.size() == 0)
    {
       currentFrame.isRoot = true;
@@ -68,12 +66,13 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    {
       U32 startSize = stack.size();
       stack.setSize(stack.size() + requiredStackSize);
-      
       for (U32 i=startSize; i<startSize+requiredStackSize; i++)
       {
          stack[i].type = ConsoleValue::TypeInternalNull;
       }
    }
+   
+   ConsoleValuePtr *const base = stack.address() + currentFrame.stackTop;
    
    for (U32 j=numParams; j<function->numArgs; j++)
    {

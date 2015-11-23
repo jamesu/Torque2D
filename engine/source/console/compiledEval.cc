@@ -242,9 +242,9 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
    U32 targetRegTmp = 0;
    
    // Debug print instructions
-   for (int j=0; j<codeSize; j++)
+   for (int j=0; j<state->currentFrame.code->codeSize; j++)
    {
-      Compiler::Instruction i = (code[j]);
+      Compiler::Instruction i = (state->currentFrame.code->code[j]);
       
       switch (TS2_OP_DEC(i))
       {
@@ -368,17 +368,17 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
             _TS2_INT_OP(Compiler::OP_MOD, %)
             
             vmcase(Compiler::OP_POW) {
-               Con::printf("Compiler::POW (%s ** %s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::POW (%s ** %s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
             vmcase(Compiler::OP_UMN) {
-               Con::printf("Compiler::UMN (-%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::UMN (-%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
             vmcase(Compiler::OP_NOT) {
-               Con::printf("Compiler::NOT (!%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
+               Con::printf("[%i] Compiler::NOT (!%s) -> R%i", ip-1, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
@@ -617,11 +617,12 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
             vmcase(Compiler::OP_SETFIELD) {
               // a := object(b).slot(c)
                const U32 tname = TS2_OP_DEC_A(i);
+               const U32 nvalue = TS2_OP_DEC_C(i);
+               
                if (tname > 128)
                {
                   int fucked = 1;
                }
-               const U32 nvalue = TS2_OP_DEC_C(i);
                ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
                ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
                ConsoleValue newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
@@ -1316,80 +1317,94 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                     nsUsage = nsEntry->mUsage;
                 }
                
-                {
-                    const char *nsName = "";
-                    if((nsEntry->mMinArgs && S32(numParams+1) < nsEntry->mMinArgs) || (nsEntry->mMaxArgs && S32(numParams+1) > nsEntry->mMaxArgs))
-                    {
-                        Con::warnf(ConsoleLogEntry::Script, "%s: %s::%s - wrong number of arguments.", state->currentFrame.code->getFileLine(ip), nsName, nsEntry->mFunctionName);
-                        Con::warnf(ConsoleLogEntry::Script, "%s: usage: %s", state->currentFrame.code->getFileLine(ip), nsEntry->mUsage);
-                    }
-                    else
-                    {
-                        // TOFIX
-                        SimObject *thisObject = numParams > 0 ? base[returnStart+1].getSimObject() : NULL;
-                       
-                        state->currentFrame.returnReg = returnStart;
-                        state->currentFrame.savedIP = ip;
-                        state->currentFrame.constantTop = (U32)(konst - konstBase);
-                       
-                        switch(nsEntry->mType)
+               {
+                  const char *nsName = "";
+                  if((nsEntry->mMinArgs && S32(numParams+1) < nsEntry->mMinArgs) || (nsEntry->mMaxArgs && S32(numParams+1) > nsEntry->mMaxArgs))
+                  {
+                     Con::warnf(ConsoleLogEntry::Script, "%s: %s::%s - wrong number of arguments.", state->currentFrame.code->getFileLine(ip), nsName, nsEntry->mFunctionName);
+                     Con::warnf(ConsoleLogEntry::Script, "%s: usage: %s", state->currentFrame.code->getFileLine(ip), nsEntry->mUsage);
+                  }
+                  else
+                  {
+                     // TOFIX
+                     SimObject *thisObject = numParams > 0 ? base[returnStart+1].getSimObject() : NULL;
+                     
+                     state->currentFrame.returnReg = returnStart;
+                     state->currentFrame.savedIP = ip;
+                     state->currentFrame.constantTop = (U32)(konst - konstBase);
+                     
+                     switch(nsEntry->mType)
+                     {
+                        case Namespace::Entry::ScriptFunctionType:
                         {
-                           case Namespace::Entry::ScriptFunctionType:
+                           CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
+                           state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
+                           
+                           // Set appropriate state based on current frame
+                           ip = state->currentFrame.savedIP;
+                           konstBase = state->currentFrame.constants;
+                           konst = konstBase + state->currentFrame.constantTop;
+                           code = state->currentFrame.code->code;
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           
+                           if (dStricmp(nsEntry->mFunctionName, "initializeCanvas") == 0)
                            {
-                              CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
-                              state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
-                              
-                              // Set appropriate state based on current frame
-                              ip = state->currentFrame.savedIP;
-                              konstBase = state->currentFrame.constants;
-                              konst = konstBase + state->currentFrame.constantTop;
-                              code = state->currentFrame.code->code;
-                              base = state->stack.address() + state->currentFrame.stackTop;
+                              dumpOpcodes(state);
                            }
-                           break;
-                            case Namespace::Entry::StringCallbackType:
-                            {
-                                ConsoleStringValuePtr ret = nsEntry->cb.mStringCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                
-                                base[returnStart].setValue(ret.value);
-                                vmbreak;
-                            }
-                            case Namespace::Entry::IntCallbackType:
-                            {
-                                S32 result = nsEntry->cb.mIntCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                base[returnStart].setValue(result);
-                                vmbreak;
-                            }
-                            case Namespace::Entry::FloatCallbackType:
-                            {
-                                F64 result = nsEntry->cb.mFloatCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                base[returnStart].setValue((F32)result);
-                                vmbreak;
-                            }
-                            case Namespace::Entry::VoidCallbackType:
-                            {
-                                nsEntry->cb.mVoidCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                
-                                base[returnStart].setNull();
-                                vmbreak;
-                            }
-                           case Namespace::Entry::ValueCallbackType:
-                           {
-                              ConsoleValuePtr result = nsEntry->cb.mValueCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                 
-                                 base[returnStart].setValue(result);
-                                 break;
-                           }
-                            case Namespace::Entry::BoolCallbackType:
-                            {
-                                bool result = nsEntry->cb.mBoolCallbackFunc(thisObject, numParams+1, base+returnStart);
-                                
-                                base[returnStart].setValue(result ? 1 : 0);
-                                vmbreak;
-                            }
+                           
+                           vmbreak;
                         }
-                    }
-                }
+                        case Namespace::Entry::StringCallbackType:
+                        {
+                           ConsoleStringValuePtr ret = nsEntry->cb.mStringCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setValue(ret.value);
+                           vmbreak;
+                        }
+                        case Namespace::Entry::IntCallbackType:
+                        {
+                           S32 result = nsEntry->cb.mIntCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setValue(result);
+                           vmbreak;
+                        }
+                        case Namespace::Entry::FloatCallbackType:
+                        {
+                           F64 result = nsEntry->cb.mFloatCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setValue((F32)result);
+                           vmbreak;
+                        }
+                        case Namespace::Entry::VoidCallbackType:
+                        {
+                           nsEntry->cb.mVoidCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setNull();
+                           vmbreak;
+                        }
+                        case Namespace::Entry::ValueCallbackType:
+                        {
+                           ConsoleValuePtr result = nsEntry->cb.mValueCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setValue(result);
+                           break;
+                        }
+                        case Namespace::Entry::BoolCallbackType:
+                        {
+                           bool result = nsEntry->cb.mBoolCallbackFunc(thisObject, numParams+1, base+returnStart);
+                           
+                           base = state->stack.address() + state->currentFrame.stackTop;
+                           base[returnStart].setValue(result ? 1 : 0);
+                           vmbreak;
+                        }
+                     }
+                  }
+               }
                
                 vmbreak;
             }

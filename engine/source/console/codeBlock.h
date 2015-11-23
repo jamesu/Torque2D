@@ -92,7 +92,7 @@ public:
    void calcBreakList();
    void clearAllBreaks();
    void setAllBreaks();
-   void dumpOpcodes( CodeBlockEvalState *state );
+   static void dumpOpcodes( CodeBlockEvalState *state );
 
    void mergeLocalVars( CodeBlockFunction *src, CodeBlockFunction *dest, Dictionary *env, bool pruneEnv );
 
