@@ -60,13 +60,15 @@ function initializeCanvas(%windowName)
             %resolution = $pref::Video::defaultResolution;
     }
 
+    %resolution = splitWords(%resolution);
+
     if ($platform $= "windows" || $platform $= "macos")
     {
-        setScreenMode( %resolution._0, %resolution._1, %resolution._2, $pref::Video::fullScreen );
+        setScreenMode( %resolution[0], %resolution[1], %resolution[2], $pref::Video::fullScreen );
     }
     else
     {
-        setScreenMode( %resolution._0, %resolution._1, %resolution._2, false );
+        setScreenMode( %resolution[0], %resolution[1], %resolution[2], false );
     }
 
     $canvasCreated = true;
