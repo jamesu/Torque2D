@@ -698,6 +698,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_GETFUNC) {
               U32 setReg = TS2_OP_DEC_A(i);
+              U32 targetReg = TS2_OP_DEC_B(i);
               ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
@@ -719,7 +720,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  
                  if (!entry)
                  {
-                    Con::warnf("Couldn't find function %s in object %s", targetObject.getTempStringValue(), nameId.getSTEStringValue());
+                    Con::warnf("Couldn't find function %s in object %s (%s)", targetObject.getTempStringValue(), nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
                     base[setReg].setNull();
                  }
                  else
@@ -739,11 +740,11 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  {
                     if (steValue == StringTable->EmptyString)
                     {
-                       Con::errorf("Couldn't find global function %s", nameId.getSTEStringValue());
+                       Con::errorf("Couldn't find global function %s (%s)", nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
                     }
                     else
                     {
-                       Con::errorf("Couldn't find function %s::%s", steValue, nameId.getSTEStringValue());
+                       Con::errorf("Couldn't find function %s::%s (%s)", steValue, nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
                     }
                     base[setReg].setNull();
                  }
@@ -1701,10 +1702,10 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
    state->currentFrame.noCalls = noCalls;
    
    // Copy argv to stack
-   for (U32 i=0; i<argc; i++)
+   for (U32 i=1; i<argc; i++)
    {
       ConsoleValue *base = &state->stack[state->currentFrame.stackTop];
-      (((ConsoleValuePtr*)base)+i)->setValue(argv[i]);
+      (((ConsoleValuePtr*)base)+i-1)->setValue(argv[i]);
    }
    
    execBlock(state);
