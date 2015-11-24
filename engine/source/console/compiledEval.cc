@@ -1438,8 +1438,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_COPYFIELDS) {
               ConsoleValue destObject = base[TS2_OP_DEC_A(i)];
-              ConsoleValue srcObject = base[TS2_OP_DEC_B(i)];
-              
+              ConsoleValue srcObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               
               SimObject *dstObj = Sim::findObject<SimObject>(destObject);
               SimObject *srcObj = Sim::findObject<SimObject>(srcObject);
