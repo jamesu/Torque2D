@@ -44,14 +44,9 @@ ConsoleUseDefaultReferenceType( TypePoint2I, Point2I )
 ConsoleTypeToString( TypePoint2I )
 {
    Point2I *pt = (Point2I *) dataPtr;
-   ConsoleValuePtr values[2];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(pt->x);
-   values[1].setValue(pt->y);
-   
-   out.setValue(ConsoleArrayValue::fromValues(2, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%d %d", pt->x, pt->y);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypePoint2I )
@@ -112,14 +107,9 @@ ConsoleUseDefaultReferenceType( TypePoint2F, Point2F )
 ConsoleTypeToString( TypePoint2F )
 {
    Point2F *pt = (Point2F *) dataPtr;
-   ConsoleValuePtr values[2];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(pt->x);
-   values[1].setValue(pt->y);
-   
-   out.setValue(ConsoleArrayValue::fromValues(2, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %9g", pt->x, pt->y);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypePoint2F )
@@ -262,15 +252,9 @@ ConsoleUseDefaultReferenceType( TypePoint3F, Point3F )
 ConsoleTypeToString( TypePoint3F )
 {
    Point3F *pt = (Point3F *) dataPtr;
-   ConsoleValuePtr values[3];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(pt->x);
-   values[1].setValue(pt->y);
-   values[2].setValue(pt->z);
-   
-   out.setValue(ConsoleArrayValue::fromValues(3, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %.9g %.9g", pt->x, pt->y);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypePoint3F )
@@ -336,16 +320,9 @@ ConsoleUseDefaultReferenceType( TypePoint4F, Point4F )
 ConsoleTypeToString( TypePoint4F )
 {
    Point4F *pt = (Point4F *) dataPtr;
-   ConsoleValuePtr values[4];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(pt->x);
-   values[1].setValue(pt->y);
-   values[2].setValue(pt->z);
-   values[3].setValue(pt->w);
-   
-   out.setValue(ConsoleArrayValue::fromValues(4, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %.9g %.9g %.9g", pt->x, pt->y, pt->z, pt->w);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypePoint4F )
@@ -416,16 +393,9 @@ ConsoleUseDefaultReferenceType( TypeRectI, RectI )
 ConsoleTypeToString( TypeRectI )
 {
    RectF *rect = (RectF *) dataPtr;
-   ConsoleValuePtr values[4];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(rect->point.x);
-   values[1].setValue(rect->point.y);
-   values[2].setValue(rect->extent.x);
-   values[3].setValue(rect->extent.y);
-   
-   out.setValue(ConsoleArrayValue::fromValues(4, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%d %d %d %d", rect->point.x, rect->point.y, rect->extent.x, rect->extent.y);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypeRectI )
@@ -482,7 +452,7 @@ ConsoleTypeFromConsoleValue( TypeRectI )
    else
    {
       S32 px = 0, py = 0, pw = 0, ph = 0;
-      dSscanf(value.getTempStringValue(), "%f %f %f %f", &px, &py, &pw, &ph);
+      dSscanf(value.getTempStringValue(), "%d %d %d %d", &px, &py, &pw, &ph);
       *((RectI *) dataPtr) = RectI(Point2I(px, py), Point2I(pw, ph));
    }
 }
@@ -495,17 +465,10 @@ ConsoleUseDefaultReferenceType( TypeRectF, RectF )
 
 ConsoleTypeToString( TypeRectF )
 {
-   RectI *rect = (RectI *) dataPtr;
-   ConsoleValuePtr values[4];
-   ConsoleValuePtr out;
-   
-   values[0].setValue(rect->point.x);
-   values[1].setValue(rect->point.y);
-   values[2].setValue(rect->extent.x);
-   values[3].setValue(rect->extent.y);
-   
-   out.setValue(ConsoleArrayValue::fromValues(4, values));
-   return out;
+   RectF *rect = (RectF *) dataPtr;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %.9g %.9g %.9g", rect->point.x, rect->point.y, rect->extent.x, rect->extent.y);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypeRectF )
@@ -576,26 +539,19 @@ ConsoleUseDefaultReferenceType( TypeMatrixPosition, MatrixF )
 ConsoleTypeToString( TypeMatrixPosition )
 {
    F32 *col = (F32 *) dataPtr + 3;
-   ConsoleValuePtr values[4];
-   ConsoleValuePtr out;
    
    if (col[12] == 1.f)
    {
-      values[0].setValue(col[0]);
-      values[1].setValue(col[4]);
-      values[2].setValue(col[8]);
-      out.setValue(ConsoleArrayValue::fromValues(3, values));
+      char* returnBuffer = Con::getReturnBuffer(256);
+      dSprintf(returnBuffer, 256, "%.9g %.9g %.9g", col[0], col[4], col[8]);
+      return returnBuffer;
    }
    else
    {
-      values[0].setValue(col[0]);
-      values[1].setValue(col[4]);
-      values[2].setValue(col[8]);
-      values[2].setValue(col[12]);
-      out.setValue(ConsoleArrayValue::fromValues(4, values));
+      char* returnBuffer = Con::getReturnBuffer(256);
+      dSprintf(returnBuffer, 256, "%.9g %.9g %.9g %.9g", col[0], col[4], col[8], col[12]);
+      return returnBuffer;
    }
-   
-   return out;
 }
 
 ConsoleTypeFromConsoleValue( TypeMatrixPosition )
@@ -659,16 +615,9 @@ ConsoleTypeToString( TypeMatrixRotation )
    AngAxisF aa(*(MatrixF *) dataPtr);
    aa.axis.normalize();
    
-   ConsoleValuePtr values[4];
-   ConsoleValuePtr out;
-
-   values[0].setValue(aa.axis.x);
-   values[1].setValue(aa.axis.y);
-   values[2].setValue(aa.axis.z);
-   values[2].setValue(mRadToDeg(aa.angle));
-   out.setValue(ConsoleArrayValue::fromValues(4, values));
-   
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %.9g %.9g %.9g", aa.axis.x, aa.axis.y, aa.axis.z, mRadToDeg(aa.angle));
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypeMatrixRotation )
@@ -740,18 +689,12 @@ ConsoleUseDefaultReferenceType( TypeBox3F, Box3F )
 ConsoleTypeToString( TypeBox3F )
 {
    Box3F *pBox = (Box3F *) dataPtr;
-   ConsoleValuePtr values[6];
-   ConsoleValuePtr out;
    
-   values[0].setValue(pBox->mMin.x);
-   values[1].setValue(pBox->mMin.y);
-   values[2].setValue(pBox->mMin.z);
-   values[3].setValue(pBox->mMax.x);
-   values[4].setValue(pBox->mMax.y);
-   values[5].setValue(pBox->mMax.z);
-   
-   out.setValue(ConsoleArrayValue::fromValues(4, values));
-   return out;
+   char* returnBuffer = Con::getReturnBuffer(256);
+   dSprintf(returnBuffer, 256, "%.9g %.9g %.9g %.9g %.9g %.9g",
+            pBox->mMin.x, pBox->mMin.y, pBox->mMin.z,
+            pBox->mMax.x, pBox->mMax.y, pBox->mMax.z);
+   return returnBuffer;
 }
 
 ConsoleTypeFromConsoleValue( TypeBox3F )
