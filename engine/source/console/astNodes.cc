@@ -1241,6 +1241,18 @@ U32 VarNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
       AssertFatal(varName[0] == '$', "Not a global");
       Compiler::CompilerConstantRef varNameIdx = codeStream.getConstantsTable()->addString(varName);
       codeStream.emitOpcodeABCRef(Compiler::OP_LOADVAR, tempRegister.regNum, varNameIdx, 0);
+      
+      if (type == TypeReqNone || type == TypeReqTargetRegister)
+      {
+         codeStream.popTarget(); // tempRegister
+      }
+      else if (type == TypeReqConditional)
+      {
+         // Compare to true
+         Compiler::CompilerConstantRef trueConst = codeStream.getConstantsTable()->addInt(0);
+         codeStream.emitOpcodeABCRef(Compiler::OP_EQ, cmpValue, tempRegister, trueConst);
+         codeStream.popTarget(); // tempRegister
+      }
    }
    
    return codeStream.tell();
@@ -2274,7 +2286,7 @@ U32 ObjectDeclNode::compileSubObject(CodeStream &codeStream, U32 ip, U32 targetR
    if (parentObject && parentObject != StringTable->EmptyString)
    {
       CompilerConstantRef parentRefKonst = codeStream.getConstantsTable()->addString(parentObject);
-      codeStream.emitOpcodeABC(Compiler::OP_COPYFIELDS, targetRegister.regNum, codeStream.emitKonstRef(parentRefKonst), 0);
+      codeStream.emitOpcodeABCRef(Compiler::OP_COPYFIELDS, targetRegister.regNum, parentRefKonst, CodeStream::RegisterTarget(0));
    }
    
    // Now emit all the slot assignments
