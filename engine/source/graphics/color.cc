@@ -473,53 +473,55 @@ ConsoleTypeFromConsoleValue( TypeColorF )
       ConsoleValuePtr bValue;
       ConsoleValuePtr aValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, rValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.fval = 1;
-         refValue->getDataField(stGetIndex, arr, gValue);
-         arr.value.fval = 2;
-         refValue->getDataField(stGetIndex, arr, bValue);
-         arr.value.fval = 3;
-         refValue->getDataField(stGetIndex, arr, aValue);
-      }
-      else
-      {
-         static StringTableEntry rName = StringTable->insert("r");
-         static StringTableEntry gName = StringTable->insert("g");
-         static StringTableEntry bName = StringTable->insert("b");
-         static StringTableEntry aName = StringTable->insert("a");
-         
-         if ( StockColor::isColor(value.getTempStringValue()) )
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, rValue))
          {
-            ColorF* destColor = (ColorF*)(dataPtr);
-            destColor->set( value.getTempStringValue() );
-            return;
-         }
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(rName, arr, rValue))
-         {
-            refValue->getDataField(gName, arr, gValue);
-            refValue->getDataField(bName, arr, bValue);
-            refValue->getDataField(aName, arr, aValue);
+            arr.value.fval = 1;
+            refValue->getDataField(stGetIndex, arr, gValue);
+            arr.value.fval = 2;
+            refValue->getDataField(stGetIndex, arr, bValue);
+            arr.value.fval = 3;
+            refValue->getDataField(stGetIndex, arr, aValue);
          }
          else
          {
-            Con::errorf("ColorF must be a string, list, or hash with r g b a, or a stock name");
+            static StringTableEntry rName = StringTable->insert("r");
+            static StringTableEntry gName = StringTable->insert("g");
+            static StringTableEntry bName = StringTable->insert("b");
+            static StringTableEntry aName = StringTable->insert("a");
+            
+            if ( StockColor::isColor(value.getTempStringValue()) )
+            {
+               ColorF* destColor = (ColorF*)(dataPtr);
+               destColor->set( value.getTempStringValue() );
+               return;
+            }
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(rName, arr, rValue))
+            {
+               refValue->getDataField(gName, arr, gValue);
+               refValue->getDataField(bName, arr, bValue);
+               refValue->getDataField(aName, arr, aValue);
+            }
+            else
+            {
+               Con::errorf("ColorF must be a string, list, or hash with r g b a, or a stock name");
+            }
          }
+         
+         *((ColorF *) dataPtr) = ColorF(rValue.getFloatValue(), gValue.getFloatValue(), bValue.getFloatValue(), aValue.getFloatValue());
+         return;
       }
-      
-      *((ColorF *) dataPtr) = ColorF(rValue.getFloatValue(), gValue.getFloatValue(), bValue.getFloatValue(), aValue.getFloatValue());
    }
-   else
-   {
-      F32 cr = 0, cg = 0, cb = 0, ca = 0;
-      
-      dSscanf(value.getTempStringValue(), "%.9g %.9g %.9g %.9g", &cr, &cg, &cb, &ca);
-      *((ColorF *) dataPtr) = ColorF(cr, cg, cb, ca);
-   }
+   
+   F32 cr = 0, cg = 0, cb = 0, ca = 0;
+   
+   dSscanf(value.getTempStringValue(), "%.9g %.9g %.9g %.9g", &cr, &cg, &cb, &ca);
+   *((ColorF *) dataPtr) = ColorF(cr, cg, cb, ca);
 }
 
 //-----------------------------------------------------------------------------
@@ -568,52 +570,54 @@ ConsoleTypeFromConsoleValue( TypeColorI )
       ConsoleValuePtr bValue;
       ConsoleValuePtr aValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, rValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, gValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, bValue);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, aValue);
-      }
-      else
-      {
-         static StringTableEntry rName = StringTable->insert("r");
-         static StringTableEntry gName = StringTable->insert("g");
-         static StringTableEntry bName = StringTable->insert("b");
-         static StringTableEntry aName = StringTable->insert("a");
-         
-         if ( StockColor::isColor(value.getTempStringValue()) )
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, rValue))
          {
-            ColorI* destColor = (ColorI*)(dataPtr);
-            destColor->set( value.getTempStringValue() );
-            return;
-         }
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(rName, arr, rValue))
-         {
-            refValue->getDataField(gName, arr, gValue);
-            refValue->getDataField(bName, arr, bValue);
-            refValue->getDataField(aName, arr, aValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, gValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, bValue);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, aValue);
          }
          else
          {
-            Con::errorf("ColorF must be a string, list, or hash with r g b a, or a stock name");
+            static StringTableEntry rName = StringTable->insert("r");
+            static StringTableEntry gName = StringTable->insert("g");
+            static StringTableEntry bName = StringTable->insert("b");
+            static StringTableEntry aName = StringTable->insert("a");
+            
+            if ( StockColor::isColor(value.getTempStringValue()) )
+            {
+               ColorI* destColor = (ColorI*)(dataPtr);
+               destColor->set( value.getTempStringValue() );
+               return;
+            }
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(rName, arr, rValue))
+            {
+               refValue->getDataField(gName, arr, gValue);
+               refValue->getDataField(bName, arr, bValue);
+               refValue->getDataField(aName, arr, aValue);
+            }
+            else
+            {
+               Con::errorf("ColorF must be a string, list, or hash with r g b a, or a stock name");
+            }
          }
+         
+         *((ColorI *) dataPtr) = ColorI(rValue.getSignedIntValue(), gValue.getSignedIntValue(), bValue.getSignedIntValue(), aValue.getSignedIntValue());
+         return;
       }
-      
-      *((ColorI *) dataPtr) = ColorI(rValue.getSignedIntValue(), gValue.getSignedIntValue(), bValue.getSignedIntValue(), aValue.getSignedIntValue());
    }
-   else
-   {
-      S32 cr = 0, cg = 0, cb = 0, ca = 0;
-      
-      dSscanf(value.getTempStringValue(), "%d %d %d %d", &cr, &cg, &cb, &ca);
-      *((ColorI *) dataPtr) = ColorI(cr, cg, cb, ca);
-   }
+   
+   S32 cr = 0, cg = 0, cb = 0, ca = 0;
+   
+   dSscanf(value.getTempStringValue(), "%d %d %d %d", &cr, &cg, &cb, &ca);
+   *((ColorI *) dataPtr) = ColorI(cr, cg, cb, ca);
 }
 

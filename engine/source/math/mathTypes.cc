@@ -65,37 +65,39 @@ ConsoleTypeFromConsoleValue( TypePoint2I )
       ConsoleValuePtr xValue;
       ConsoleValuePtr yValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
          }
          else
          {
-            Con::errorf("Point2I must be a string, list, or hash with x,y");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+            }
+            else
+            {
+               Con::errorf("Point2I must be a string, list, or hash with x,y");
+            }
          }
+         
+         *((Point2I *) dataPtr) = Point2I(xValue.getIntValue(), yValue.getIntValue());
+         return;
       }
-      
-      *((Point2I *) dataPtr) = Point2I(xValue.getIntValue(), yValue.getIntValue());
    }
-   else
-   {
-      S32 px = 0, py = 0;
-      dSscanf(value.getTempStringValue(), "%d %d", &px, &py);
-      *((Point2I *) dataPtr) = Point2I(px, py);
-   }
+   
+   S32 px = 0, py = 0;
+   dSscanf(value.getTempStringValue(), "%d %d", &px, &py);
+   *((Point2I *) dataPtr) = Point2I(px, py);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -128,37 +130,39 @@ ConsoleTypeFromConsoleValue( TypePoint2F )
       ConsoleValuePtr xValue;
       ConsoleValuePtr yValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
          }
          else
          {
-            Con::errorf("Point2F must be a string, list, or hash with x,y");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+            }
+            else
+            {
+               Con::errorf("Point2F must be a string, list, or hash with x,y");
+            }
          }
+         
+         *((Point2F *) dataPtr) = Point2F(xValue.getFloatValue(), yValue.getFloatValue());
+         return;
       }
-      
-      *((Point2F *) dataPtr) = Point2F(xValue.getFloatValue(), yValue.getFloatValue());
    }
-   else
-   {
-      F32 px = 0, py = 0;
-      dSscanf(value.getTempStringValue(), "%f %f", &px, &py);
-      *((Point2F *) dataPtr) = Point2F(px, py);
-   }
+   
+   F32 px = 0, py = 0;
+   dSscanf(value.getTempStringValue(), "%f %f", &px, &py);
+   *((Point2F *) dataPtr) = Point2F(px, py);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -274,41 +278,43 @@ ConsoleTypeFromConsoleValue( TypePoint3F )
       ConsoleValuePtr yValue;
       ConsoleValuePtr zValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, zValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         static StringTableEntry zName = StringTable->insert("z");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
-            refValue->getDataField(zName, arr, zValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, zValue);
          }
          else
          {
-            Con::errorf("Point3F must be a string, list, or hash with x,y");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            static StringTableEntry zName = StringTable->insert("z");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+               refValue->getDataField(zName, arr, zValue);
+            }
+            else
+            {
+               Con::errorf("Point3F must be a string, list, or hash with x,y");
+            }
          }
+         
+         *((Point3F *) dataPtr) = Point3F(xValue.getFloatValue(), yValue.getFloatValue(), zValue.getFloatValue());
+         return;
       }
-      
-      *((Point3F *) dataPtr) = Point3F(xValue.getFloatValue(), yValue.getFloatValue(), zValue.getFloatValue());
    }
-   else
-   {
-      F32 px = 0, py = 0, pz = 0;
-      dSscanf(value.getTempStringValue(), "%f %f %f", &px, &py, &pz);
-      *((Point3F *) dataPtr) = Point3F(px, py, pz);
-   }
+   
+   F32 px = 0, py = 0, pz = 0;
+   dSscanf(value.getTempStringValue(), "%f %f %f", &px, &py, &pz);
+   *((Point3F *) dataPtr) = Point3F(px, py, pz);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -343,45 +349,48 @@ ConsoleTypeFromConsoleValue( TypePoint4F )
       ConsoleValuePtr zValue;
       ConsoleValuePtr wValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, zValue);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, wValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         static StringTableEntry zName = StringTable->insert("z");
-         static StringTableEntry wName = StringTable->insert("w");
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
          
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
-            refValue->getDataField(zName, arr, zValue);
-            refValue->getDataField(wName, arr, wValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, zValue);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, wValue);
          }
          else
          {
-            Con::errorf("Point3F must be a string, list, or hash with x,y");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            static StringTableEntry zName = StringTable->insert("z");
+            static StringTableEntry wName = StringTable->insert("w");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+               refValue->getDataField(zName, arr, zValue);
+               refValue->getDataField(wName, arr, wValue);
+            }
+            else
+            {
+               Con::errorf("Point3F must be a string, list, or hash with x,y");
+            }
          }
+         
+         *((Point4F *) dataPtr) = Point4F(xValue.getIntValue(), yValue.getIntValue(), zValue.getIntValue(), wValue.getIntValue());
+         return;
       }
-      
-      *((Point4F *) dataPtr) = Point4F(xValue.getIntValue(), yValue.getIntValue(), zValue.getIntValue(), wValue.getIntValue());
    }
-   else
-   {
-      F32 px = 0, py = 0, pz = 0, pw = 0;
-      dSscanf(value.getTempStringValue(), "%f %f %f %f", &px, &py, &pz, &pw);
-      *((Point4F *) dataPtr) = Point4F(px, py, pz, pw);
-   }
+   
+   F32 px = 0, py = 0, pz = 0, pw = 0;
+   dSscanf(value.getTempStringValue(), "%f %f %f %f", &px, &py, &pz, &pw);
+   *((Point4F *) dataPtr) = Point4F(px, py, pz, pw);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -416,45 +425,47 @@ ConsoleTypeFromConsoleValue( TypeRectI )
       ConsoleValuePtr wValue;
       ConsoleValuePtr hValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, wValue);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, hValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         static StringTableEntry wName = StringTable->insert("w");
-         static StringTableEntry hName = StringTable->insert("h");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
-            refValue->getDataField(wName, arr, wValue);
-            refValue->getDataField(hName, arr, hValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, wValue);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, hValue);
          }
          else
          {
-            Con::errorf("RectI must be a string, list, or hash with x,y,w,h");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            static StringTableEntry wName = StringTable->insert("w");
+            static StringTableEntry hName = StringTable->insert("h");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+               refValue->getDataField(wName, arr, wValue);
+               refValue->getDataField(hName, arr, hValue);
+            }
+            else
+            {
+               Con::errorf("RectI must be a string, list, or hash with x,y,w,h");
+            }
          }
+         
+         *((RectI *) dataPtr) = RectI(Point2I(xValue.getIntValue(), yValue.getIntValue()), Point2I(wValue.getIntValue(), hValue.getIntValue()));
+         return;
       }
-      
-      *((RectI *) dataPtr) = RectI(Point2I(xValue.getIntValue(), yValue.getIntValue()), Point2I(wValue.getIntValue(), hValue.getIntValue()));
    }
-   else
-   {
-      S32 px = 0, py = 0, pw = 0, ph = 0;
-      dSscanf(value.getTempStringValue(), "%d %d %d %d", &px, &py, &pw, &ph);
-      *((RectI *) dataPtr) = RectI(Point2I(px, py), Point2I(pw, ph));
-   }
+   
+   S32 px = 0, py = 0, pw = 0, ph = 0;
+   dSscanf(value.getTempStringValue(), "%d %d %d %d", &px, &py, &pw, &ph);
+   *((RectI *) dataPtr) = RectI(Point2I(px, py), Point2I(pw, ph));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -489,45 +500,47 @@ ConsoleTypeFromConsoleValue( TypeRectF )
       ConsoleValuePtr wValue;
       ConsoleValuePtr hValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, wValue);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, hValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         static StringTableEntry wName = StringTable->insert("w");
-         static StringTableEntry hName = StringTable->insert("h");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
-            refValue->getDataField(wName, arr, wValue);
-            refValue->getDataField(hName, arr, hValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, wValue);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, hValue);
          }
          else
          {
-            Con::errorf("RectI must be a string, list, or hash with x,y,w,h");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            static StringTableEntry wName = StringTable->insert("w");
+            static StringTableEntry hName = StringTable->insert("h");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+               refValue->getDataField(wName, arr, wValue);
+               refValue->getDataField(hName, arr, hValue);
+            }
+            else
+            {
+               Con::errorf("RectI must be a string, list, or hash with x,y,w,h");
+            }
          }
+         
+         *((RectF *) dataPtr) = RectF(Point2F(xValue.getFloatValue(), yValue.getFloatValue()), Point2F(wValue.getFloatValue(), hValue.getFloatValue()));
+         return;
       }
-      
-      *((RectF *) dataPtr) = RectF(Point2F(xValue.getFloatValue(), yValue.getFloatValue()), Point2F(wValue.getFloatValue(), hValue.getFloatValue()));
    }
-   else
-   {
-      F32 px = 0, py = 0, pw = 0, ph = 0;
-      dSscanf(value.getTempStringValue(), "%f %f %f %f", &px, &py, &pw, &ph);
-      *((RectF *) dataPtr) = RectF(Point2F(px, py), Point2F(pw, ph));
-   }
+   
+   F32 px = 0, py = 0, pw = 0, ph = 0;
+   dSscanf(value.getTempStringValue(), "%f %f %f %f", &px, &py, &pw, &ph);
+   *((RectF *) dataPtr) = RectF(Point2F(px, py), Point2F(pw, ph));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -575,33 +588,35 @@ ConsoleTypeFromConsoleValue( TypeMatrixPosition )
       ConsoleValuePtr value3;
       ConsoleValuePtr value4;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, value1))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, value2);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, value2);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, value3);
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, value1))
+         {
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, value2);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, value2);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, value3);
+         }
+         else
+         {
+            Con::errorf("MatrixPosition must be a string or a list");
+         }
+         
+         col[0] = value1.getFloatValue();
+         col[4] = value2.getFloatValue();
+         col[8] = value3.getFloatValue();
+         col[12] = value4.getFloatValue();
+         return;
       }
-      else
-      {
-         Con::errorf("MatrixPosition must be a string or a list");
-      }
-      
-      col[0] = value1.getFloatValue();
-      col[4] = value2.getFloatValue();
-      col[8] = value3.getFloatValue();
-      col[12] = value4.getFloatValue();
    }
-   else
-   {
-      col[0] = col[4] = col[8] = 0.f;
-      col[12] = 1.f;
-      dSscanf(value.getTempStringValue(), "%g %g %g %g", &col[0], &col[4], &col[8], &col[12]);
-   }
+   
+   col[0] = col[4] = col[8] = 0.f;
+   col[12] = 1.f;
+   dSscanf(value.getTempStringValue(), "%g %g %g %g", &col[0], &col[4], &col[8], &col[12]);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -640,37 +655,50 @@ ConsoleTypeFromConsoleValue( TypeMatrixRotation )
       ConsoleValuePtr value3;
       ConsoleValuePtr value4;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, value1))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, value2);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, value2);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, value3);
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, value1))
+         {
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, value2);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, value2);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, value3);
+         }
+         else
+         {
+            Con::errorf("Matrix rotation must be set as { x, y, z, angle } or \"x y z angle\"");
+         }
+         
+         aa = AngAxisF(Point3F(value1.getFloatValue(),
+                               value2.getFloatValue(),
+                               value3.getFloatValue()),
+                       mDegToRad(value4.getFloatValue()));
+         
+         
+         //
+         MatrixF temp;
+         aa.setMatrix(&temp);
+         
+         F32* pDst = *(MatrixF *)dataPtr;
+         const F32* pSrc = temp;
+         for (U32 i = 0; i < 3; i++)
+            for (U32 j = 0; j < 3; j++)
+               pDst[i*4 + j] = pSrc[i*4 + j];
+         return;
       }
-      else
-      {
-         Con::errorf("Matrix rotation must be set as { x, y, z, angle } or \"x y z angle\"");
-      }
-      
-      aa = AngAxisF(Point3F(value1.getFloatValue(),
-                            value2.getFloatValue(),
-                            value3.getFloatValue()),
-                    mDegToRad(value4.getFloatValue()));
    }
-   else
-   {
-      dSscanf(value.getTempStringValue(), "%g %g %g %g", &aa.axis.x, &aa.axis.y, &aa.axis.z, &aa.angle);
-      aa.angle = mDegToRad(aa.angle);
-   }
-                     
+   
+   dSscanf(value.getTempStringValue(), "%g %g %g %g", &aa.axis.x, &aa.axis.y, &aa.axis.z, &aa.angle);
+   aa.angle = mDegToRad(aa.angle);
+   
    //
    MatrixF temp;
    aa.setMatrix(&temp);
-
+   
    F32* pDst = *(MatrixF *)dataPtr;
    const F32* pSrc = temp;
    for (U32 i = 0; i < 3; i++)
@@ -717,53 +745,55 @@ ConsoleTypeFromConsoleValue( TypeBox3F )
       ConsoleValuePtr maxyValue;
       ConsoleValuePtr maxzValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, minxValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, minyValue);
-         arr.value.ival = 2;
-         refValue->getDataField(stGetIndex, arr, minzValue);
-         arr.value.ival = 3;
-         refValue->getDataField(stGetIndex, arr, maxxValue);
-         arr.value.ival = 4;
-         refValue->getDataField(stGetIndex, arr, maxyValue);
-         arr.value.ival = 5;
-         refValue->getDataField(stGetIndex, arr, maxzValue);
-      }
-      else
-      {
-         static StringTableEntry xminName = StringTable->insert("xmin");
-         static StringTableEntry yminName = StringTable->insert("ymin");
-         static StringTableEntry zminName = StringTable->insert("zmin");
-         static StringTableEntry xmaxName = StringTable->insert("xmax");
-         static StringTableEntry ymaxName = StringTable->insert("ymax");
-         static StringTableEntry zmaxName = StringTable->insert("zmax");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xminName, arr, minxValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, minxValue))
          {
-            refValue->getDataField(yminName, arr, minyValue);
-            refValue->getDataField(zminName, arr, minzValue);
-            refValue->getDataField(xmaxName, arr, maxxValue);
-            refValue->getDataField(ymaxName, arr, maxyValue);
-            refValue->getDataField(zmaxName, arr, maxzValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, minyValue);
+            arr.value.ival = 2;
+            refValue->getDataField(stGetIndex, arr, minzValue);
+            arr.value.ival = 3;
+            refValue->getDataField(stGetIndex, arr, maxxValue);
+            arr.value.ival = 4;
+            refValue->getDataField(stGetIndex, arr, maxyValue);
+            arr.value.ival = 5;
+            refValue->getDataField(stGetIndex, arr, maxzValue);
          }
          else
          {
-            Con::errorf("Box3F must be a string, list, or hash with xmin,ymin,xmax,ymax");
+            static StringTableEntry xminName = StringTable->insert("xmin");
+            static StringTableEntry yminName = StringTable->insert("ymin");
+            static StringTableEntry zminName = StringTable->insert("zmin");
+            static StringTableEntry xmaxName = StringTable->insert("xmax");
+            static StringTableEntry ymaxName = StringTable->insert("ymax");
+            static StringTableEntry zmaxName = StringTable->insert("zmax");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xminName, arr, minxValue))
+            {
+               refValue->getDataField(yminName, arr, minyValue);
+               refValue->getDataField(zminName, arr, minzValue);
+               refValue->getDataField(xmaxName, arr, maxxValue);
+               refValue->getDataField(ymaxName, arr, maxyValue);
+               refValue->getDataField(zmaxName, arr, maxzValue);
+            }
+            else
+            {
+               Con::errorf("Box3F must be a string, list, or hash with xmin,ymin,xmax,ymax");
+            }
          }
+         
+         *((Box3F *) dataPtr) = Box3F(Point3F(minxValue.getFloatValue(), minyValue.getFloatValue(), minzValue.getFloatValue()), Point3F(maxxValue.getFloatValue(), maxyValue.getFloatValue(), maxzValue.getFloatValue()));
+         return;
       }
-      
-      *((Box3F *) dataPtr) = Box3F(Point3F(minxValue.getFloatValue(), minyValue.getFloatValue(), minzValue.getFloatValue()), Point3F(maxxValue.getFloatValue(), maxyValue.getFloatValue(), maxzValue.getFloatValue()));
    }
-   else
-   {
-      F32 minx = 0, miny = 0, minz = 0, maxx = 0, maxy = 0, maxz = 0;
-      dSscanf(value.getTempStringValue(), "%f %f %f %f %f %f", &minx, &miny, &minz, &maxx, &maxy, &maxz);
-      *((Box3F *) dataPtr) = Box3F(Point3F(minx, miny, minz), Point3F(maxx, maxy, maxz));
-   }
+   
+   F32 minx = 0, miny = 0, minz = 0, maxx = 0, maxy = 0, maxz = 0;
+   dSscanf(value.getTempStringValue(), "%f %f %f %f %f %f", &minx, &miny, &minz, &maxx, &maxy, &maxz);
+   *((Box3F *) dataPtr) = Box3F(Point3F(minx, miny, minz), Point3F(maxx, maxy, maxz));
 }
 
 //------------------------------------------------------------------------------

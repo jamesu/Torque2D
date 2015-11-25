@@ -54,33 +54,35 @@ ConsoleTypeFromConsoleValue( TypeVector2 )
       ConsoleValuePtr xValue;
       ConsoleValuePtr yValue;
       
-      const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
       ConsoleReferenceCountedType* refValue = value.value.refValue;
-      if (refValue->getDataField(stGetIndex, arr, xValue))
+      if (refValue->isEnumerable())
       {
-         arr.value.ival = 1;
-         refValue->getDataField(stGetIndex, arr, yValue);
-      }
-      else
-      {
-         static StringTableEntry xName = StringTable->insert("x");
-         static StringTableEntry yName = StringTable->insert("y");
-         
-         arr.type = ConsoleValue::TypeInternalNull;
-         if (refValue->getDataField(xName, arr, xValue))
+         const StringTableEntry stGetIndex = ConsoleBaseType::getFieldIndexName();
+         if (refValue->getDataField(stGetIndex, arr, xValue))
          {
-            refValue->getDataField(yName, arr, yValue);
+            arr.value.ival = 1;
+            refValue->getDataField(stGetIndex, arr, yValue);
          }
          else
          {
-            Con::errorf("Vector2 must be set as { x, y } or \"x y\"");
+            static StringTableEntry xName = StringTable->insert("x");
+            static StringTableEntry yName = StringTable->insert("y");
+            
+            arr.type = ConsoleValue::TypeInternalNull;
+            if (refValue->getDataField(xName, arr, xValue))
+            {
+               refValue->getDataField(yName, arr, yValue);
+            }
+            else
+            {
+               Con::errorf("Vector2 must be set as { x, y } or \"x y\"");
+            }
          }
+         
+         pVector->Set(xValue.getFloatValue(), yValue.getFloatValue());
+         return;
       }
-      
-      pVector->Set(xValue.getFloatValue(), yValue.getFloatValue());
    }
-   else
-   {
-      pVector->setString(value.getTempStringValue());
-   }
+   
+   pVector->setString(value.getTempStringValue());
 }
