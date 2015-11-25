@@ -287,10 +287,12 @@ void SimObject::assignFieldsFrom(SimObject *parent)
          for(S32 j = 0; j <= lastField; j++)
          {
              ConsoleValuePtr fieldVal = (*f->getDataFn)( this,  Con::getDataValue(f->type, (void *) (((const char *)parent) + f->offset), j, f->table));
-            if(fieldVal)
+            if(fieldVal.type != ConsoleValue::TypeInternalNull)
             {
                if((*f->setDataFn)( this, fieldVal ) )
+               {
                   Con::setData(f->type, (void *) (((const char *)this) + f->offset), j, fieldVal, f->table);
+               }
             }
          }
       }
