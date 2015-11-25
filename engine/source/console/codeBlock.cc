@@ -38,9 +38,6 @@ bool           CodeBlock::smInFunction = false;
 CodeBlock *    CodeBlock::smCodeBlockList = NULL;
 CodeBlock *    CodeBlock::smCurrentCodeBlock = NULL;
 
-
-FunctionDeclStmtNode* CodeBlock::smCurrentFunctionList = NULL;
-FunctionDeclStmtNode* CodeBlock::smFunctionListHead = NULL;
 CodeBlockFunction* CodeBlock::smCurrentFunction = NULL;
 CodeBlockFunction* CodeBlock::smCurrentCodeblockFunction = NULL;
 

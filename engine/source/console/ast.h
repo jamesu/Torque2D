@@ -555,7 +555,6 @@ struct FunctionDeclStmtNode : StmtNode
     U32 argc;
     
     VarNode *vars;
-    FunctionDeclStmtNode* nextFunction;
     ReferencedVariableNode* localVars;
     
     static FunctionDeclStmtNode *alloc( S32 lineNumber, StringTableEntry fnName, StringTableEntry nameSpace, VarNode *args, StmtNode *stmts );

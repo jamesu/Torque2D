@@ -46,8 +46,6 @@ public:
     
 public:
    static bool                  smInFunction;
-   static FunctionDeclStmtNode *smCurrentFunctionList;
-   static FunctionDeclStmtNode *smFunctionListHead;
    
    static CodeBlockFunction *smCurrentFunction;
    static CodeBlockFunction *smCurrentCodeblockFunction;

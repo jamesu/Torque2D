@@ -2362,21 +2362,6 @@ U32 FunctionDeclStmtNode::compileStmt(CodeStream &codeStream, U32 ip)
    
     // Defined with
     // OP_BINDNSFUNC <ns> <pkg> <name> <entry idx>
-   
-   if (!CodeBlock::smFunctionListHead)
-   {
-      CodeBlock::smFunctionListHead = this;
-   }
-   
-   if (CodeBlock::smCurrentFunctionList)
-   {
-      FunctionDeclStmtNode* head = CodeBlock::smCurrentFunctionList;
-      head->nextFunction = this;
-   }
-   
-   CodeBlock::smCurrentFunctionList = this;
-   nextFunction = NULL;
-   
    CodeBlockFunction* func = new CodeBlockFunction;
    func->name = fnName;
    CodeBlock::smCurrentCodeBlock->mFunctions.push_back(func);
