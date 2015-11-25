@@ -691,8 +691,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                   Con::warnf("OP_SETVAR global variables of type currently not supported, variable %s will be converted to a string.", namePtr.getTempStringValue());
                }
                
-                valuePtr.getInternalStringValue(temp1, 256);
-                Con::setVariable(temp1, valuePtr.getTempStringValue());
+                Con::setVariable(namePtr.getSTEStringValue(), valuePtr.getTempStringValue());
                 vmbreak;
             }
            
