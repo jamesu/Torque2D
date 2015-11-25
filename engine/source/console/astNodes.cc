@@ -1130,11 +1130,11 @@ U32 VarNode::compile(CodeStream &codeStream, U32 ip, TypeReq type)
     }
    
    
-   U32 cmpValue = 0;
+   U32 cmpValue = 1;
    if (type == TypeReqFalseConditional)
    {
       type = TypeReqConditional;
-      cmpValue = 1;
+      cmpValue = 0;
    }
 
     S32 variableRegister = -1;
