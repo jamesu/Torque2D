@@ -591,7 +591,7 @@ function TruckToy::createWreckedCar( %this, %carNumber, %posX, %posY, %angle, %s
 {
     if ( %carNumber < 1 || %carNumber > 3 )
     {
-        echo( "Invalid brick no of" SPC %brickNumber );
+        echo( "Invalid car no of" SPC %carNumber );
         return;
     }
 

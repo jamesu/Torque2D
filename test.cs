@@ -1,9 +1,116 @@
 // TwistScript basic test
 
-echo("Test conditional block");
+//echo("Test conditional block");
 
 $shazbot = 1;
 $fudge = 2 + 2.3;
+
+
+//
+
+RootGroup.someField = "fred";
+
+if (RootGroup.someField $= "Fred")
+{
+	echo("SlotAccess string conditional passed");
+}
+else
+{
+	echo("SlotAccess string conditional failed");
+}
+
+if (RootGroup.someField !$= "fred")
+{
+	echo("SlotAccess string conditional failed");
+}
+else
+{
+	echo("SlotAccess string conditional passed");
+}
+
+if (RootGroup.someField !$= "george")
+{
+	echo("SlotAccess string conditional passed");
+}
+else
+{
+	echo("SlotAccess string conditional failed");
+}
+
+if (RootGroup.someField $= "george")
+{
+	echo("SlotAccess string conditional failed");
+}
+else
+{
+	echo("SlotAccess string conditional passed");
+}
+
+// Specific case
+//%moduleDefinition.moduleId $= $pref::Sandbox::defaultToyId
+$georgeVar = "george";
+$fredVar = "fred";
+
+if (RootGroup.someField $= $fredVar)
+{
+	echo("SlotAccess string global conditional passed");
+}
+else
+{
+	echo("SlotAccess string global conditional failed");
+}
+
+if (RootGroup.someField $= $georgeVar)
+{
+	echo("SlotAccess string global conditional failed");
+}
+else
+{
+	echo("SlotAccess string global conditional passed");
+}
+
+if (RootGroup.someField !$= $fredVar)
+{
+	echo("SlotAccess string global conditional failed");
+}
+else
+{
+	echo("SlotAccess string global conditional passed");
+}
+
+%groupVar = RootGroup;
+
+
+if (%groupVar.someField $= $fredVar)
+{
+	echo("SlotAccess string local global conditional passed");
+}
+else
+{
+	echo("SlotAccess string local global conditional failed");
+}
+
+
+if (%groupVar.someField !$= $fredVar)
+{
+	echo("SlotAccess string local global conditional failed");
+}
+else
+{
+	echo("SlotAccess string local global conditional passed");
+}
+
+// 
+
+%numVar = 4;
+if (%numVar < 1 || %numVar > 5)
+{
+	echo("OR conditional failed");
+}
+else
+{
+	echo("OR conditional passed");
+}
 
 if ($fudge < 2)
 {
@@ -43,8 +150,8 @@ echo("--");
 echo($shazbot);
 echo("--");
 
-%test = testReturnArray();
-$test = testReturnArray();
+%test = createArray();
+$test = createArray();
 %test[123] += 1;
 $test[123] += 2;
 
@@ -239,6 +346,281 @@ else
 	echo("testReturnCond UNARY FAIL");
 }
 
+function testOR(%val)
+{
+	echo("testOR" @ %val);
+	return %val;
+}
+
+//
+
+
+
+$hello = "Hello";
+%hello = "Hello";
+
+if (%hello $= %hello)
+{
+	echo("String check passed");
+}
+else
+{
+	echo("String check failed");
+}
+
+
+if (%hello !$= %hello)
+{
+	echo("String check failed");
+}
+else
+{
+	echo("String check passed");
+}
+
+if (true)
+{
+	echo("IntConst passed");
+}
+else
+{
+	echo("IntConst failed");
+}
+
+if (1<<0)
+{
+	echo("IntBinary passed");
+}
+else
+{
+	echo("IntBinary failed");
+}
+
+if (1<0)
+{
+	echo("IntBinary lt failed");
+}
+else
+{
+	echo("IntBinary lt passed");
+}
+
+if (0<1)
+{
+	echo("IntBinary lt passed");
+}
+else
+{
+	echo("IntBinary lt failed");
+}
+
+if (1>0)
+{
+	echo("IntBinary gt passed");
+}
+else
+{
+	echo("IntBinary gt passwd");
+}
+
+if(1>=0)
+{
+	echo("IntBinary gte passed");
+}
+else
+{
+	echo("IntBinary gte failed");
+}
+
+if(1>=1)
+{
+	echo("IntBinary gte passed");
+}
+else
+{
+	echo("IntBinary gte failed");
+}
+
+
+if(1<=0)
+{
+	echo("IntBinary lte failed");
+}
+else
+{
+	echo("IntBinary lte passed");
+}
+
+if(1<=1)
+{
+	echo("IntBinary lte passed");
+}
+else
+{
+	echo("IntBinary lte failed");
+}
+
+if (1%10)
+{
+	echo("IntBinary % passed");
+}
+else
+{
+	echo("IntBinary % failed");
+}
+
+if (0%10)
+{
+	echo("IntBinary % failed");
+}
+else
+{
+	echo("IntBinary % passed");
+}
+
+if (0==1)
+{
+	echo("IntBinary == failed");
+}
+else
+{
+	echo("IntBinary == passed");
+}
+
+if (1==1)
+{
+	echo("IntBinary == passed");
+}
+else
+{
+	echo("IntBinary == failed");
+}
+
+if (0!=1)
+{
+	echo("IntBinary != passed");
+}
+else
+{
+	echo("IntBinary != failed");
+}
+
+if (1!=1)
+{
+	echo("IntBinary != failed");
+}
+else
+{
+	echo("IntBinary != passed");
+}
+
+if (1.0)
+{
+	echo("FloatConst passed");
+}
+else
+{
+	echo("FloatConst failed");
+}
+
+
+
+if (1.0+0.0)
+{
+	echo("FloatBinary + passed");
+}
+else
+{
+	echo("FloatBinary + failed");
+}
+
+if (1.0+1.0)
+{
+	echo("FloatBinary + passed");
+}
+else
+{
+	echo("FloatBinary + failed");
+}
+
+if (0.0+0.0)
+{
+	echo("FloatBinary + failed");
+}
+else
+{
+	echo("FloatBinary + passed");
+}
+
+if (1.0-0.0)
+{
+	echo("FloatBinary - passed");
+}
+else
+{
+	echo("FloatBinary - failed");
+}
+
+if (1.0-1.0)
+{
+	echo("FloatBinary - failed");
+}
+else
+{
+	echo("FloatBinary - passed");
+}
+
+if (1.0*1.0)
+{
+	echo("FloatBinary * passed");
+}
+else
+{
+	echo("FloatBinary * failed");
+}
+
+if (1.0/1.0)
+{
+	echo("FloatBinary / passed");
+}
+else
+{
+	echo("FloatBinary / failed");
+}
+
+
+if (true && false)
+{
+	echo("&& failed");
+}
+else
+{
+	echo("&& passed");
+}
+
+if (true && true)
+{
+	echo("&& passed");
+}
+else
+{
+	echo("&& failed");
+}
+
+if (true && %hello $= %hello)
+{
+	echo("ERR");
+}
+
+//
+
+echo("Should print 0,1");
+%foo = testOR(false) || testOR(true);
+echo(%foo);
+echo("Should print 1");
+%foo = testOR(true) || testOR(false);
+echo(%foo);
+
 
 // Variable assignment
 
@@ -296,8 +678,14 @@ function Frodo::doThis(%this)
 }
 
 
+// not equal, equal
 echo("Frodo" $= 123 ? "equal" : "not equal");
 echo(123 $= "123" ? "equal" : "not equal");
+
+// should print "not equal equal"
+%var = "Frodo" $= 123 ? "equal" : "not equal";
+%var2 = 123 $= "123" ? "equal" : "not equal";
+echo(%var," ",%var2);
 
 Frodo.doThis();
 echo("doThis done");
