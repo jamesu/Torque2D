@@ -58,7 +58,7 @@ ConsoleTypeFromConsoleValue( Typeb2AABB )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       

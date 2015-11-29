@@ -688,7 +688,7 @@ bool BehaviorComponent::raise( BehaviorInstance* pOutputBehavior, StringTableEnt
 
     // Execute a callback for the output.
     // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-    Con::executef( this, pOutputName, pOutputBehavior->getIdString() );
+    Con::executef( this, pOutputName, pOutputBehavior );
 
     // Find behavior instance connections.
     typeInstanceConnectionHash::iterator instanceItr = mBehaviorConnections.find( pOutputBehavior->getId() );
@@ -735,7 +735,7 @@ bool BehaviorComponent::raise( BehaviorInstance* pOutputBehavior, StringTableEnt
 #endif
         // Execute a callback for the input.
         // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-        Con::executef( pInputBehavior, pInputName, pOutputBehavior->getIdString(), pOutputName );
+        Con::executef( pInputBehavior, pInputName, pOutputBehavior, pOutputName );
     }
 
     return true;
@@ -982,7 +982,7 @@ ConsoleValuePtr BehaviorComponent::callOnBehaviors( U32 argc, ConsoleValuePtr ar
             argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
 			  
 			   //ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state);
-            result = pNSEntry->execute(argc, argPtrs, &gNewEvalState);
+            result.setValue(pNSEntry->execute(argc, argPtrs, &gNewEvalState));
 			  
             handled = true;
             break;
@@ -993,7 +993,7 @@ ConsoleValuePtr BehaviorComponent::callOnBehaviors( U32 argc, ConsoleValuePtr ar
     // to deal with it.  If the parent cannot handle the message it will return an error string.
     if (!handled)
     {
-        result = Parent::callOnBehaviors( argc, argv );
+        result.setValue(Parent::callOnBehaviors( argc, argv ));
     }
 
     // Clean up.

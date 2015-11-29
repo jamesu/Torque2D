@@ -30,6 +30,37 @@
 ConsoleType( Vector2, TypeVector2, sizeof(Vector2), "" )
 ConsoleUseDefaultReferenceType( TypeVector2, Vector2 )
 
+ConsoleValuePtr castConsoleTypeToConsoleValuePtr( _ConsoleConstType< Vector2 >::ConstType &arg )
+{
+   ConsoleValuePtr values[2];
+   values[0].setValue(arg.ToPoint2F().x);
+   values[1].setValue(arg.ToPoint2F().y);
+   return ConsoleArrayValue::fromValues(2, values);
+}
+
+ConsoleValuePtr castConsoleTypeToConsoleValuePtr( _ConsoleConstType< Point2I >::ConstType &arg )
+{
+   ConsoleValuePtr values[2];
+   values[0].setValue(arg.x);
+   values[1].setValue(arg.y);
+   return ConsoleArrayValue::fromValues(2, values);
+}
+
+ConsoleValuePtr castConsoleTypeToConsoleValuePtr( _ConsoleConstType< Point2F >::ConstType &arg )
+{
+   ConsoleValuePtr values[2];
+   values[0].setValue(arg.x);
+   values[1].setValue(arg.y);
+   return ConsoleArrayValue::fromValues(2, values);
+}
+
+ConsoleValuePtr castConsoleTypeToConsoleValuePtr( _ConsoleConstType< U8 >::ConstType &arg )
+{
+   ConsoleValuePtr value;
+   value.setValue(arg);
+   return value;
+}
+
 ConsoleTypeToString( TypeVector2 )
 {
     return ((Vector2*)dataPtr)->scriptThis();
@@ -47,7 +78,7 @@ ConsoleTypeFromConsoleValue( TypeVector2 )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       

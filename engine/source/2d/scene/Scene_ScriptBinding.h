@@ -371,12 +371,17 @@ ConsoleMethodWithDocs(Scene, mergeScene, ConsoleVoid, 3, 3, (scene))
 /*! Gets the Scene Controllers.
     @return Gets the scene controllers.
 */
-ConsoleMethodWithDocs(Scene, getControllers, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(Scene, getControllers, ConsoleValuePtr, 2, 2, ())
 {
     // Fetch the scene controllers.
+    ConsoleValuePtr ret;
     SimSet* pControllerSet = object->getControllers();
 
-    return ( pControllerSet == NULL ) ? StringTable->EmptyString : pControllerSet->getIdString();
+    if (pControllerSet)
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pControllerSet));
+    }
+    return ret;
 }
 
 //-----------------------------------------------------------------------------
@@ -859,28 +864,28 @@ ConsoleMethodWithDocs(Scene, getRopeJointMaxLength, ConsoleFloat, 3, 3, (jointId
 ConsoleMethodWithDocs(Scene, createRevoluteJoint, ConsoleInt, 4, 9, (sceneObjectA, sceneObjectB, [localAnchorA X/Y], [localAnchorB X/Y], [collideConnected]))
 {
     // Fetch scene object references.
-    const char* sceneObjectA = argv[2];
-    const char* sceneObjectB = argv[3];
+    ConsoleValuePtr sceneObjectA = argv[2];
+    ConsoleValuePtr sceneObjectB = argv[3];
 
     SceneObject* pSceneObjectA = NULL;
     SceneObject* pSceneObjectB = NULL;
 
     // Fetch scene object.
-    if ( *sceneObjectA != 0 )
+    if ( sceneObjectA.getIntValue() != 0 )
     {
         pSceneObjectA = Sim::findObject<SceneObject>(sceneObjectA);
 
         if ( !pSceneObjectA )
-            Con::warnf("Scene::createRevoluteJoint() - Could not find scene object %d.", sceneObjectA);
+            Con::warnf("Scene::createRevoluteJoint() - Could not find scene object %d.", sceneObjectA.getTempStringValue());
     }
 
     // Fetch scene object.
-    if ( *sceneObjectB != 0 )
+    if ( sceneObjectB.getIntValue() != 0 )
     {
         pSceneObjectB = Sim::findObject<SceneObject>(sceneObjectB);
 
         if ( !pSceneObjectB )
-            Con::warnf("Scene::createRevoluteJoint() - Could not find scene object %d.", sceneObjectB);
+            Con::warnf("Scene::createRevoluteJoint() - Could not find scene object %d.", sceneObjectB.getTempStringValue());
     }
 
     if ( argc == 4 )
@@ -3581,12 +3586,17 @@ ConsoleMethodWithDocs(Scene, setIsEditorScene, ConsoleVoid, 3, 3, ())
 /*! Creates the specified scene-object derived type and adds it to the scene.
     @return The scene-object or NULL if not created.
 */
-ConsoleMethodWithDocs(Scene, create, ConsoleString, 3, 3, (type))
+ConsoleMethodWithDocs(Scene, create, ConsoleValuePtr, 3, 3, (type))
 {
     // Create the scene object.
+    ConsoleValuePtr ret;
     SceneObject* pSceneObject = object->create( argv[2] );
 
-    return pSceneObject == NULL ? NULL : pSceneObject->getIdString();
+    if (pSceneObject)
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pSceneObject));
+    }
+    return ret;
 }
 
 ConsoleMethodGroupEndWithDocs(Scene)

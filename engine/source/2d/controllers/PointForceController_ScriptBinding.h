@@ -189,12 +189,17 @@ ConsoleMethodWithDocs(PointForceController, setTrackedObject, ConsoleVoid, 3, 3,
 /*! Gets the scene object from which the position will be tracked.
     @return The scene object from which the position will be tracked or an empty string if nothing is being tracked.
 */
-ConsoleMethodWithDocs(PointForceController, getTrackedObject, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(PointForceController, getTrackedObject, ConsoleValuePtr, 2, 2, ())
 {
     // Fetch the scene object.
+    ConsoleValuePtr ret;
     SceneObject* pSceneObject = object->getTrackedObject();
 
-    return pSceneObject == NULL ? NULL : pSceneObject->getIdString();
+    if (pSceneObject)
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pSceneObject));
+    }
+    return ret;
 } 
 
 ConsoleMethodGroupEndWithDocs(PointForceController)

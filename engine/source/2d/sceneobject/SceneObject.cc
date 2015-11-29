@@ -74,6 +74,8 @@
 // Debug Profiling.
 #include "debug/profiler.h"
 
+#include "math/mathTypes.h"
+
 //-----------------------------------------------------------------------------
 
 // Scene-Object counter.
@@ -2648,20 +2650,11 @@ void SceneObject::onInputEvent( StringTableEntry name, const GuiEvent& event, co
     // Debug Profiling.
     PROFILE_SCOPE(SceneObject_OnInputEvent);
 
-    // Argument Buffers.
-    char argBuffer[3][32];
-
-    // ID
-    dSprintf(argBuffer[0], 32, "%d", event.eventID);
-    
-    // Format Mouse-Position Buffer.
-    dSprintf(argBuffer[1], 32, "%g %g", worldMousePosition.x, worldMousePosition.y);
-
-    // Optional double click
-    dSprintf(argBuffer[2], 32, "%d", event.mouseClickCount);
-
     // Call Scripts.
-    Con::executef(this, name, argBuffer[0], argBuffer[1], argBuffer[2]);
+    if (isMethod(name))
+    {
+       Con::executef(this, name, event.eventID, worldMousePosition, event.mouseClickCount);
+    }
 }
 
 //-----------------------------------------------------------------------------

@@ -2126,7 +2126,7 @@ bool ModuleManager::registerModule( const char* pModulePath, const char* pModule
     // Emit notifications.
     for( SimSet::iterator notifyItr = mNotificationListeners.begin(); notifyItr != mNotificationListeners.end(); ++notifyItr )
     {
-        Con::executef( *notifyItr, "onModuleRegister", pModuleDefinition->getIdString() );
+        Con::executef( *notifyItr, "onModuleRegister", pModuleDefinition );
     }
 
     return true;
@@ -2174,7 +2174,7 @@ void ModuleManager::raiseModulePreLoadNotifications( ModuleDefinition* pModuleDe
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePreLoad" ) )
-            Con::executef( pListener, "onModulePreLoad", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePreLoad", pModuleDefinition );
     }
 }
 
@@ -2195,7 +2195,7 @@ void ModuleManager::raiseModulePostLoadNotifications( ModuleDefinition* pModuleD
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePostLoad" ) )
-            Con::executef( pListener, "onModulePostLoad", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePostLoad", pModuleDefinition );
     }
 }
 
@@ -2216,7 +2216,7 @@ void ModuleManager::raiseModulePreUnloadNotifications( ModuleDefinition* pModule
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePreUnload" ) )
-            Con::executef( pListener, "onModulePreUnload", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePreUnload", pModuleDefinition );
     }
 }
 
@@ -2237,7 +2237,7 @@ void ModuleManager::raiseModulePostUnloadNotifications( ModuleDefinition* pModul
             
         // Perform script callback.
         if ( pListener->isMethod( "onModulePostUnload" ) )
-            Con::executef( pListener, "onModulePostUnload", pModuleDefinition->getIdString() );
+            Con::executef( pListener, "onModulePostUnload", pModuleDefinition );
     }
 }
 

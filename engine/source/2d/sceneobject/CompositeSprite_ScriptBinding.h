@@ -1012,9 +1012,11 @@ ConsoleMethodWithDocs(CompositeSprite, setSpriteDataObject, ConsoleVoid, 3, 3, (
 /*! Gets the sprite data object.
     @return The sprite data object.
 */
-ConsoleMethodWithDocs(CompositeSprite, getSpriteDataObject, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(CompositeSprite, getSpriteDataObject, ConsoleValuePtr, 2, 2, ())
 {
-    return object->getSpriteDataObject()->getIdString();
+    ConsoleValuePtr ret;
+    ret.setValue(ConsoleSimObjectPtr::fromObject(object->getSpriteDataObject()));
+    return ret;
 }
 
 //-----------------------------------------------------------------------------

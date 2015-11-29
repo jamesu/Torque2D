@@ -846,7 +846,8 @@ void GuiColorPickerCtrl::onMouseEnter(const GuiEvent &event)
 {
    mMouseOver = true;
 
-   Con::executef(this, "onMouseEnter");
+   if (isMethod("onMouseEnter"))
+      Con::executef(this, "onMouseEnter");
 }
 
 //--------------------------------------------------------------------------

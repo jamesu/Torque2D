@@ -223,7 +223,7 @@ protected:
     /// Asset manifest.
     static bool             setAssetTagsManifest(void *obj, ConsoleValuePtr data)            { static_cast<ModuleDefinition*>(obj)->setAssetTagsManifest( data ); return false; }
     static bool             writeAssetTagsManifest( void* obj, StringTableEntry pFieldName ) { return static_cast<ModuleDefinition*>(obj)->getAssetTagsManifest() != StringTable->EmptyString; }
-    static ConsoleValuePtr      getScopeSet(void *obj, ConsoleValuePtr data)                 { return Con::getIntArg( static_cast<ModuleDefinition*>(obj)->getScopeSet() ); }
+    static ConsoleValuePtr      getScopeSet(void *obj, ConsoleValuePtr data)                 { return ConsoleSimObjectPtr::fromObject( Sim::findObject<SimSet>((static_cast<ModuleDefinition*>(obj)->getScopeSet()) ) ); }
 
     static bool             setDependencies(void *obj, ConsoleValuePtr data)
     {

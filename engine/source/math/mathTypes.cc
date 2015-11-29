@@ -58,7 +58,7 @@ ConsoleTypeFromConsoleValue( TypePoint2I )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -123,7 +123,7 @@ ConsoleTypeFromConsoleValue( TypePoint2F )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -181,8 +181,8 @@ ConsoleTypeToString( TypePoint2FVector )
    
    for (Vector<Point2F>::iterator itr = vec->begin(); itr != vec->end(); itr++)
    {
-      ConsoleValue xValue;
-      ConsoleValue yValue;
+      ConsoleValuePtr xValue;
+      ConsoleValuePtr yValue;
       
       xValue.type = ConsoleValue::TypeInternalFloat;
       xValue.value.fval = itr->x;
@@ -208,7 +208,7 @@ ConsoleTypeFromConsoleValue( TypePoint2FVector )
       if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          
@@ -270,7 +270,7 @@ ConsoleTypeFromConsoleValue( TypePoint3F )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -340,7 +340,7 @@ ConsoleTypeFromConsoleValue( TypePoint4F )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -416,7 +416,7 @@ ConsoleTypeFromConsoleValue( TypeRectI )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -491,7 +491,7 @@ ConsoleTypeFromConsoleValue( TypeRectF )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -579,7 +579,7 @@ ConsoleTypeFromConsoleValue( TypeMatrixPosition )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -646,7 +646,7 @@ ConsoleTypeFromConsoleValue( TypeMatrixRotation )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       
@@ -734,7 +734,7 @@ ConsoleTypeFromConsoleValue( TypeBox3F )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.ival = 0;
       

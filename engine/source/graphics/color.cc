@@ -464,7 +464,7 @@ ConsoleTypeFromConsoleValue( TypeColorF )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.fval = 0;
       
@@ -472,6 +472,7 @@ ConsoleTypeFromConsoleValue( TypeColorF )
       ConsoleValuePtr gValue;
       ConsoleValuePtr bValue;
       ConsoleValuePtr aValue;
+      aValue.setValue(1.0);
       
       ConsoleReferenceCountedType* refValue = value.value.refValue;
       if (refValue->isEnumerable())
@@ -518,7 +519,14 @@ ConsoleTypeFromConsoleValue( TypeColorF )
       }
    }
    
-   F32 cr = 0, cg = 0, cb = 0, ca = 0;
+   F32 cr = 0, cg = 0, cb = 0, ca = 1.0f;
+   
+   const char* strValue = value.getTempStringValue();
+   if (StockColor::isColor(strValue))
+   {
+      *((ColorF *) dataPtr) = StockColor::colorF(strValue);
+      return;
+   }
    
    dSscanf(value.getTempStringValue(), "%.9g %.9g %.9g %.9g", &cr, &cg, &cb, &ca);
    *((ColorF *) dataPtr) = ColorF(cr, cg, cb, ca);
@@ -561,7 +569,7 @@ ConsoleTypeFromConsoleValue( TypeColorI )
       // 2) it's a list
       // 3) it's some sort of hashtable
       
-      ConsoleValue arr;
+      ConsoleValuePtr arr;
       arr.type = ConsoleValue::TypeInternalInt;
       arr.value.fval = 0;
       
@@ -569,6 +577,7 @@ ConsoleTypeFromConsoleValue( TypeColorI )
       ConsoleValuePtr gValue;
       ConsoleValuePtr bValue;
       ConsoleValuePtr aValue;
+      aValue.setValue(255);
       
       ConsoleReferenceCountedType* refValue = value.value.refValue;
       if (refValue->isEnumerable())
@@ -615,7 +624,14 @@ ConsoleTypeFromConsoleValue( TypeColorI )
       }
    }
    
-   S32 cr = 0, cg = 0, cb = 0, ca = 0;
+   S32 cr = 0, cg = 0, cb = 0, ca = 255;
+   
+   const char* strValue = value.getTempStringValue();
+   if (StockColor::isColor(strValue))
+   {
+      *((ColorI *) dataPtr) = StockColor::colorI(strValue);
+      return;
+   }
    
    dSscanf(value.getTempStringValue(), "%d %d %d %d", &cr, &cg, &cb, &ca);
    *((ColorI *) dataPtr) = ColorI(cr, cg, cb, ca);

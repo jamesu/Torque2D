@@ -63,10 +63,10 @@ bool NameTags::onAdd()
 
     // Fetch tag count.
     StringTableEntry tagCountFieldName = StringTable->insert("TagCount");
-    const U32 tagCount = dAtoi( getDataField( tagCountFieldName, NULL ) );
+    const S32 tagCount = getDataField( tagCountFieldName, NULL ).getFloatValue();
 
     // Finish if not tags to add.
-    if ( tagCount == 0 )
+    if ( tagCount <= 0 )
         return true;
 
     // Clear tag count field.
@@ -79,13 +79,13 @@ bool NameTags::onAdd()
     {
         // Fetch field value.
         dSprintf( indexBuffer, 16, "%d", index );
-        const char* pFieldValue = getDataField( tagFieldName, indexBuffer );
+        ConsoleStringValuePtr pFieldValue = getDataField( tagFieldName, indexBuffer ).getStringValue();
 
         // Fetch tag Id.
-        const TagId tagId = dAtoi( StringUnit::getUnit( pFieldValue, 0, "\n" ) );
+        const TagId tagId = dAtoi( StringUnit::getUnit( pFieldValue.c_str(), 0, "\n" ) );
 
         // Fetch tag name.
-        const char* pTagName = StringUnit::getUnit( pFieldValue, 1, "\n" );
+        const char* pTagName = StringUnit::getUnit( pFieldValue.c_str(), 1, "\n" );
 
         // Fetch hash.
         const HashId hash = StringTable->hashString( pTagName );
@@ -261,19 +261,19 @@ bool NameTags::tag( const SimObjectId objId, const TagId tagId )
     char newTagsBuffer[4096];
 
     // Fetch tags.
-    const char* pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL );
+    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
 
     // Check if already tagged.
-    if ( dStrlen( pOldTags ) != 0 )
+    if ( dStrlen( pOldTags.c_str() ) != 0 )
     {
         // Fetch element count.
-        const U32 elementCount = StringUnit::getUnitCount( pOldTags, " \t\n" );
+        const U32 elementCount = StringUnit::getUnitCount( pOldTags.c_str(), " \t\n" );
 
         // Iterate elements.
         for ( U32 index = 0; index < elementCount; ++index )
         {
             // Fetch element.
-            const char* pElement = StringUnit::getUnit( pOldTags, index, " \t\n" );
+            const char* pElement = StringUnit::getUnit( pOldTags.c_str(), index, " \t\n" );
 
             // if already tagged then finish.
             if ( dAtoi( pElement ) == tagId )
@@ -314,26 +314,26 @@ bool NameTags::untag( const SimObjectId objId, const TagId tagId )
     }
 
     // Fetch tags.
-    const char* pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL );
+    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
 
     // Finish if no tags.
-    if ( dStrlen( pOldTags ) == 0 )
+    if ( dStrlen( pOldTags.c_str() ) == 0 )
         return true;
 
     // Fetch element count.
-    const U32 elementCount = StringUnit::getUnitCount( pOldTags, " \t\n" );
+    const U32 elementCount = StringUnit::getUnitCount( pOldTags.c_str(), " \t\n" );
 
     // Iterate elements.
     for ( U32 index = 0; index < elementCount; ++index )
     {
         // Fetch element.
-        const char* pElement = StringUnit::getUnit( pOldTags, index, " \t\n" );
+        const char* pElement = StringUnit::getUnit( pOldTags.c_str(), index, " \t\n" );
 
         // Found tag?
         if ( dAtoi( pElement ) == tagId )
         {
             // Yes, so remove element.
-            const char* pNewTags = StringUnit::removeUnit( pOldTags, index, " \t\n" );
+            const char* pNewTags = StringUnit::removeUnit( pOldTags.c_str(), index, " \t\n" );
 
             // Update field.
             pSimObject->setDataField( mNameTagsFieldEntry, NULL, pNewTags );
@@ -365,20 +365,20 @@ bool NameTags::hasTag( const SimObjectId objId, const TagId tagId ) const
     }
 
     // Fetch tags.
-    const char* pTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL );
+    ConsoleStringValuePtr pTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
 
     // Finish if no tags.
-    if ( dStrlen( pTags ) == 0 )
+    if ( dStrlen( pTags.c_str() ) == 0 )
         return false;
 
     // Fetch element count.
-    const U32 elementCount = StringUnit::getUnitCount( pTags, " \t\n" );
+    const U32 elementCount = StringUnit::getUnitCount( pTags.c_str(), " \t\n" );
 
     // Iterate elements.
     for ( U32 index = 0; index < elementCount; ++index )
     {
         // Fetch element.
-        const char* pElement = StringUnit::getUnit( pTags, index, " \t\n" );
+        const char* pElement = StringUnit::getUnit( pTags.c_str(), index, " \t\n" );
 
         // Finish if found tag.
         if ( dAtoi( pElement ) == tagId )
@@ -444,19 +444,19 @@ void NameTags::queryTags( const char* pTags )
             SimObject* pSimObject = itr->value;
 
             // Fetch tags.
-            const char* pFieldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL );
+            ConsoleStringValuePtr pFieldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
 
             // Any field tags?
-            if ( dStrlen( pFieldTags ) > 0 )
+            if ( dStrlen( pFieldTags.c_str() ) > 0 )
             {
                 // Yes, so fetch element count.
-                const U32 elementCount = StringUnit::getUnitCount( pFieldTags, " \t\n" );
+                const U32 elementCount = StringUnit::getUnitCount( pFieldTags.c_str(), " \t\n" );
 
                 // Iterate elements.
                 for ( U32 index = 0; index < elementCount; ++index )
                 {
                     // Fetch element.
-                    const char* pElement = StringUnit::getUnit( pFieldTags, index, " \t\n" );
+                    const char* pElement = StringUnit::getUnit( pFieldTags.c_str(), index, " \t\n" );
 
                     // Found tag?
                     if ( dAtoi( pElement ) == tagId )                        

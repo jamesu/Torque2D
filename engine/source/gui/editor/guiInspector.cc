@@ -204,14 +204,15 @@ ConsoleMethod( GuiInspector, inspect, void, 3, 3, "(obj) Goes through the object
 }
 
 
-ConsoleMethod( GuiInspector, getInspectObject, ConsoleString, 2, 2, "() - Returns currently inspected object\n"
+ConsoleMethod( GuiInspector, getInspectObject, ConsoleValuePtr, 2, 2, "() - Returns currently inspected object\n"
               "@return The Object's ID as a string.")
 {
+   ConsoleValuePtr ret;
    SimObject *pSimObject = object->getInspectObject();
    if( pSimObject != NULL )
-      return pSimObject->getIdString();
+      ret.setValue(ConsoleSimObjectPtr::fromObject(pSimObject));
    
-   return "";
+   return ret;
 }
 
 void GuiInspector::setName( const char* newName )
@@ -298,12 +299,12 @@ void GuiInspectorField::setData( const char* data )
    mTarget->inspectPostApply();
 }
 
-const char* GuiInspectorField::getData()
+ConsoleStringValuePtr GuiInspectorField::getData()
 {
    if( mField == NULL || mTarget == NULL )
       return "";
 
-   return mTarget->getDataField( mField->pFieldname, mFieldArrayIndex );
+   return mTarget->getDataField( mField->pFieldname, mFieldArrayIndex ).getStringValue();
 }
 
 void GuiInspectorField::setInspectorField( AbstractClassRep::Field *field, const char*arrayIndex ) 
@@ -448,7 +449,7 @@ bool GuiInspectorField::onAdd()
    setField( "profile", "GuiInspectorFieldProfile" );
 
    // Force our editField to set it's value
-   updateValue( getData() );
+   updateValue( getData().c_str() );
 
    return true;
 }
@@ -688,14 +689,11 @@ bool GuiInspectorGroup::inspectGroup()
                FrameTemp<char> intToStr( 64 );
                dSprintf( intToStr, 64, "%d", nI );
 
-               const char *val = mTarget->getDataField( itr->pFieldname, intToStr );
-               if (!val)
-                  val = StringTable->EmptyString;
-
-
+               ConsoleStringValuePtr val = mTarget->getDataField( itr->pFieldname, intToStr ).getStringValue();
+               
                // Copy Val and construct proper ValueName[nI] format 
                //      which is "ValueName0" for index 0, etc.
-               S32 frameTempSize = dStrlen( val ) + 32;
+               S32 frameTempSize = dStrlen( val.c_str() ) + 32;
                FrameTemp<char> valCopy( frameTempSize );
                dSprintf( (char *)valCopy, frameTempSize, "%s%d", itr->pFieldname, nI );
 
@@ -703,7 +701,8 @@ bool GuiInspectorGroup::inspectGroup()
                GuiInspectorField *field = findField( valCopy );
                if( field != NULL )
                {
-                  field->updateValue( field->getData() );
+                  ConsoleStringValuePtr dat = field->getData();
+                  field->updateValue( dat.c_str() );
                   continue;
                }
 
@@ -733,7 +732,7 @@ bool GuiInspectorGroup::inspectGroup()
             GuiInspectorField *field = findField( itr->pFieldname );
             if( field != NULL )
             {
-               field->updateValue( field->getData() );
+               field->updateValue( field->getData().c_str() );
                continue;
             }
 
@@ -966,10 +965,10 @@ void GuiInspectorDynamicField::setData( const char* data )
 
 }
 
-const char* GuiInspectorDynamicField::getData()
+ConsoleStringValuePtr GuiInspectorDynamicField::getData()
 {
    if( mTarget == NULL || mDynField == NULL )
-      return "";
+      return ConsoleStringValuePtr();
 
    return mTarget->getFieldDictionary()->getFieldValue( mDynField->slotName );
 }
@@ -1002,7 +1001,7 @@ void GuiInspectorDynamicField::renameField( StringTableEntry newFieldName )
    }
 
    // Grab our current dynamic field value
-   const char* currentValue = getData();
+   ConsoleStringValuePtr currentValue = getData();
 
    // Create our new field with the value of our old field and the new fields name!
    mTarget->setDataField( newFieldName, NULL, currentValue );
@@ -1174,7 +1173,7 @@ GuiControl* GuiInspectorDatablockField::constructEditControl()
    // Let's make it look pretty.
    retCtrl->setField( "profile", "InspectorTypeEnumProfile" );
 
-   menu->setField("text", getData());
+   menu->setField( "text", getData().c_str() );
 
    registerEditControl( retCtrl );
 

@@ -337,7 +337,7 @@ ConsoleTypeFromConsoleValue( TypeF32 )
       }
    }
    
-   *((S32 *) dataPtr) = (S32)value.getFloatValue();
+   *((F32 *) dataPtr) = (F32)value.getFloatValue();
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -67,7 +67,7 @@ public:
    //////////////////////////////////////////////////////////////////////////
    virtual GuiControl*        constructEditControl();
    virtual void               setData( StringTableEntry data );
-   virtual StringTableEntry   getData();
+   virtual ConsoleStringValuePtr   getData();
    virtual void               updateValue( StringTableEntry newValue );
 };
 

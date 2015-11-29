@@ -29,12 +29,17 @@ ConsoleMethodGroupBeginWithDocs(ParticleAssetEmitter, SimObject)
 /*! Gets the asset owner of the emitter.
     @return The asset owner of the emitter or nothing if no owner assigned.
 */
-ConsoleMethodWithDocs(ParticleAssetEmitter, getOwner, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(ParticleAssetEmitter, getOwner, ConsoleValuePtr, 2, 2, ())
 {
     // Fetch the owner.
+    ConsoleValuePtr ret;
     ParticleAsset* pParticleAsset = object->getOwner();
-
-    return pParticleAsset == NULL ? StringTable->EmptyString : pParticleAsset->getIdString();
+   
+    if (pParticleAsset)
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pParticleAsset));
+    }
+    return ret;
 }
 
 //-----------------------------------------------------------------------------

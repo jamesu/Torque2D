@@ -237,9 +237,10 @@ ConsoleMethodWithDocs(Taml, write, ConsoleBool, 4, 4, (object, filename))
     @param filename The filename to read from.
     @return (Object) The object read from the file or an empty string if read failed.
 */
-ConsoleMethodWithDocs(Taml, read, ConsoleString, 3, 3, (filename))
+ConsoleMethodWithDocs(Taml, read, ConsoleValuePtr, 3, 3, (filename))
 {
     // Fetch filename.
+    ConsoleValuePtr ret;
     const char* pFilename = argv[2];
 
     // Read object.
@@ -250,10 +251,12 @@ ConsoleMethodWithDocs(Taml, read, ConsoleString, 3, 3, (filename))
     {
         // No, so warn.
         Con::warnf( "Taml::read() - Could not read object from file '%s'.", pFilename );
-        return StringTable->EmptyString;
+        return ret;
     }
-
-    return pSimObject->getIdString();
+    else
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pSimObject));
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -323,9 +326,10 @@ ConsoleFunctionWithDocs(TamlWrite, ConsoleBool, 3, 5, (object, filename, [format
     @param format The file format to use.  Optional: Defaults to 'xml'.  Can be set to 'binary'.
     @return (Object) The object read from the file or an empty string if read failed.
 */
-ConsoleFunctionWithDocs(TamlRead, ConsoleString, 2, 4, (filename, [format]?))
+ConsoleFunctionWithDocs(TamlRead, ConsoleValuePtr, 2, 4, (filename, [format]?))
 {
     // Fetch filename.
+    ConsoleValuePtr ret;
     const char* pFilename = argv[1];
 
     // Set the format mode.
@@ -349,10 +353,14 @@ ConsoleFunctionWithDocs(TamlRead, ConsoleString, 2, 4, (filename, [format]?))
     {
         // No, so warn.
         Con::warnf( "TamlRead() - Could not read object from file '%s'.", pFilename );
-        return StringTable->EmptyString;
+        return ret;
+    }
+    else
+    {
+        ret.setValue(ConsoleSimObjectPtr::fromObject(pSimObject));
     }
 
-    return pSimObject->getIdString();
+    return ret;
 }
 
 //-----------------------------------------------------------------------------

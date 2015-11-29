@@ -143,9 +143,10 @@ ConsoleMethodWithDocs(ModuleManager, unloadExplicit, ConsoleBool, 3, 3, (moduleI
     @param versionId The version Id to find.
     @return The module definition object or NULL if not found.
 */
-ConsoleMethodWithDocs(ModuleManager, findModule, ConsoleString, 4, 4, (moduleId, versionId))
+ConsoleMethodWithDocs(ModuleManager, findModule, ConsoleValuePtr, 4, 4, (moduleId, versionId))
 {
     // Fetch module Id.
+    ConsoleValuePtr ret;
     const char* pModuleId = argv[2];
 
     // Fetch version Id.
@@ -156,9 +157,10 @@ ConsoleMethodWithDocs(ModuleManager, findModule, ConsoleString, 4, 4, (moduleId,
 
     // Return nothing if not found.
     if ( pModuleDefinition == NULL )
-        return StringTable->EmptyString;
+       return ret;
 
-    return pModuleDefinition->getIdString();
+    ret.setValue(ConsoleSimObjectPtr::fromObject(pModuleDefinition));
+    return ret;
 }
 
 //-----------------------------------------------------------------------------

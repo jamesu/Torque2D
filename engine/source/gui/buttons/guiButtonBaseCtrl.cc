@@ -210,7 +210,7 @@ void GuiButtonBaseCtrl::onMouseEnter(const GuiEvent &event)
 {
    setUpdate();
 
-   if(mUseMouseEvents)
+   if(mUseMouseEvents && isMethod("onMouseEnter"))
       Con::executef( this, "onMouseEnter" );
 
    if(isMouseLocked())
@@ -239,7 +239,7 @@ void GuiButtonBaseCtrl::onMouseLeave(const GuiEvent &)
     mouseUnlock();  
     setUpdate();  
   
-   if(mUseMouseEvents)  
+   if(mUseMouseEvents && isMethod("onMouseLeave") )
       Con::executef( this, "onMouseLeave" );  
   
    mMouseOver = false;  
@@ -261,11 +261,10 @@ void GuiButtonBaseCtrl::onMouseUp(const GuiEvent &event)
    // Execute callback
    if (mUseMouseEvents)
    {
-       char buf[3][32];
-       dSprintf(buf[0], 32, "%d", event.modifier);
-       dSprintf(buf[1], 32, "%d %d", event.mousePoint.x, event.mousePoint.y);
-       dSprintf(buf[2], 32, "%d", event.mouseClickCount);
-       Con::executef(this, "onMouseUp", buf[0], buf[1], buf[2]);
+       if (isMethod("onMouseUp"))
+       {
+          Con::executef(this, "onMouseUp", event.modifier, event.mousePoint, event.mouseClickCount);
+       }
    }
 
    mDepressed = false;
@@ -273,7 +272,10 @@ void GuiButtonBaseCtrl::onMouseUp(const GuiEvent &event)
 
 void GuiButtonBaseCtrl::onRightMouseUp(const GuiEvent &event)
 {
-   Con::executef( this, "onRightClick" );
+   if (isMethod("onRightClick"))
+   {
+      Con::executef( this, "onRightClick" );
+   }
 
    Parent::onRightMouseUp( event );
 }

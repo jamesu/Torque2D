@@ -128,7 +128,7 @@ public:
    virtual void        updateValue( const char* newValue );
    virtual StringTableEntry getFieldName();
    virtual void              setData( const char* data );
-   virtual const char*  getData();
+   virtual ConsoleStringValuePtr  getData();
 
    virtual void resize(const Point2I &newPosition, const Point2I &newExtent);
    virtual bool onAdd();
@@ -185,7 +185,7 @@ public:
    DECLARE_CONOBJECT(GuiInspectorDynamicField);
 
    virtual void setData( const char* data );
-   virtual const char* getData();
+   virtual ConsoleStringValuePtr getData();
 
    virtual StringTableEntry getFieldName() { return ( mDynField != NULL ) ? mDynField->slotName : StringTable->EmptyString; };
 

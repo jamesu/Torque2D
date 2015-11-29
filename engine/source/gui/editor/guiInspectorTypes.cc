@@ -39,7 +39,7 @@ GuiControl* GuiInspectorTypeEnum::constructEditControl()
    // Let's make it look pretty.
    retCtrl->setField( "profile", "InspectorTypeEnumProfile" );
 
-   menu->setField("text", getData());
+   menu->setField("text", getData().c_str());
 
    registerEditControl( retCtrl );
 
@@ -80,12 +80,12 @@ void GuiInspectorTypeEnum::setData( StringTableEntry data )
    updateValue( data );
 }
 
-StringTableEntry  GuiInspectorTypeEnum::getData()
+ConsoleStringValuePtr  GuiInspectorTypeEnum::getData()
 {
    if( mField == NULL || mTarget == NULL )
-      return "";
+      return ConsoleStringValuePtr();
 
-   return mTarget->getDataField( mField->pFieldname, NULL );
+   return mTarget->getDataField( mField->pFieldname, NULL ).getStringValue();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ GuiControl* GuiInspectorTypeCheckBox::constructEditControl()
 
    check->mIndent = 4;
 
-   retCtrl->setScriptValue( getData() );
+   retCtrl->setScriptValue( getData().c_str() );
 
    registerEditControl( retCtrl );
 
@@ -161,7 +161,7 @@ GuiControl* GuiInspectorTypeGuiProfile::constructEditControl()
    // Let's make it look pretty.
    retCtrl->setField( "profile", "InspectorTypeEnumProfile" );
 
-   menu->setField("text", getData());
+   menu->setField( "text", getData().c_str() );
 
    registerEditControl( retCtrl );
 

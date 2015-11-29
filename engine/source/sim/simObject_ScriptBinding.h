@@ -480,7 +480,7 @@ ConsoleMethodWithDocs(SimObject, getClassName, ConsoleString, 2, 2, ())
 	> myValue
 	@endcode
 */
-ConsoleMethodWithDocs(SimObject, getFieldValue, ConsoleString, 3, 3, (fieldName))
+ConsoleMethodWithDocs(SimObject, getFieldValue, ConsoleValuePtr, 3, 3, (fieldName))
 {
    const char *fieldName = StringTable->insert( argv[2] );
    return object->getDataField( fieldName, NULL );
@@ -1005,8 +1005,8 @@ ConsoleMethodWithDocs(SimObject, isTimerActive, ConsoleBool, 2, 2, ())
 ConsoleMethodWithDocs(SimObject,schedule, ConsoleInt, 4, 0, (time , command , [arg]* ))
 {
    U32 timeDelta = U32(dAtof(argv[2]));
-   argv[2] = argv[3];
-   argv[3] = argv[1];
+   argv[2].setValue(argv[3]);
+   argv[3].setValue(argv[1]);
    SimConsoleEvent *evt = new SimConsoleEvent(argc - 2, argv + 2, true);
    S32 ret = Sim::postEvent(object, evt, Sim::getCurrentTime() + timeDelta);
 // #ifdef DEBUG

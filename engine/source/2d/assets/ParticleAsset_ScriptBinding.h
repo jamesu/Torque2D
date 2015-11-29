@@ -346,12 +346,17 @@ ConsoleMethodWithDocs(ParticleAsset, getValueScale, ConsoleFloat, 2, 2, ())
 /*! Creates and add a new emitter.
     @return The new emitter that was added or 0 if failed.
 */
-ConsoleMethodWithDocs(ParticleAsset, createEmitter, ConsoleString, 2, 2, ())
+ConsoleMethodWithDocs(ParticleAsset, createEmitter, ConsoleValuePtr, 2, 2, ())
 {
     // Find the emitter.
+    ConsoleValuePtr ret;
     ParticleAssetEmitter* pEmitter = object->createEmitter();
 
-    return pEmitter == NULL ? StringTable->EmptyString : pEmitter->getIdString();
+    if (pEmitter)
+    {
+       ret.setValue(ConsoleSimObjectPtr::fromObject(pEmitter));
+    }
+    return ret;
 }
 
 //-----------------------------------------------------------------------------

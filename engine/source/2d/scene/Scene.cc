@@ -444,6 +444,17 @@ void Scene::forwardContacts( void )
     }
 }
 
+ConsoleFunction(len, S32, 2, 2, "")
+{
+   ConsoleValuePtr value = argv[1];
+   if (value.type >= ConsoleValue::TypeReferenceCounted)
+   {
+      return value.value.refValue->getIteratorLength();
+   }
+   
+   return -1;
+}
+
 //-----------------------------------------------------------------------------
 
 void Scene::dispatchBeginContactCallbacks( void )
@@ -500,13 +511,28 @@ void Scene::dispatchBeginContactCallbacks( void )
         // Format objects.
         ConsoleValuePtr sceneObjectABuffer;
         ConsoleValuePtr sceneObjectBBuffer;
+        ConsoleValuePtr miscInfoBuffer;
         sceneObjectABuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectA));
         sceneObjectBBuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectB));
 
         // Format miscellaneous information.
-        char miscInfoBuffer[128];
         if ( pointCount == 2 )
         {
+           ConsoleValuePtr args[12];
+           args[0].setValue(shapeIndexA);
+           args[1].setValue(shapeIndexB);
+           args[2].setValue(normal.x);
+           args[3].setValue(normal.y);
+           args[4].setValue(point1.x);
+           args[5].setValue(point1.y);
+           args[6].setValue(normalImpulse1);
+           args[7].setValue(tangentImpulse1);
+           args[8].setValue(point2.x);
+           args[9].setValue(point2.y);
+           args[10].setValue(normalImpulse2);
+           args[11].setValue(tangentImpulse2);
+           miscInfoBuffer.setValue(ConsoleArrayValue::fromValues(12, args));
+           /*
             dSprintf(miscInfoBuffer, sizeof(miscInfoBuffer),
                 "%d %d %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f",
                 shapeIndexA, shapeIndexB,
@@ -516,23 +542,39 @@ void Scene::dispatchBeginContactCallbacks( void )
                 tangentImpulse1,
                 point2.x, point2.y,
                 normalImpulse2,
-                tangentImpulse2 );
+                tangentImpulse2 );*/
         }
         else if ( pointCount == 1 )
         {
+           ConsoleValuePtr args[8];
+           args[0].setValue(shapeIndexA);
+           args[1].setValue(shapeIndexB);
+           args[2].setValue(normal.x);
+           args[3].setValue(normal.y);
+           args[4].setValue(point1.x);
+           args[5].setValue(point1.y);
+           args[6].setValue(normalImpulse1);
+           args[7].setValue(tangentImpulse1);
+           miscInfoBuffer.setValue(ConsoleArrayValue::fromValues(8, args));
+           /*
             dSprintf(miscInfoBuffer, sizeof(miscInfoBuffer),
                 "%d %d %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f",
                 shapeIndexA, shapeIndexB,
                 normal.x, normal.y,
                 point1.x, point1.y,
                 normalImpulse1,
-                tangentImpulse1 );
+                tangentImpulse1 );*/
         }
         else
         {
+           ConsoleValuePtr args[2];
+           args[0].setValue(shapeIndexA);
+           args[1].setValue(shapeIndexB);
+           miscInfoBuffer.setValue(ConsoleArrayValue::fromValues(2, args));
+           /*
             dSprintf(miscInfoBuffer, sizeof(miscInfoBuffer),
                 "%d %d",
-                shapeIndexA, shapeIndexB );
+                shapeIndexA, shapeIndexB );*/
         }
 
         // Does the scene handle the collision callback?
@@ -1369,7 +1411,10 @@ void Scene::addToScene( SceneObject* pSceneObject )
     // Perform callback only if properly added to the simulation.
     if ( pSceneObject->isProperlyAdded() )
     {
-        Con::executef(pSceneObject, "onAddToScene", getIdString());
+       if (isMethod("onAddToScene"))
+       {
+          Con::executef(pSceneObject, "onAddToScene", this);
+       }
     }
     else
     {
@@ -1422,7 +1467,10 @@ void Scene::removeFromScene( SceneObject* pSceneObject )
     }
 
     // Perform callback.
-    Con::executef( pSceneObject, "onRemoveFromScene", getIdString() );
+    if (pSceneObject->isMethod("onRemoveFromScene"))
+    {
+       Con::executef( pSceneObject, "onRemoveFromScene", getIdString() );
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -3749,8 +3797,11 @@ void Scene::processDeleteRequests( const bool forceImmediate )
             SceneObject* pSceneObject = mDeleteRequestsTemp[requestIndex].mpSceneObject;
 
             // Do script callback.
-            Con::executef(this, "onSafeDelete", pSceneObject->getIdString() );
-
+            if (pSceneObject->isMethod("onSafeDelete"))
+            {
+               Con::executef(this, "onSafeDelete", pSceneObject );
+            }
+           
             // Destroy the object.
             pSceneObject->deleteObject();
         }
@@ -3773,8 +3824,11 @@ void Scene::processDeleteRequests( const bool forceImmediate )
                 SceneObject* pSceneObject = deleteRequest.mpSceneObject;
 
                 // Do script callback.
-                Con::executef(this, "onSafeDelete", pSceneObject->getIdString() );
-
+                if (isMethod("onSafeDelete"))
+                {
+                   Con::executef(this, "onSafeDelete", pSceneObject );
+                }
+               
                 // Destroy the object.
                 pSceneObject->deleteObject();
 

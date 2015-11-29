@@ -159,13 +159,15 @@ void GuiSceneObjectCtrl::setSceneObject( const char* name )
    setUpdate();
 }
 
-ConsoleMethod( GuiSceneObjectCtrl, getSceneObject, ConsoleString, 2, 2, "() \n@return Returns displaying sceneobject id")
+ConsoleMethod( GuiSceneObjectCtrl, getSceneObject, ConsoleValuePtr, 2, 2, "() \n@return Returns displaying sceneobject id")
 {
+   ConsoleValuePtr ret;
    SceneObject *sceneObject = object->getSceneObject();
    if( !sceneObject )
-      return "";
+      return ret;
 
-   return sceneObject->getIdString();
+   ret.setValue(ConsoleSimObjectPtr::fromObject(sceneObject));
+   return ret;
 }
 
 
@@ -187,7 +189,7 @@ void GuiSceneObjectCtrl::setCaption( const char* caption )
 //
 void GuiSceneObjectCtrl::onMouseUp(const GuiEvent &event)
 {
-   if( mDepressed && ( event.mouseClickCount % 2 ) == 0 )
+   if( mDepressed && ( event.mouseClickCount % 2 ) == 0 && isMethod("onDoubleClick") )
          Con::executef( this, "onDoubleClick" );    
 
    Parent::onMouseUp( event );
@@ -195,22 +197,31 @@ void GuiSceneObjectCtrl::onMouseUp(const GuiEvent &event)
 
 void GuiSceneObjectCtrl::onMouseLeave( const GuiEvent &event )
 {
-   Con::executef( this, "onMouseLeave" );
-
+   if (isMethod("onMouseLeave"))
+   {
+      Con::executef( this, "onMouseLeave" );
+   }
+   
    Parent::onMouseLeave( event );
 }
 
 void GuiSceneObjectCtrl::onMouseEnter( const GuiEvent &event )
 {
-   Con::executef( this, "onMouseEnter" );
-
+   if (isMethod("onMouseEnter"))
+   {
+      Con::executef( this, "onMouseEnter" );
+   }
+   
    Parent::onMouseEnter( event );
 }
 
 void GuiSceneObjectCtrl::onMouseDragged( const GuiEvent &event )
 {
-   Con::executef( this, "onMouseDragged" );
-
+   if (isMethod("onMouseDragged"))
+   {
+      Con::executef( this, "onMouseDragged" );
+   }
+   
    Parent::onMouseDragged( event );
 }
 

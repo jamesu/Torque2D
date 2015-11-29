@@ -63,7 +63,10 @@ public:
         pSceneObject->mRotateToEventId = 0;
 
         // Script callback.
-        Con::executef( object, "onRotateToComplete", (mRadToDeg(mTargetAngle)) );
+        if (object->isMethod("onRotateToComplete"))
+        {
+           Con::executef( object, "onRotateToComplete", (mRadToDeg(mTargetAngle)) );
+        }
     }
 
 private:

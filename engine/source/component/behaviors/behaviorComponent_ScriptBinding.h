@@ -60,7 +60,7 @@ ConsoleFunctionWithDocs( copyBehaviorToComponent, ConsoleBool, 3, 3, (behavior, 
     // Fetch template field count.
     const U32 fieldCount = pTemplate->getBehaviorFieldCount();
     
-    const char* pFieldValue = NULL;
+    ConsoleValuePtr pFieldValue;
     BehaviorTemplate::BehaviorField* pField = NULL;
 
     // Copy behavior fields.

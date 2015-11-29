@@ -961,27 +961,20 @@ void SceneWindow::sendWindowInputEvent( StringTableEntry name, const GuiEvent& e
         worldMousePoint = localGuiPoint;
     }
 
-
-    // Argument Buffers.
-    char argBuffer[3][64];
-
-     // Format Event-Modifier Buffer.
-    dSprintf(argBuffer[0], 64, "%d", event.eventID);
-
-    // Format Mouse-Position Buffer.
-    dSprintf(argBuffer[1], 64, "%g %g", worldMousePoint.x, worldMousePoint.y);
-
-    // Format Mouse-Click Count Buffer.
-    dSprintf(argBuffer[2], 64, "%d", event.mouseClickCount);
-
     // Call Scripts.
-    Con::executef(this, name, argBuffer[0], argBuffer[1], argBuffer[2]);
-
+    if (isMethod(name))
+    {
+       Con::executef(this, name, event.eventID, worldMousePoint, event.mouseClickCount);
+    }
+   
     // Iterate listeners.
     for( SimSet::iterator listenerItr = mInputListeners.begin(); listenerItr != mInputListeners.end(); ++listenerItr )
     {
         // Call scripts on listener.
-        Con::executef( *listenerItr, name, argBuffer[0], argBuffer[1], argBuffer[2] );
+        if ((*listenerItr)->isMethod(name))
+        {
+           Con::executef( *listenerItr, name, event.eventID, worldMousePoint, event.mouseClickCount );
+        }
     }
 }
 
