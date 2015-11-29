@@ -1385,7 +1385,7 @@ void ImageAsset::calculateExplicitMode( void )
 
 //------------------------------------------------------------------------------
 
-bool ImageAsset::setFilterMode( void *obj, const ConsoleValuePtr data )
+bool ImageAsset::setFilterMode( void *obj, const ConsoleValuePtr &data )
 {
     static_cast<ImageAsset*>(obj)->setFilterMode(getFilterModeEnum(data.getTempStringValue()));
     return false;

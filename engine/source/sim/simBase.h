@@ -163,7 +163,7 @@ namespace Sim
 
    SimObject* findObject(SimObjectId);
    SimObject* findObject(const char* name);
-   SimObject* findObject(const ConsoleValue &value);
+   SimObject* findObject(const ConsoleValuePtr &value);
    template<class T> inline bool findObject(SimObjectId id,T*&t)
    {
       t = dynamic_cast<T*>(findObject(id));
@@ -174,7 +174,7 @@ namespace Sim
       t = dynamic_cast<T*>(findObject(pObjectName));
       return t != NULL;
    }
-   template<class T> inline bool findObject(const ConsoleValue &value,T*&t)
+   template<class T> inline bool findObject(const ConsoleValuePtr &value,T*&t)
    {
       t = dynamic_cast<T*>(findObject(value));
       return t != NULL;
@@ -187,7 +187,7 @@ namespace Sim
    {
        return dynamic_cast<T*>(findObject(pObjectName));
    }
-   template<class T> inline T* findObject(const ConsoleValue &value)
+   template<class T> inline T* findObject(const ConsoleValuePtr &value)
    {
       return dynamic_cast<T*>(findObject(value));
    }

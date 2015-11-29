@@ -489,6 +489,9 @@ bool CodeBlock::compile(const char *fileName, const char *script)
    codeStream.mLastKonstPage = 0; // reset konst page, it's always 0 at the start
    for (U32 i=1; i<mFunctions.size(); i++)
    {
+      codeStream.mTargetList.clear();
+      codeStream.mVarInfo.clear();
+      
       mFunctions[i]->ip = codeStream.tell();
       CodeBlock::smCurrentFunction = mFunctions[i];
       mFunctions[i]->stmt->compileFunction(codeStream, codeStream.tell());
@@ -514,6 +517,7 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
    
    CodeBlockFunction* newFunction = mFunctions[0];
    
+   gNewEvalState.currentFrame.returnReg = gNewEvalState.getFrameEnd();
    gNewEvalState.pushFunction(newFunction, this, NULL, 0);
    gNewEvalState.currentFrame.globalVars = gNewEvalState.globalVars;
    

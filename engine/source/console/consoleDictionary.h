@@ -48,91 +48,68 @@ class Dictionary
 public:
     struct Entry
     {
-        enum
-        {
-            TypeInternalInt = -3,
-            TypeInternalFloat = -2,
-            TypeInternalString = -1,
-        };
-
         StringTableEntry name;
         Entry *nextEntry;
-        S32 type;
-        char *sval;
-        U32 ival;  // doubles as strlen when type = -1
-        F32 fval;
-        U32 bufferLen;
+       
+        ConsoleValuePtr value;
         void *dataPtr;
+        S32 type;
 
         Entry(StringTableEntry name);
         ~Entry();
 
-        U32 getIntValue()
+        inline ConsoleValuePtr getValue()
         {
-            if(type <= TypeInternalString)
-                return ival;
-            else
-                return dAtoi(Con::getData(type, dataPtr, 0).c_str());
+          if (type < 0)
+             return value;
+          else
+             return Con::getDataValue(type, dataPtr, 0).getStringValue();
         }
-        F32 getFloatValue()
+        inline U64 getIntValue()
         {
-            if(type <= TypeInternalString)
-                return fval;
-            else
-                return dAtof(Con::getData(type, dataPtr, 0).c_str());
+           if (type < 0)
+              return value.getIntValue();
+           else
+              return Con::getDataValue(type, dataPtr, 0).getIntValue();
         }
-        ConsoleStringValuePtr getStringValue()
+        inline F64 getFloatValue()
         {
-            if(type == TypeInternalString)
-                return sval;
-            if(type == TypeInternalFloat)
-                return Con::getData(TypeF32, &fval, 0);
-            else if(type == TypeInternalInt)
-                return Con::getData(TypeS32, &ival, 0);
-            else
-                return Con::getData(type, dataPtr, 0);
+           if (type < 0)
+              return value.getFloatValue();
+           else
+              return Con::getDataValue(type, dataPtr, 0).getFloatValue();
         }
-        void setIntValue(U32 val)
+        inline ConsoleStringValuePtr getStringValue()
         {
-            if(type <= TypeInternalString)
-            {
-                fval = (F32)val;
-                ival = val;
-                if(sval != typeValueEmpty)
-                {
-                    dFree(sval);
-                    sval = typeValueEmpty;
-                }
-                type = TypeInternalInt;
-                return;
-            }
-            else
-            {
-                ConsoleValuePtr dataValue = Con::getDataValue(TypeS32, &val, 0);
-                Con::setDataFromValue(type, dataPtr, 0, dataValue);
-            }
+          if (type < 0)
+             return value.getStringValue();
+          else
+             return Con::getDataValue(type, dataPtr, 0).getStringValue();
         }
-        void setFloatValue(F32 val)
+        inline void setIntValue(U64 val)
         {
-            if(type <= TypeInternalString)
-            {
-                fval = val;
-                ival = static_cast<U32>(val);
-                if(sval != typeValueEmpty)
-                {
-                    dFree(sval);
-                    sval = typeValueEmpty;
-                }
-                type = TypeInternalFloat;
-                return;
-            }
-            else
-            {
-                ConsoleValuePtr dataValue = Con::getDataValue(TypeF32, &val, 0);
-                Con::setData(type, dataPtr, 0, dataValue);
-            }
+           value.setValue((U64)val);
+           if (type >= 0)
+              Con::setDataFromValue(type, dataPtr, 0, value);
         }
-        void setStringValue(const char *value);
+        inline void setIntValue(S64 val)
+        {
+           value.setValue((F64)val);
+           if (type >= 0)
+              Con::setDataFromValue(type, dataPtr, 0, value);
+        }
+        inline void setFloatValue(F64 val)
+        {
+           value.setValue(val);
+           if (type >= 0)
+              Con::setDataFromValue(type, dataPtr, 0, value);
+        }
+        inline void setStringValue(const char *inValue)
+        {
+           value.setString(inValue);
+           if (type >= 0)
+              Con::setDataFromValue(type, dataPtr, 0, value);
+        }
     };
 
 private:
@@ -166,7 +143,9 @@ public:
     void deleteVariables(const char *varString);
 
     void setVariable(StringTableEntry name, const char *value);
+    void setValueVariable(StringTableEntry name, const ConsoleValuePtr& variable);
     ConsoleStringValuePtr getVariable(StringTableEntry name, bool *valid = NULL);
+    ConsoleValuePtr getValueVariable(StringTableEntry name, bool *valid = NULL);
 
     void addVariable(const char *name, S32 type, void *dataPtr);
     bool removeVariable(StringTableEntry name);

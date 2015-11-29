@@ -88,14 +88,14 @@ public:
    DECLARE_CONOBJECT(GuiImageButtonCtrl);
 
 protected:
-    static bool setNormalImage(void *obj, const ConsoleValuePtr data) { static_cast<GuiImageButtonCtrl*>(obj)->setNormalImage( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr getNormalImage(void *obj, const ConsoleValuePtr data) { return static_cast<GuiImageButtonCtrl*>(obj)->getNormalImage(); }
-    static bool setHoverImage(void *obj, const ConsoleValuePtr data) { static_cast<GuiImageButtonCtrl*>(obj)->setHoverImage( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr getHoverImage(void *obj, const ConsoleValuePtr data) { return static_cast<GuiImageButtonCtrl*>(obj)->getHoverImage(); }
-    static bool setDownImage(void *obj, const ConsoleValuePtr data) { static_cast<GuiImageButtonCtrl*>(obj)->setDownImage( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr getDownImage(void *obj, const ConsoleValuePtr data) { return static_cast<GuiImageButtonCtrl*>(obj)->getDownImage(); }
-    static bool setInactiveImage(void *obj, const ConsoleValuePtr data) { static_cast<GuiImageButtonCtrl*>(obj)->setInactiveImage( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr getInactiveImage(void *obj, const ConsoleValuePtr data) { return static_cast<GuiImageButtonCtrl*>(obj)->getInactiveImage(); }
+    static bool setNormalImage(void *obj, const ConsoleValuePtr &data) { static_cast<GuiImageButtonCtrl*>(obj)->setNormalImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getNormalImage(void *obj, const ConsoleValuePtr &data) { return static_cast<GuiImageButtonCtrl*>(obj)->getNormalImage(); }
+    static bool setHoverImage(void *obj, const ConsoleValuePtr &data) { static_cast<GuiImageButtonCtrl*>(obj)->setHoverImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getHoverImage(void *obj, const ConsoleValuePtr &data) { return static_cast<GuiImageButtonCtrl*>(obj)->getHoverImage(); }
+    static bool setDownImage(void *obj, const ConsoleValuePtr &data) { static_cast<GuiImageButtonCtrl*>(obj)->setDownImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getDownImage(void *obj, const ConsoleValuePtr &data) { return static_cast<GuiImageButtonCtrl*>(obj)->getDownImage(); }
+    static bool setInactiveImage(void *obj, const ConsoleValuePtr &data) { static_cast<GuiImageButtonCtrl*>(obj)->setInactiveImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getInactiveImage(void *obj, const ConsoleValuePtr &data) { return static_cast<GuiImageButtonCtrl*>(obj)->getInactiveImage(); }
 };
 
 #endif //_GUIIMAGEBUTTON_H_

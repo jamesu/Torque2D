@@ -344,21 +344,17 @@ void SimObject::writeFields(Stream &stream, U32 tabStop)
       {
          char array[8];
          dSprintf( array, 8, "%d", j );
-         const char *val = getDataField(fieldName, array );
-
+         ConsoleValuePtr val = getDataField(fieldName, array );
+         
          // Make a copy for the field check.
-         if (!val)
+         ConsoleStringValuePtr valCopy = val.getStringValue();
+         if (val.type == ConsoleValue::TypeInternalNull)
             continue;
-
-         U32 nBufferSize = dStrlen( val ) + 1;
-         FrameTemp<char> valCopy( nBufferSize );
-         dStrcpy( (char *)valCopy, val );
-
-         if (!writeField(fieldName, valCopy))
+         
+         if (!writeField(fieldName, valCopy.c_str()))
             continue;
-
-         val = valCopy;
-
+         
+         U32 nBufferSize = dStrlen( valCopy.c_str() ) + 1;
          U32 expandedBufferSize = ( nBufferSize  * 2 ) + 32;
          FrameTemp<char> expandedBuffer( expandedBufferSize );
          if(f->elementCount == 1)
@@ -367,14 +363,17 @@ void SimObject::writeFields(Stream &stream, U32 tabStop)
             dSprintf(expandedBuffer, expandedBufferSize, "%s[%d] = \"", f->pFieldname, j);
 
          // detect and collapse relative path information
-         char fnBuf[1024];
          if (f->type == TypeFilename)
          {
-            Con::collapsePath(fnBuf, 1024, val);
-            val = fnBuf;
+            char fnBuf[1024];
+            Con::collapsePath(fnBuf, 1024, valCopy.c_str());
+            expandEscape((char*)expandedBuffer + dStrlen(expandedBuffer), fnBuf);
          }
-
-         expandEscape((char*)expandedBuffer + dStrlen(expandedBuffer), val);
+         else
+         {
+            expandEscape((char*)expandedBuffer + dStrlen(expandedBuffer), valCopy.c_str());
+         }
+         
          dStrcat(expandedBuffer, "\";\r\n");
 
          stream.writeTabs(tabStop);
@@ -494,7 +493,7 @@ const char *SimObject::tabComplete(const char *prevText, S32 baseLen, bool fForw
 
 //-----------------------------------------------------------------------------
 
-void SimObject::setDataField(StringTableEntry slotName, const char *array, const char *value)
+void SimObject::setDataField(StringTableEntry slotName, const char *array, const ConsoleValuePtr &value)
 {
    // first search the static fields if enabled
    if(mFlags.test(ModStaticFields))
@@ -523,18 +522,14 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
             ConsoleBaseType *cbt = ConsoleBaseType::getType( fld->type );
             AssertFatal( cbt != NULL, "Could not resolve Type Id." );
 
-            dStrncpy(buffer, value, 2048);
             //const char* szBuffer = cbt->prepData( value, buffer, 2048 );
             //dMemset( bufferSecure, 0, 2048 );
             //dMemcpy( bufferSecure, szBuffer, dStrlen( szBuffer ) );
-
-            ConsoleValuePtr value;
-            value.setString(buffer);
-
+            
             if( (*fld->setDataFn)( this, value ) )
-               Con::setData(fld->type, (void *) (((const char *)this) + fld->offset), array1, value, fld->table);
+               Con::setDataFromValue(fld->type, (void *) (((const char *)this) + fld->offset), array1, value, fld->table);
 
-            onStaticModified( slotName, value );
+            onStaticModified( slotName, value.getTempStringValue() );
 
             return;
          }
@@ -542,7 +537,7 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
          if(fld->validator)
             fld->validator->validateType(this, (void *) (((const char *)this) + fld->offset));
 
-         onStaticModified( slotName, value );
+         onStaticModified( slotName, value.getTempStringValue() );
          return;
       }
    }
@@ -553,20 +548,20 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
          mFieldDictionary = new SimFieldDictionary;
 
       if(!array)
-         mFieldDictionary->setFieldValue(slotName, value);
+         mFieldDictionary->setFieldValue(slotName, value.getTempStringValue());
       else
       {
          char buf[256];
          dStrcpy(buf, slotName);
          dStrcat(buf, array);
-         mFieldDictionary->setFieldValue(StringTable->insert(buf), value);
+         mFieldDictionary->setFieldValue(StringTable->insert(buf), value.getTempStringValue());
       }
    }
 }
 
 //-----------------------------------------------------------------------------
 
-const char *SimObject::getDataField(StringTableEntry slotName, const char *array)
+ConsoleValuePtr SimObject::getDataField(StringTableEntry slotName, const char *array)
 {
    ConsoleValuePtr result;
    if(mFlags.test(ModStaticFields))
@@ -580,14 +575,14 @@ const char *SimObject::getDataField(StringTableEntry slotName, const char *array
             result.setValue((*fld->getDataFn)( this, Con::getDataValue(fld->type, (void *) (((const char *)this) + fld->offset), 0, fld->table) ));
          if(array1 >= 0 && array1 < fld->elementCount)
             result.setValue((*fld->getDataFn)( this, Con::getDataValue(fld->type, (void *) (((const char *)this) + fld->offset), array1, fld->table) ));
-         return result.getTempStringValue(); // TOFIX this should return a ConsoleStringValuePtr or ConsoleValuePtr
+         return result;
       }
    }
 
    if(mFlags.test(ModDynamicFields))
    {
       if(!mFieldDictionary)
-         return "";
+         return ConsoleValuePtr();
 
       if(!array) 
       {
@@ -604,7 +599,7 @@ const char *SimObject::getDataField(StringTableEntry slotName, const char *array
       }
    }
 
-   return "";
+   return ConsoleValuePtr();
 }
 
 //-----------------------------------------------------------------------------
@@ -615,13 +610,13 @@ const char *SimObject::getPrefixedDataField(StringTableEntry fieldName, const ch
     AssertFatal( fieldName != NULL, "Cannot get field value with NULL field name." );
 
     // Fetch field value.
-    const char* pFieldValue = getDataField( fieldName, array );
+    ConsoleValuePtr pFieldValue = getDataField( fieldName, array );
 
     // Sanity.
-    AssertFatal( pFieldValue != NULL, "Field value cannot be NULL." );
+    AssertFatal( pFieldValue.type != ConsoleValue::TypeInternalNull, "Field value cannot be NULL." );
 
     // Return without the prefix if there's no value.
-    if ( *pFieldValue == 0 )
+    if ( *pFieldValue.getTempStringValue() == '\0' )
         return StringTable->EmptyString;
 
     // Fetch the field prefix.
@@ -629,15 +624,17 @@ const char *SimObject::getPrefixedDataField(StringTableEntry fieldName, const ch
 
     // Sanity!
     AssertFatal( fieldPrefix != NULL, "Field prefix cannot be NULL." );
+   
+    ConsoleStringValuePtr strValue = pFieldValue.getStringValue();
 
     // Calculate a buffer size including prefix.
-    const U32 valueBufferSize = dStrlen(fieldPrefix) + dStrlen(pFieldValue) + 1;
+    const U32 valueBufferSize = dStrlen(fieldPrefix) + dStrlen(strValue.c_str()) + 1;
 
     // Fetch a buffer.
     char* pValueBuffer = Con::getReturnBuffer( valueBufferSize );
 
     // Format the value buffer.
-    dSprintf( pValueBuffer, valueBufferSize, "%s%s", fieldPrefix, pFieldValue );
+    dSprintf( pValueBuffer, valueBufferSize, "%s%s", fieldPrefix, strValue.c_str() );
 
     return pValueBuffer;
 }
@@ -694,10 +691,10 @@ const char *SimObject::getPrefixedDynamicDataField(StringTableEntry fieldName, c
     AssertFatal( fieldName != NULL, "Cannot get field value with NULL field name." );
 
     // Fetch field value.
-    const char* pFieldValue = getDataField( fieldName, array );
+    ConsoleValuePtr pFieldValue = getDataField( fieldName, array );
 
     // Sanity.
-    AssertFatal( pFieldValue != NULL, "Field value cannot be NULL." );
+    AssertFatal( pFieldValue.type != ConsoleValue::TypeInternalNull, "Field value cannot be NULL." );
 
     // Return the field if no field type is specified.
     if ( fieldType == -1 )
@@ -715,7 +712,7 @@ const char *SimObject::getPrefixedDynamicDataField(StringTableEntry fieldName, c
     {
         // No, so warn.
         Con::warnf("getPrefixedDynamicDataField() - Invalid field type '%d' specified for field '%s' with value '%s'.",
-            fieldType, fieldName, pFieldValue );
+            fieldType, fieldName, pFieldValue.getTempStringValue() );
     }
 
     // Fetch the field prefix.
@@ -723,15 +720,17 @@ const char *SimObject::getPrefixedDynamicDataField(StringTableEntry fieldName, c
 
     // Sanity!
     AssertFatal( fieldPrefix != NULL, "Field prefix cannot be NULL." );
+   
+    ConsoleStringValuePtr strValue = pFieldValue.getStringValue();
 
     // Calculate a buffer size including prefix.
-    const U32 valueBufferSize = dStrlen(fieldPrefix) + dStrlen(pFieldValue) + 1;
+    const U32 valueBufferSize = dStrlen(fieldPrefix) + dStrlen(strValue.c_str()) + 1;
 
     // Fetch a buffer.
     char* pValueBuffer = Con::getReturnBuffer( valueBufferSize );
 
     // Format the value buffer.
-    dSprintf( pValueBuffer, valueBufferSize, "%s%s", fieldPrefix, pFieldValue );
+    dSprintf( pValueBuffer, valueBufferSize, "%s%s", fieldPrefix, strValue.c_str() );
 
     return pValueBuffer;
 }
@@ -1135,7 +1134,7 @@ void SimObject::copyTo(SimObject* object)
 
 //-----------------------------------------------------------------------------
 
-bool SimObject::setParentGroup(void *obj, const ConsoleValuePtr data)
+bool SimObject::setParentGroup(void *obj, const ConsoleValuePtr &data)
 {
    SimGroup *parent = NULL;
    SimObject *object = static_cast<SimObject*>(obj);

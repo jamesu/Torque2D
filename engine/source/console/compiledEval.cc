@@ -182,7 +182,7 @@ inline U32 ts2_eq_str(ConsoleValue *a, ConsoleValue *b)
       {
          return a->value.string == b->value.string;
       }
-      else if (a->type == ConsoleValue::TypeReferenceCounted)
+      else if (a->type > ConsoleValue::TypeReferenceCounted)
       {
          return a->value.refValue->stringCompare(b->value.refValue->getString().c_str());
       }
@@ -236,8 +236,8 @@ inline const char *ts2PrintKonstOrRef(U32 value, ConsoleValue *konst)
 
 void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
 {
-   ConsoleValue *konst = state->currentFrame.constants;
-   ConsoleValue *konstBase = konst;
+   ConsoleValuePtr *konst = state->currentFrame.constants;
+   ConsoleValuePtr *konstBase = konst;
    U32 ip = state->currentFrame.savedIP;
    U32 targetRegTmp = 0;
    
@@ -298,6 +298,11 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
             
             vmcase(Compiler::OP_GETFUNC) {
                Con::printf("[%i] OP_GETFUNC %s %s -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
+               vmbreak;
+            }
+            
+            vmcase(Compiler::OP_GETFUNC_NS) {
+               Con::printf("[%i] OP_GETFUNC_NS %s %s -> R%i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), TS2_OP_DEC_A(i));
                vmbreak;
             }
             
@@ -488,15 +493,15 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 {
     // Executes code block as normal
     U32 ip = state->currentFrame.savedIP;
-    ConsoleValue *konst = state->currentFrame.constants;
-    ConsoleValue *konstBase = konst;
+    ConsoleValuePtr *konst = state->currentFrame.constants;
+    ConsoleValuePtr *konstBase = konst;
     ConsoleValuePtr *base = state->stack.address() + state->currentFrame.stackTop;
     
     char temp1[256];
     
-    ConsoleValue acc;
+    ConsoleValuePtr acc;
    acc.type = ConsoleValue::TypeInternalFloat;
-   ConsoleValue iacc;
+   ConsoleValuePtr iacc;
    iacc.type = ConsoleValue::TypeInternalInt;
    U32 end;
    U32 startFrameSize = state->frames.size();
@@ -511,7 +516,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
     {
         const Compiler::Instruction i = (code[ip++]);
        
-        ConsoleValue *ra = base+TS2_OP_DEC_A(i);
+        ConsoleValuePtr *ra = base+TS2_OP_DEC_A(i);
         vmdispatch (TS2_OP_DEC(i)) {
            
            
@@ -538,7 +543,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 //#ifdef TS2_VM_DEBUG
                //Con::printf("[%i] OP_LOADK %i %i", ip-1, TS2_OP_DEC_A(i),TS2_OP_DEC_Bx(i));
 //#endif
-                *ra = konst[TS2_OP_DEC_Bx(i)];
+                ra->setValue(konst[TS2_OP_DEC_Bx(i)]);
                 vmbreak;
             }
             vmcase(Compiler::OP_PAGEK) {
@@ -551,9 +556,9 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               //Con::printf("[%i] OP_GETFIELD R%i %s %s", ip-1, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst));
               
               
-              ConsoleValuePtr& targetObject = base[TS2_OP_DEC_B(i)];
-              ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
-              ConsoleValue arrayValue;
+              ConsoleValuePtr &targetObject = base[TS2_OP_DEC_B(i)];
+              ConsoleValuePtr &targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValuePtr arrayValue;
               
               if (targetObject.type > ConsoleValue::TypeReferenceCounted)
               {
@@ -580,8 +585,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               //Con::printf("[%i] OP_GETFIELD R%i %s %s [%s]", ip-1, TS2_OP_DEC_A(i),ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_B(i)+1, konst));
               
               ConsoleValuePtr& targetObject = base[TS2_OP_DEC_B(i)];
-              ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
-              ConsoleValue targetArray = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)+1);
+              ConsoleValuePtr& targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValuePtr& targetArray = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)+1);
               
               if (targetObject.type > ConsoleValue::TypeReferenceCounted)
               {
@@ -592,8 +597,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  SimObject *obj = Sim::findObject<SimObject>(targetObject);
                  if (obj)
                  {
-                    // TODO: direct access
-                     ((ConsoleValuePtr*)(ra))->setValue(ConsoleStringValue::fromString(obj->getDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue())));
+                     ((ConsoleValuePtr*)(ra))->setValue(obj->getDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue()));
                  }
                  else
                  {
@@ -609,7 +613,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #ifdef TS2_VM_DEBUG
                Con::printf("[%i] OP_LOADVAR %i %i", ip-1, ra,TS2_OP_DEC_B(i));
 #endif
-                ((ConsoleValuePtr*)(ra))->setValue(Con::getVariable(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getTempStringValue()));
+                ((ConsoleValuePtr*)(ra))->setValue(Con::getConsoleValueVariable(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getTempStringValue()));
                 vmbreak;
             }
            
@@ -619,10 +623,10 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                const U32 tname = TS2_OP_DEC_A(i);
                const U32 nvalue = TS2_OP_DEC_C(i);
                
-               ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
-               ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-               ConsoleValue newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
-               ConsoleValue arrayValue;
+               ConsoleValuePtr& targetObject = base[TS2_OP_DEC_A(i)];
+               ConsoleValuePtr& targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+               ConsoleValuePtr& newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+               ConsoleValuePtr arrayValue;
                
                // We use two methods here:
                // 1) If we have a basic type, assume we have a SimObject
@@ -638,7 +642,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                   if (obj)
                   {
                      // TODO: direct set
-                     obj->setDataField(targetSlot.getSTEStringValue(), NULL, newValue.getTempStringValue());
+                     obj->setDataField(targetSlot.getSTEStringValue(), NULL, newValue);
                   }
                }
                
@@ -650,10 +654,10 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                U32 opA = TS2_OP_DEC_A(i);
                U32 opB = TS2_OP_DEC_B(i);
                U32 opC = TS2_OP_DEC_C(i);
-               ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
-               ConsoleValue targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-               ConsoleValue targetArray = base[TS2_OP_DEC_C(i)+1];
-               ConsoleValue newValue = base[TS2_OP_DEC_C(i)];
+               ConsoleValuePtr& targetObject = base[TS2_OP_DEC_A(i)];
+               ConsoleValuePtr& targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+               ConsoleValuePtr& targetArray = base[TS2_OP_DEC_C(i)+1];
+               ConsoleValuePtr& newValue = base[TS2_OP_DEC_C(i)];
                
                if (targetObject.type > ConsoleValue::TypeReferenceCounted)
                {
@@ -683,23 +687,18 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                Con::printf("[%i] OP_SETVAR %i %i %i", ip-1, ra,TS2_OP_DEC_B(i),TS2_OP_DEC_C(i));
 #endif
                 U32 bValue = TS2_OP_DEC_B(i);
-                ConsoleValuePtr namePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-                ConsoleValuePtr valuePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+                ConsoleValuePtr &namePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+                ConsoleValuePtr &valuePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
                
-               if (valuePtr.type >= ConsoleValue::TypeReferenceCounted && valuePtr.type != TypeBufferString)
-               {
-                  Con::warnf("OP_SETVAR global variables of type currently not supported, variable %s will be converted to a string.", namePtr.getTempStringValue());
-               }
-               
-                Con::setVariable(namePtr.getSTEStringValue(), valuePtr.getTempStringValue());
+                Con::setValueVariable(namePtr.getSTEStringValue(), valuePtr);
                 vmbreak;
             }
            
            vmcase(Compiler::OP_GETFUNC) {
               U32 setReg = TS2_OP_DEC_A(i);
               U32 targetReg = TS2_OP_DEC_B(i);
-              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
               
 #ifdef TS2_VM_DEBUG
@@ -719,7 +718,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  
                  if (!entry)
                  {
-                    Con::warnf("Couldn't find function %s in object %s (%s)", targetObject.getTempStringValue(), nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
+                    Con::warnf("Couldn't find function %s in object %s (%s)", nameId.getSTEStringValue(), targetObject.getTempStringValue(), state->currentFrame.code->getFileLine(ip-1));
                     base[setReg].setNull();
                  }
                  else
@@ -784,11 +783,54 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               vmbreak;
            }
            
+           vmcase(Compiler::OP_GETFUNC_NS) {
+              U32 setReg = TS2_OP_DEC_A(i);
+              U32 targetReg = TS2_OP_DEC_B(i);
+              ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+              
+#ifdef TS2_VM_DEBUG
+              Con::printf("[%i] OP_GETFUNC_NS %s %s -> %i", ip-1, ra);
+#endif
+              
+                 Namespace *ns = Namespace::find(targetObject.getSTEStringValue());
+                 if (!ns)
+                 {
+                    ns = targetObject.value.refValue->getNamespace();
+                    Con::errorf("Couldn't find namespace for %s.", targetObject.getTempStringValue());
+                    vmbreak;
+                 }
+                 StringTableEntry steValue = nameId.getSTEStringValue();
+                 Namespace::Entry *entry = ns->lookup(nameId.getSTEStringValue());
+                 
+                 if (!entry)
+                 {
+                    if (steValue == StringTable->EmptyString)
+                    {
+                       Con::errorf("Couldn't find global function %s (%s)", nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
+                    }
+                    else
+                    {
+                       Con::errorf("Couldn't find function %s::%s (%s)", steValue, nameId.getSTEStringValue(), state->currentFrame.code->getFileLine(ip-1));
+                    }
+                    base[setReg].setNull();
+                 }
+                 else
+                 {
+                    base[setReg].setNull();
+                    base[setReg].type = ConsoleValue::TypeInternalNamespaceEntry;
+                    base[setReg].value.ptrValue = entry;
+                 }
+              
+              vmbreak;
+           }
+           
            
            vmcase(Compiler::OP_GETINTERNAL) {
               U32 setReg = TS2_OP_DEC_A(i);
-              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
               SimSet *object = Sim::findObject<SimSet>(targetObject);
               if (object)
@@ -807,8 +849,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_GETINTERNAL_N) {
               U32 setReg = TS2_OP_DEC_A(i);
-              ConsoleValue targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-              ConsoleValue nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
               SimSet *object = Sim::findObject<SimSet>(targetObject);
               if (object)
@@ -827,7 +869,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            
            vmcase(Compiler::OP_CREATE_VALUE) {
-              ConsoleValue typeName = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &typeName = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               StringTableEntry typeSTE = typeName.getSTEStringValue();
               
               ConsoleBaseType *typeInst = ConsoleBaseType::getTypeByName(typeSTE);
@@ -872,7 +914,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #ifdef DEBUG_COMPILER
               Con::printf("Creating object... %s of klass %s", objectName, klassName);
 #endif
-              
               // objectName = argv[1]...
               SimObject *currentNewObject = NULL;
               
@@ -979,8 +1020,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_FINISH_OBJECT) {
               // registerObject(A), B.addObject(A), [flags(c)]
-              ConsoleValue targetObject = base[TS2_OP_DEC_A(i)];
-              ConsoleValue parentObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &targetObject = base[TS2_OP_DEC_A(i)];
+              ConsoleValuePtr &parentObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               
               SimObject *currentNewObject;
               SimGroup *parent;
@@ -1088,8 +1129,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            //Con::printf(#_op "[%i] -> %i", ip-1,  targetRegTmp);
 #define TS2_INT_OP(_op, _operand) \
            vmcase(_op) { \
-              acc.value.ival = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getIntValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getIntValue()); \
-              ((ConsoleValuePtr*)ra)->setValue(acc); \
+              iacc.value.ival = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getIntValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getIntValue()); \
+              ra->setValue(iacc); \
               vmbreak; \
            }
            
@@ -1097,7 +1138,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #define TS2_FLOAT_OP(_op, _operand) \
             vmcase(_op) { \
                 acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue()); \
-                ((ConsoleValuePtr*)ra)->setValue(acc); \
+                ra->setValue(acc); \
                 vmbreak; \
             }
             
@@ -1113,7 +1154,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_SUB) {
               //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
               acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() - TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
-              *ra = acc;
+              ra->setValue(acc);
               vmbreak;
            }
            
@@ -1125,21 +1166,21 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_POW) {
               //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
               acc.value.fval = mPow(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue(), TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
-              *ra = acc;
+              ra->setValue(acc);
               vmbreak;
            }
            
            vmcase(Compiler::OP_UMN) {
               //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
               acc.value.fval = -(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue());
-              *ra = acc;
+              ra->setValue(acc);
               vmbreak;
            }
            
            vmcase(Compiler::OP_NOT) {
               //Con::printf("Compiler::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
               acc.value.fval = !(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue());
-              *ra = acc;
+              ra->setValue(acc);
               vmbreak;
            }
            
@@ -1262,7 +1303,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #ifdef TS2_VM_DEBUG
               Con::printf("[%i] OP_EQ_STR %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
 #endif
-              
               if (ts2_eq_str(&v1, &v2) != TS2_OP_DEC_A(i))
               {
                  // skip JMP (i.e. follow true branch)
@@ -1328,6 +1368,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                      state->currentFrame.returnReg = returnStart;
                      state->currentFrame.savedIP = ip;
                      state->currentFrame.constantTop = (U32)(konst - konstBase);
+                     state->currentFrame.stackTop = base - state->stack.address();
+                     
                      
                      switch(nsEntry->mType)
                      {
@@ -1342,11 +1384,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            konst = konstBase + state->currentFrame.constantTop;
                            code = state->currentFrame.code->code;
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           
-                           if (dStricmp(nsEntry->mFunctionName, "initializeCanvas") == 0)
-                           {
-                              dumpOpcodes(state);
-                           }
                            
                            vmbreak;
                         }
@@ -1436,14 +1473,15 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            }
            
            vmcase(Compiler::OP_COPYFIELDS) {
-              ConsoleValue destObject = base[TS2_OP_DEC_A(i)];
-              ConsoleValue srcObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr &destObject = base[TS2_OP_DEC_A(i)];
+              ConsoleValuePtr &srcObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               
               SimObject *dstObj = Sim::findObject<SimObject>(destObject);
               SimObject *srcObj = Sim::findObject<SimObject>(srcObject);
               
               if (dstObj && srcObj)
               {
+                 //Con::printf("Copying fields to %s from %s", dstObj->getName(), srcObj->getName());
                  dstObj->assignFieldsFrom(srcObj);
               }
               else
@@ -1460,8 +1498,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_ITR_GET) {
               // a := b.itr(c)
               
-              ConsoleValue itrObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-              ConsoleValue itrValue = base[TS2_OP_DEC_C(i)];
+              ConsoleValuePtr itrObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr itrValue = base[TS2_OP_DEC_C(i)];
               
               if (itrObject.type > ConsoleValue::TypeReferenceCounted)
               {

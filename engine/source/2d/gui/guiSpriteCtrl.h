@@ -69,13 +69,13 @@ protected:
     virtual void onAnimationEnd( void );
 
 protected:
-    static bool setImage(void *obj, const ConsoleValuePtr data) { static_cast<GuiSpriteCtrl*>(obj)->setImage( data.getTempStringValue() ); return false; }
+    static bool setImage(void *obj, const ConsoleValuePtr &data) { static_cast<GuiSpriteCtrl*>(obj)->setImage( data.getTempStringValue() ); return false; }
     static bool writeImage(void* obj, StringTableEntry pFieldName) { GuiSpriteCtrl* pCastObject = static_cast<GuiSpriteCtrl*>(obj); if ( !pCastObject->isStaticFrameProvider() ) return false; return pCastObject->mImageAssetId != StringTable->EmptyString; }
-    static bool setImageFrame(void *obj, const ConsoleValuePtr data) { static_cast<GuiSpriteCtrl*>(obj)->setImageFrame( dAtoi(data) ); return false; }
+    static bool setImageFrame(void *obj, const ConsoleValuePtr &data) { static_cast<GuiSpriteCtrl*>(obj)->setImageFrame( dAtoi(data) ); return false; }
     static bool writeImageFrame(void* obj, StringTableEntry pFieldName) { GuiSpriteCtrl* pCastObject = static_cast<GuiSpriteCtrl*>(obj); if ( !pCastObject->isStaticFrameProvider() || pCastObject->isUsingNamedImageFrame() ) return false; return pCastObject->getImageFrame() > 0; }
-    static bool setNamedImageFrame(void *obj, const ConsoleValuePtr data) { static_cast<GuiSpriteCtrl*>(obj)->setNamedImageFrame(data.getTempStringValue()); return false; }
+    static bool setNamedImageFrame(void *obj, const ConsoleValuePtr &data) { static_cast<GuiSpriteCtrl*>(obj)->setNamedImageFrame(data.getTempStringValue()); return false; }
     static bool writeNamedImageFrame(void* obj, StringTableEntry pFieldName) { GuiSpriteCtrl* pCastObject = static_cast<GuiSpriteCtrl*>(obj); if ( !pCastObject->isStaticFrameProvider() || !pCastObject->isUsingNamedImageFrame() ) return false; return pCastObject->mNamedImageFrameId != StringTable->EmptyString; }
-    static bool setAnimation(void *obj, const ConsoleValuePtr data) { static_cast<GuiSpriteCtrl*>(obj)->setAnimation(data.getTempStringValue()); return false; };
+    static bool setAnimation(void *obj, const ConsoleValuePtr &data) { static_cast<GuiSpriteCtrl*>(obj)->setAnimation(data.getTempStringValue()); return false; };
     static bool writeAnimation(void* obj, StringTableEntry pFieldName) { GuiSpriteCtrl* pCastObject = static_cast<GuiSpriteCtrl*>(obj); if ( pCastObject->isStaticFrameProvider() ) return false; return pCastObject->mAnimationAssetId != StringTable->EmptyString; }
 };
 

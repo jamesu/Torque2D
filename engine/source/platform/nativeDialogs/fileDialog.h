@@ -126,15 +126,15 @@ protected:
    /// @li @b ChangePath (bool) : <c>Will change the working path of the tools to the selected path when not canceled</c>
    /// @code %fd.ChangePath = true; // Change Working Path on Success @endcode
    /// @internal
-   static bool setDefaultPath(void *obj, const ConsoleValuePtr data);
-   static bool setDefaultFile(void *obj, const ConsoleValuePtr data);
-   static bool setFilters(void *obj, const ConsoleValuePtr data);
-   static bool setChangePath(void *obj, const ConsoleValuePtr data);
-   static ConsoleValuePtr getChangePath(void *obj, const ConsoleValuePtr data);
+   static bool setDefaultPath(void *obj, const ConsoleValuePtr &data);
+   static bool setDefaultFile(void *obj, const ConsoleValuePtr &data);
+   static bool setFilters(void *obj, const ConsoleValuePtr &data);
+   static bool setChangePath(void *obj, const ConsoleValuePtr &data);
+   static ConsoleValuePtr getChangePath(void *obj, const ConsoleValuePtr &data);
    ///
    /// @}
 
-   static bool setFile(void *obj, const ConsoleValuePtr data);
+   static bool setFile(void *obj, const ConsoleValuePtr &data);
 };
 /// @}
 
@@ -163,12 +163,12 @@ protected:
    /// @}
 
    /// Must Exist Property
-   static bool setMustExist(void *obj, const ConsoleValuePtr data);
-   static ConsoleValuePtr getMustExist(void *obj, const ConsoleValuePtr data);
+   static bool setMustExist(void *obj, const ConsoleValuePtr &data);
+   static ConsoleValuePtr getMustExist(void *obj, const ConsoleValuePtr &data);
 
    /// Multiple Files Property
-   static bool setMultipleFiles(void *obj, const ConsoleValuePtr data);
-   static ConsoleValuePtr getMultipleFiles(void *obj, const ConsoleValuePtr data);
+   static bool setMultipleFiles(void *obj, const ConsoleValuePtr &data);
+   static ConsoleValuePtr getMultipleFiles(void *obj, const ConsoleValuePtr &data);
 };
 
 class OpenFolderDialog : public OpenFileDialog
@@ -201,8 +201,8 @@ public:
 
 protected:
    // Overwrite Prompt Property
-   static bool setOverwritePrompt(void *obj, const ConsoleValuePtr data);
-   static ConsoleValuePtr getOverwritePrompt(void *obj, const ConsoleValuePtr data);
+   static bool setOverwritePrompt(void *obj, const ConsoleValuePtr &data);
+   static ConsoleValuePtr getOverwritePrompt(void *obj, const ConsoleValuePtr &data);
 
 };
 

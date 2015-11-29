@@ -133,9 +133,9 @@ private:
     void renderRegionNoSplit( BatchRender* pBatchRenderer, TextureHandle& texture, const ScrollSplitRegion& splitRegion );
 
 protected:
-    static bool setRepeatX(void *obj, const ConsoleValuePtr data)                { static_cast<Scroller*>(obj)->setRepeatX( dAtof(data) ); return false; }
+    static bool setRepeatX(void *obj, const ConsoleValuePtr &data)                { static_cast<Scroller*>(obj)->setRepeatX( dAtof(data) ); return false; }
     static bool writeRepeatX( void* obj, StringTableEntry pFieldName ) { return mNotEqual( static_cast<Scroller*>(obj)->mRepeatX, 1.0f); }
-    static bool setRepeatY(void *obj, const ConsoleValuePtr data)                { static_cast<Scroller*>(obj)->setRepeatY( dAtof(data) ); return false; }
+    static bool setRepeatY(void *obj, const ConsoleValuePtr &data)                { static_cast<Scroller*>(obj)->setRepeatY( dAtof(data) ); return false; }
     static bool writeRepeatY( void* obj, StringTableEntry pFieldName ) { return mNotEqual( static_cast<Scroller*>(obj)->mRepeatY, 1.0f); }
     static bool writeScrollX( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<Scroller*>(obj)->mScrollX); }
     static bool writeScrollY( void* obj, StringTableEntry pFieldName ) { return mNotZero(static_cast<Scroller*>(obj)->mScrollY); }

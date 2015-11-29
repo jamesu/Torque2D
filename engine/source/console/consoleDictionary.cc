@@ -41,43 +41,6 @@
 static char scratchBuffer[1024];
 #define ST_INIT_SIZE 15
 
-extern StringStack STR;
-
-struct StringValue
-{
-   S32 size;
-   char *val;
-
-   operator char *() { return val; }
-   StringValue &operator=(const char *string);
-
-   StringValue() { size = 0; val = NULL; }
-   ~StringValue() { dFree(val); }
-};
-
-
-StringValue & StringValue::operator=(const char *string)
-{
-   if(!val)
-   {
-      val = dStrdup(string);
-      size = dStrlen(val);
-   }
-   else
-   {
-      S32 len = dStrlen(string);
-      if(len < size)
-         dStrcpy(val, string);
-      else
-      {
-         size = len;
-         dFree(val);
-         val = dStrdup(string);
-      }
-   }
-   return *this;
-}
-
 static S32 QSORT_CALLBACK varCompare(const void* a,const void* b)
 {
    return dStricmp( (*((Dictionary::Entry **) a))->name, (*((Dictionary::Entry **) b))->name );
@@ -125,18 +88,20 @@ void Dictionary::exportVariables(const char *varString, const char *fileName, bo
 
    for(s = sortList.begin(); s != sortList.end(); s++)
    {
-      switch((*s)->type)
+      if ((*s)->value.type > ConsoleValue::TypeReferenceCounted)
       {
-         case Entry::TypeInternalInt:
-            dSprintf(buffer, sizeof(buffer), "%s = %d;%s", (*s)->name, (*s)->ival, cat);
-            break;
-         case Entry::TypeInternalFloat:
-            dSprintf(buffer, sizeof(buffer), "%s = %g;%s", (*s)->name, (*s)->fval, cat);
-            break;
-         default:
-            expandEscape(expandBuffer, (*s)->getStringValue().c_str());
-            dSprintf(buffer, sizeof(buffer), "%s = \"%s\";%s", (*s)->name, expandBuffer, cat);
-            break;
+         dSprintf(buffer, sizeof(buffer), "%s = \"%s\";%s", (*s)->name, (*s)->value.getTempStringValue(), cat);
+      }
+      else
+      {
+         if ((*s)->value.isString())
+         {
+            dSprintf(buffer, sizeof(buffer), "%s = \"%s\";%s", (*s)->name, (*s)->value.getTempStringValue(), cat);
+         }
+         else
+         {
+            dSprintf(buffer, sizeof(buffer), "%s = %s;%s", (*s)->name, (*s)->value.getTempStringValue(), cat);
+         }
       }
       if(fileName)
          strm.write(dStrlen(buffer), buffer);
@@ -337,20 +302,13 @@ const char *Dictionary::tabComplete(const char *prevText, S32 baseLen, bool fFor
 
 char *typeValueEmpty = (char*)"";
 
-Dictionary::Entry::Entry(StringTableEntry in_name)
+Dictionary::Entry::Entry(StringTableEntry in_name) : name(in_name), type(-1)
 {
-   dataPtr = NULL;
-   name = in_name;
-   type = -1;
-   ival = 0;
-   fval = 0;
-   sval = typeValueEmpty;
+   value.setValue(ConsoleValuePtr());
 }
 
 Dictionary::Entry::~Entry()
 {
-   if(sval != typeValueEmpty)
-      dFree(sval);
 }
 
 ConsoleStringValuePtr Dictionary::getVariable(StringTableEntry name, bool *entValid)
@@ -372,55 +330,23 @@ ConsoleStringValuePtr Dictionary::getVariable(StringTableEntry name, bool *entVa
    return "";
 }
 
-void Dictionary::Entry::setStringValue(const char * value)
+ConsoleValuePtr Dictionary::getValueVariable(StringTableEntry name, bool *entValid)
 {
-   if(type <= TypeInternalString)
+   Entry *ent = lookup(name);
+   if(ent)
    {
-      // Let's not remove empty-string-valued global vars from the dict.
-      // If we remove them, then they won't be exported, and sometimes
-      // it could be necessary to export such a global.  There are very
-      // few empty-string global vars so there's no performance-related
-      // need to remove them from the dict.
-/*
-      if(!value[0] && name[0] == '$')
-      {
-         gEvalState.globalVars.remove(this);
-         return;
-      }
-*/
-
-      U32 stringLen = dStrlen(value);
-
-      // If it's longer than 256 bytes, it's certainly not a number.
-      //
-      // (This decision may come back to haunt you. Shame on you if it
-      // does.)
-      if(stringLen < 256)
-      {
-         fval = dAtof(value);
-         ival = dAtoi(value);
-      }
-      else
-      {
-         fval = 0.f;
-         ival = 0;
-      }
-
-      type = TypeInternalString;
-
-      // may as well pad to the next cache line
-      U32 newLen = ((stringLen + 1) + 15) & ~15;
-      
-      if(sval == typeValueEmpty)
-         sval = (char *) dMalloc(newLen);
-      else if(newLen > bufferLen)
-         sval = (char *) dRealloc(sval, newLen);
-
-      bufferLen = newLen;
-      dStrcpy(sval, value);
+      if(entValid)
+         *entValid = true;
+      return ent->getValue();
    }
-   else
-      Con::setData(type, dataPtr, 0, value);
+   if(entValid)
+      *entValid = false;
+   
+   // Warn users when they access a variable that isn't defined.
+   if(gWarnUndefinedScriptVariables)
+      Con::warnf(" *** Accessed undefined variable '%s'", name);
+   
+   return ConsoleValuePtr();
 }
 
 void Dictionary::setVariable(StringTableEntry name, const char *value)
@@ -429,6 +355,12 @@ void Dictionary::setVariable(StringTableEntry name, const char *value)
    if(!value)
       value = "";
    ent->setStringValue(value);
+}
+
+void Dictionary::setValueVariable(StringTableEntry name, const ConsoleValuePtr& variable)
+{
+   Entry *ent = add(name);
+   ent->value.setValue(variable);
 }
 
 void Dictionary::addVariable(const char *name, S32 type, void *dataPtr)
@@ -441,11 +373,6 @@ void Dictionary::addVariable(const char *name, S32 type, void *dataPtr)
    }
    Entry *ent = add(StringTable->insert(name));
    ent->type = type;
-   if(ent->sval != typeValueEmpty)
-   {
-      dFree(ent->sval);
-      ent->sval = typeValueEmpty;
-   }
    ent->dataPtr = dataPtr;
 }
 

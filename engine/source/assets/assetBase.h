@@ -112,27 +112,27 @@ protected:
     virtual void            onAssetRefresh( void ) {}
 
 protected:
-    static bool             setAssetName(void *obj, const ConsoleValuePtr data)           { static_cast<AssetBase*>(obj)->setAssetName( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr      getAssetName(void *obj, const ConsoleValuePtr data)           { return static_cast<AssetBase*>(obj)->getAssetName(); }
+    static bool             setAssetName(void *obj, const ConsoleValuePtr &data)           { static_cast<AssetBase*>(obj)->setAssetName( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr      getAssetName(void *obj, const ConsoleValuePtr &data)           { return static_cast<AssetBase*>(obj)->getAssetName(); }
     static bool             writeAssetName( void* obj, StringTableEntry pFieldName ) { return static_cast<AssetBase*>(obj)->getAssetName() != StringTable->EmptyString; }
 
-    static bool             setAssetDescription(void *obj, const ConsoleValuePtr data)    { static_cast<AssetBase*>(obj)->setAssetDescription( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr      getAssetDescription(void *obj, const ConsoleValuePtr data)    { return static_cast<AssetBase*>(obj)->getAssetDescription(); }
+    static bool             setAssetDescription(void *obj, const ConsoleValuePtr &data)    { static_cast<AssetBase*>(obj)->setAssetDescription( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr      getAssetDescription(void *obj, const ConsoleValuePtr &data)    { return static_cast<AssetBase*>(obj)->getAssetDescription(); }
     static bool             writeAssetDescription( void* obj, StringTableEntry pFieldName ) { return static_cast<AssetBase*>(obj)->getAssetDescription() != StringTable->EmptyString; }
 
-    static bool             setAssetCategory(void *obj, const ConsoleValuePtr data)       { static_cast<AssetBase*>(obj)->setAssetCategory( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr      getAssetCategory(void *obj, const ConsoleValuePtr data)       { return static_cast<AssetBase*>(obj)->getAssetCategory(); }
+    static bool             setAssetCategory(void *obj, const ConsoleValuePtr &data)       { static_cast<AssetBase*>(obj)->setAssetCategory( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr      getAssetCategory(void *obj, const ConsoleValuePtr &data)       { return static_cast<AssetBase*>(obj)->getAssetCategory(); }
     static bool             writeAssetCategory( void* obj, StringTableEntry pFieldName ) { return static_cast<AssetBase*>(obj)->getAssetCategory() != StringTable->EmptyString; }
 
-    static bool             setAssetAutoUnload(void *obj, const ConsoleValuePtr data)     { static_cast<AssetBase*>(obj)->setAssetAutoUnload( dAtob(data) ); return false; }
-    static ConsoleValuePtr      getAssetAutoUnload(void *obj, const ConsoleValuePtr data)     { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetAutoUnload()); }
+    static bool             setAssetAutoUnload(void *obj, const ConsoleValuePtr &data)     { static_cast<AssetBase*>(obj)->setAssetAutoUnload( dAtob(data) ); return false; }
+    static ConsoleValuePtr      getAssetAutoUnload(void *obj, const ConsoleValuePtr &data)     { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetAutoUnload()); }
     static bool             writeAssetAutoUnload( void* obj, StringTableEntry pFieldName ) { return static_cast<AssetBase*>(obj)->getAssetAutoUnload() == false; }
 
-    static bool             setAssetInternal(void *obj, const ConsoleValuePtr data)       { static_cast<AssetBase*>(obj)->setAssetInternal( dAtob(data) ); return false; }
-    static ConsoleValuePtr      getAssetInternal(void *obj, const ConsoleValuePtr data)       { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetInternal()); }
+    static bool             setAssetInternal(void *obj, const ConsoleValuePtr &data)       { static_cast<AssetBase*>(obj)->setAssetInternal( dAtob(data) ); return false; }
+    static ConsoleValuePtr      getAssetInternal(void *obj, const ConsoleValuePtr &data)       { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetInternal()); }
     static bool             writeAssetInternal( void* obj, StringTableEntry pFieldName ) { return static_cast<AssetBase*>(obj)->getAssetInternal() == true; }
 
-    static ConsoleValuePtr      getAssetPrivate(void *obj, const ConsoleValuePtr data)        { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetPrivate()); }
+    static ConsoleValuePtr      getAssetPrivate(void *obj, const ConsoleValuePtr &data)        { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetPrivate()); }
 
 private:
     void                    acquireAssetReference( void );

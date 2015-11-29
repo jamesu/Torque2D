@@ -99,7 +99,7 @@ ConsoleTypeFromConsoleValue( TypeStringTableEntryVector )
       if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          
@@ -283,7 +283,7 @@ ConsoleTypeFromConsoleValue( TypeS32Vector )
       if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          ConsoleValuePtr outValue;
@@ -377,7 +377,7 @@ ConsoleTypeFromConsoleValue( TypeF32Vector )
       if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          ConsoleValuePtr outValue;
@@ -469,7 +469,7 @@ ConsoleTypeFromConsoleValue( TypeBoolVector )
       if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          ConsoleValuePtr outValue;
@@ -652,7 +652,7 @@ ConsoleBaseType* ConsoleSimObjectPtr::getType()
 }
 
 
-bool ConsoleSimObjectPtr::getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue)
+bool ConsoleSimObjectPtr::getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue)
 {
    // Don't allow array accessor
    if (slotName == ConsoleBaseType::getFieldIndexName())
@@ -663,24 +663,22 @@ bool ConsoleSimObjectPtr::getDataField(StringTableEntry slotName, const ConsoleV
    
    if (value)
    {
-      // TODO: directly pass through values
-      const char *res = value->getDataField(slotName, array.getTempStringValue());
-      (ConsoleValuePtr&)outValue = ConsoleStringValue::fromString(res);
+      outValue.setValue(value->getDataField(slotName, array.getTempStringValue()));
    }
    else
    {
-      ((ConsoleValuePtr&)outValue).setNull();
+      outValue.setNull();
    }
    
    return true;
 }
 
-void ConsoleSimObjectPtr::setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue)
+void ConsoleSimObjectPtr::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue)
 {
    if (value)
    {
       // TODO: directly pass through values
-      value->setDataField(slotName, array.getTempStringValue(), newValue.getTempStringValue());
+      value->setDataField(slotName, array.getTempStringValue(), newValue);
    }
 }
 
@@ -699,7 +697,7 @@ S32 ConsoleSimObjectPtr::getIteratorLength()
    return setObj ? setObj->size() : 0;
 }
 
-bool ConsoleSimObjectPtr::advanceIterator(ConsoleValue &iterator, ConsoleValue& iteratorValue)
+bool ConsoleSimObjectPtr::advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr& iteratorValue)
 {
    SimObject* obj = value;
    if (!obj)
@@ -871,12 +869,12 @@ ConsoleStringValuePtr ConsoleNamespacePtr::getString()
    return StringTable->EmptyString;
 }
 
-bool ConsoleNamespacePtr::getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue)
+bool ConsoleNamespacePtr::getDataField(StringTableEntry slotName, const ConsoleValuePtr &, ConsoleValuePtr &outValue)
 {
    return false;
 }
 
-void ConsoleNamespacePtr::setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue)
+void ConsoleNamespacePtr::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue)
 {
    
 }
@@ -941,7 +939,7 @@ ConsoleTypeFromConsoleValue( TypeConsoleArray )
       else if (value.value.refValue->isEnumerable())
       {
          S32 length = value.value.refValue->getIteratorLength();
-         ConsoleValue iterator;
+         ConsoleValuePtr iterator;
          iterator.type = ConsoleValue::TypeInternalInt;
          iterator.value.ival = 1;
          ConsoleValuePtr outValue;

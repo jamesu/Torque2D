@@ -113,7 +113,7 @@ public:
    /// @{
 
    /// Sets the message queue.
-   static bool setMessageQueue( void* obj, ConsoleValuePtr data )
+   static bool setMessageQueue( void *obj, const ConsoleValuePtr &data )
    {
       static_cast<EventManager*>( obj )->setMessageQueue( data.getTempStringValue() );
       return false;

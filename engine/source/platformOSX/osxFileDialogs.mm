@@ -76,7 +76,7 @@ bool FileDialog::Execute()
 
 //-----------------------------------------------------------------------------
 // Default Path Property - String Validated on Write
-bool FileDialog::setDefaultPath(void* obj, const ConsoleValuePtr data)
+bool FileDialog::setDefaultPath(void *obj, const ConsoleValuePtr &data)
 {
 	ConsoleStringValuePtr strValue = data.getStringValue();
 	const char* path = strValue.c_str();
@@ -102,7 +102,7 @@ bool FileDialog::setDefaultPath(void* obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // Default Path Property - String Validated on Write
-bool FileDialog::setDefaultFile(void* obj, const ConsoleValuePtr data)
+bool FileDialog::setDefaultFile(void *obj, const ConsoleValuePtr &data)
 {
 	ConsoleStringValuePtr strValue = data.getStringValue();
 	const char* path = strValue.c_str();

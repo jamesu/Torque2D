@@ -39,12 +39,12 @@ GuiBitmapCtrl::GuiBitmapCtrl(void)
     mSourceRect.set(0, 0, 0, 0);
 }
 
-bool GuiBitmapCtrl::setBitmapName( void *obj, ConsoleValuePtr data )
+bool GuiBitmapCtrl::setBitmapName( void *obj, const ConsoleValuePtr &data )
 {
    // Prior to this, you couldn't do bitmap.bitmap = "foo.jpg" and have it work.
    // With protected console types you can now call the setBitmap function and
    // make it load the image.
-   static_cast<GuiBitmapCtrl *>( obj )->setBitmap( data );
+   static_cast<GuiBitmapCtrl *>( obj )->setBitmap( data.getTempStringValue() );
 
    // Return false because the setBitmap method will assign 'mBitmapName' to the
    // argument we are specifying in the call.

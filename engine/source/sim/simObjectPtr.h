@@ -135,13 +135,13 @@ public:
    
    virtual ConsoleBaseType *getType();
    
-   virtual bool getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue);
-   virtual void setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue);
+   virtual bool getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
+   virtual void setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
    
    
    virtual S32 getIteratorLength();
-   virtual bool advanceIterator(ConsoleValue &iterator, ConsoleValue &iteratorValue);
+   virtual bool advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr &iteratorValue);
    
    virtual void read(Stream &s, ConsoleSerializationState &state);
    

@@ -116,7 +116,7 @@ public:
    void instantExpand();
 
    // Property - "Collapsed"
-   static bool setCollapsed(void *obj, const ConsoleValuePtr data)
+   static bool setCollapsed(void *obj, const ConsoleValuePtr &data)
    { 
       bool bCollapsed = dAtob( data );
       if( bCollapsed )

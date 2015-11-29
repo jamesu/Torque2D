@@ -59,7 +59,7 @@ inline ConsoleValuePtr ConsoleMarshallData( U32 value )
 template< typename T >
 inline void ConsoleMarshallData( const T& arg, S32& argc, ConsoleValuePtr *argv )
 {
-   argv[ argc ] = castConsoleTypeToString( arg );
+   argv[ argc ].setValue(castConsoleTypeToConsoleValuePtr( arg ));
    argc ++;
 }
 inline void ConsoleMarshallData( bool arg, S32& argc, ConsoleValuePtr *argv )

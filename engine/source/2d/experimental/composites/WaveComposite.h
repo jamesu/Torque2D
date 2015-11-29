@@ -86,13 +86,13 @@ protected:
     void updateComposition( const F32 time );
 
 protected:
-    static bool setImage(void *obj, const ConsoleValuePtr data) { static_cast<WaveComposite*>(obj)->setImage( data.getTempStringValue() ); return false; }
-    static ConsoleValuePtr getImage(void *obj, const ConsoleValuePtr data) { return DYNAMIC_VOID_CAST_TO(WaveComposite, ImageFrameProvider, obj)->getImage(); }
+    static bool setImage(void *obj, const ConsoleValuePtr &data) { static_cast<WaveComposite*>(obj)->setImage( data.getTempStringValue() ); return false; }
+    static ConsoleValuePtr getImage(void *obj, const ConsoleValuePtr &data) { return DYNAMIC_VOID_CAST_TO(WaveComposite, ImageFrameProvider, obj)->getImage(); }
     static bool writeImage( void* obj, StringTableEntry pFieldName ) { return static_cast<WaveComposite*>(obj)->mImageAsset.notNull(); }
-    static bool setImageFrame(void *obj, const ConsoleValuePtr data) { static_cast<WaveComposite*>(obj)->setImageFrame( dAtoi(data) ); return false; }
+    static bool setImageFrame(void *obj, const ConsoleValuePtr &data) { static_cast<WaveComposite*>(obj)->setImageFrame( dAtoi(data) ); return false; }
     static bool writeImageFrame( void* obj, StringTableEntry pFieldName ) { return static_cast<WaveComposite*>(obj)->getImageFrame() > 0; }
-    static bool setSpriteCount(void *obj, const ConsoleValuePtr data) { static_cast<WaveComposite*>(obj)->setSpriteCount( dAtoi(data) ); return false; }
-    static bool setSpriteSize(void *obj, const ConsoleValuePtr data) { static_cast<WaveComposite*>(obj)->setSpriteSize( Vector2(data.getTempStringValue()) ); return false; }
+    static bool setSpriteCount(void *obj, const ConsoleValuePtr &data) { static_cast<WaveComposite*>(obj)->setSpriteCount( dAtoi(data) ); return false; }
+    static bool setSpriteSize(void *obj, const ConsoleValuePtr &data) { static_cast<WaveComposite*>(obj)->setSpriteSize( Vector2(data.getTempStringValue()) ); return false; }
 };
 
 #endif // _WAVE_COMPOSITE_H_

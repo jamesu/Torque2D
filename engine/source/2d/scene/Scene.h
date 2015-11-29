@@ -683,8 +683,8 @@ public:
 
 protected:
     /// Physics.
-    static bool setGravity( void *obj, const ConsoleValuePtr data )                 { static_cast<Scene*>(obj)->setGravity( Vector2( data.getTempStringValue() ) ); return false; }
-    static ConsoleValuePtr getGravity(void *obj, const ConsoleValuePtr data)        { return Vector2(static_cast<Scene*>(obj)->getGravity()).scriptThis(); }
+    static bool setGravity( void *obj, const ConsoleValuePtr &data )                { static_cast<Scene*>(obj)->setGravity( Vector2( data.getTempStringValue() ) ); return false; }
+    static ConsoleValuePtr getGravity(void *obj, const ConsoleValuePtr &data)       { return Vector2(static_cast<Scene*>(obj)->getGravity()).scriptThis(); }
     static bool writeGravity( void* obj, StringTableEntry pFieldName )              { return Vector2(static_cast<Scene*>(obj)->getGravity()).notEqual( Vector2::getZero() ); }
     static bool writeVelocityIterations( void* obj, StringTableEntry pFieldName )   { return static_cast<Scene*>(obj)->getVelocityIterations() != 8; }
     static bool writePositionIterations( void* obj, StringTableEntry pFieldName )   { return static_cast<Scene*>(obj)->getPositionIterations() != 3; }

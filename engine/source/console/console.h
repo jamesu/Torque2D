@@ -386,6 +386,12 @@ namespace Con
    /// @param name   Global console variable name to set
    /// @param value  String value to assign to this variable.
    void setVariable(const char *name, const char *value);
+   
+   /// Assign a ConsoleValuePtr value to a global console variable
+   void setValueVariable(const char *name, const ConsoleValuePtr& value);
+   
+   /// Gets a ConsoleValuePtr value from a global console variable
+   ConsoleValuePtr getConsoleValueVariable(const char *name);
 
    /// Retrieve the string value of a global console variable
    /// @param name   Global Console variable name to query
@@ -626,7 +632,7 @@ namespace Con
    void setData(S32 type, void *dataPtr, S32 index, const char *value, EnumTable *tbl = NULL);
    ConsoleStringValuePtr getData(S32 type, void *dataPtr, S32 index, EnumTable *tbl = NULL);
    
-   void setDataFromValue(S32 type, void *dataPtr, S32 index, ConsoleValue value, EnumTable *tbl = NULL);
+   void setDataFromValue(S32 type, void *dataPtr, S32 index, const ConsoleValuePtr &value, EnumTable *tbl = NULL);
    ConsoleValuePtr getDataValue(S32 type, void *dataPtr, S32 index, EnumTable *tbl = NULL);
    /// @}
 };

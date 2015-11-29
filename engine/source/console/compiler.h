@@ -103,8 +103,9 @@ namespace Compiler
 
       OP_LOADVAR,      //  [ab(c)]   [a := $[b]]        ; loads a global variable
       OP_GETFIELD,     //  a b c [a := b[c]]      ; gets an object property or table field
-      OP_GETFIELDA,     //  a b c [a := b[c]]      ; gets an object property or table field
+      OP_GETFIELDA,    //  a b c [a := b[c]]      ; gets an object property or table field
       OP_GETFUNC,      //  a b c [a := b.func ns] ; gets bound ns function for object
+      OP_GETFUNC_NS,   //  a b c [a := b(ns).func] ; gets bound ns function
 
       OP_GETINTERNAL,  // a = b->c
       OP_GETINTERNAL_N, // a = b-->c
@@ -221,7 +222,7 @@ namespace Compiler
        CompilerConstantRef addNull();
        CompilerConstantRef addNamespace(const char* nsName);
        
-       CompilerConstantRef addInt(U32 value);
+       CompilerConstantRef addInt(S64 value);
        CompilerConstantRef addFloat(F64 value);
       
        // Checks if current page has required number of constants,
@@ -515,11 +516,6 @@ public:
       U32 *ptr = (U32*)allocCode(4);
       U32 code = TS2_OP_ENC_A_B_C(op, a, b, c);
       
-      U32 codeA = a << Compiler::OP_A_SHIFT;
-      U32 codeB = b << Compiler::OP_B_SHIFT;
-      U32 codeC = c << Compiler::OP_C_SHIFT;
-      
-      
       *ptr = code;
 #ifdef DEBUG_CODESTREAM
       printf("code[%u] = %u\n", mCodePos, code);
@@ -535,11 +531,6 @@ public:
          if (b.constRef.page != c.constRef.page)
          {
             U32 curPage = getConstantsTable()->currentPage;
-            
-            if (curPage == 5 || curPage == 6)
-            {
-               int fucked = 1;
-            }
             
             if (b.constRef.page == curPage || c.constRef.page == curPage)
             {

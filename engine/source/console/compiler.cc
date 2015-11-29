@@ -82,7 +82,7 @@ namespace Compiler
       getGlobalConstantsTable().reset();
    }
 
-   void *consoleAlloc(U32 size) { return gConsoleAllocator.alloc(size);  }
+   void *consoleAlloc(U32 size) { U8* ptr = (U8*)gConsoleAllocator.alloc(size); dMemset(ptr, '\0', size); return ptr;  }
    void consoleAllocReset()     { gConsoleAllocator.freeBlocks(); }
 
 }
@@ -324,7 +324,7 @@ CompilerConstantRef Compiler::CompilerConstantsTable::addNamespace(const char *s
    return CompilerConstantRef(currentPageCount-1, currentPage);
 }
 
-Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::addInt(U32 value)
+Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::addInt(S64 value)
 {
    Entry** walk;
    Entry** endCurrentPage;
@@ -506,7 +506,7 @@ Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::duplicateConstan
    
    Entry *dupConst = (Entry *) consoleAlloc(sizeof(Entry));
    dMemset(dupConst, '\0', sizeof(Entry));
-   dupConst->value = valueCheck;
+   dupConst->value.setValue(valueCheck);
    dupConst->next = NULL;
    count++;
    currentPageCount++;

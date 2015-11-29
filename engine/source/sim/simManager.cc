@@ -381,7 +381,7 @@ SimObject* findObject(const char* name)
    return obj->findObject(name + len + 1);
 }
 
-SimObject* findObject(const ConsoleValue &value)
+SimObject* findObject(const ConsoleValuePtr &value)
 {
    if (value.type >= ConsoleValue::TypeCustomFieldStart)
    {

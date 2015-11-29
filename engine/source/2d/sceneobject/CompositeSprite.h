@@ -94,15 +94,15 @@ protected:
 protected:
     static bool         writeDefaultSpriteStride( void* obj, StringTableEntry pFieldName )  { return !STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->getDefaultSpriteStride().isEqual( Vector2::getOne() ); }
     static bool         writeDefaultSpriteSize( void* obj, StringTableEntry pFieldName )    { return !STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->getDefaultSpriteSize().isEqual( Vector2::getOne() ); }
-    static bool         setDefaultSpriteAngle(void *obj, const ConsoleValuePtr data)                  { STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->setDefaultSpriteAngle(mDegToRad(dAtof(data))); return false; }
-    static ConsoleValuePtr  getDefaultSpriteAngle(void *obj, const ConsoleValuePtr data)                  { return Con::getFloatArg( mRadToDeg(STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->getDefaultSpriteAngle()) ); }
+    static bool         setDefaultSpriteAngle(void *obj, const ConsoleValuePtr &data)       { STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->setDefaultSpriteAngle(mDegToRad(dAtof(data))); return false; }
+    static ConsoleValuePtr  getDefaultSpriteAngle(void *obj, const ConsoleValuePtr &data)   { return Con::getFloatArg( mRadToDeg(STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->getDefaultSpriteAngle()) ); }
     static bool         writeDefaultSpriteAngle( void* obj, StringTableEntry pFieldName )   { return mNotZero( STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->getDefaultSpriteAngle() ); }
     static bool         writeBatchIsolated( void* obj, StringTableEntry pFieldName )        { return static_cast<CompositeSprite*>(obj)->getBatchIsolated(); }
     static bool         writeBatchSortMode( void* obj, StringTableEntry pFieldName )        { return static_cast<CompositeSprite*>(obj)->getBatchSortMode() != SceneRenderQueue::RENDER_SORT_OFF; }
 
-    static bool         setBatchLayout(void *obj, const ConsoleValuePtr data)                         { static_cast<CompositeSprite*>(obj)->setBatchLayout( getBatchLayoutTypeEnum(data.getTempStringValue()) ); return false; }
+    static bool         setBatchLayout(void *obj, const ConsoleValuePtr &data)              { static_cast<CompositeSprite*>(obj)->setBatchLayout( getBatchLayoutTypeEnum(data.getTempStringValue()) ); return false; }
     static bool         writeBatchLayout( void* obj, StringTableEntry pFieldName )          { return static_cast<CompositeSprite*>(obj)->getBatchLayout() != CompositeSprite::NO_LAYOUT; }
-    static bool         setBatchCulling(void *obj, const ConsoleValuePtr data)                        { STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->setBatchCulling(dAtob(data)); return false; }
+    static bool         setBatchCulling(void *obj, const ConsoleValuePtr &data)             { STATIC_VOID_CAST_TO(CompositeSprite, SpriteBatch, obj)->setBatchCulling(dAtob(data)); return false; }
     static bool         writeBatchCulling( void* obj, StringTableEntry pFieldName )         { return !static_cast<CompositeSprite*>(obj)->getBatchCulling(); }
 };
 

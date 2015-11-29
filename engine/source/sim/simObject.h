@@ -334,11 +334,11 @@ protected:
     StringTableEntry mClassName;     ///< Stores the class name to link script class namespaces
     StringTableEntry mSuperClassName;   ///< Stores super class name to link script class namespaces
 
-    static bool setClass(void *obj, const ConsoleValuePtr data)                      { static_cast<SimObject*>(obj)->setClassNamespace(data.getTempStringValue()); return false; };
-    static bool setSuperClass(void *obj, const ConsoleValuePtr data)                 { static_cast<SimObject*>(obj)->setSuperClassNamespace(data.getTempStringValue()); return false; };
+    static bool setClass(void *obj, const ConsoleValuePtr &data)                      { static_cast<SimObject*>(obj)->setClassNamespace(data.getTempStringValue()); return false; };
+    static bool setSuperClass(void *obj, const ConsoleValuePtr &data)                 { static_cast<SimObject*>(obj)->setSuperClassNamespace(data.getTempStringValue()); return false; };
     static bool writeCanSaveDynamicFields( void* obj, StringTableEntry pFieldName )  { return static_cast<SimObject*>(obj)->mCanSaveFieldDictionary == false; }
     static bool writeInternalName( void* obj, StringTableEntry pFieldName )          { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mInternalName != NULL && simObject->mInternalName != StringTable->EmptyString; }
-    static bool setParentGroup(void *obj, const ConsoleValuePtr data);
+    static bool setParentGroup(void *obj, const ConsoleValuePtr &data);
     static bool writeParentGroup( void* obj, StringTableEntry pFieldName )           { return static_cast<SimObject*>(obj)->mGroup != NULL; }
     static bool writeSuperclass( void* obj, StringTableEntry pFieldName )            { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mSuperClassName != NULL && simObject->mSuperClassName != StringTable->EmptyString; }
     static bool writeClass( void* obj, StringTableEntry pFieldName )                 { SimObject* simObject = static_cast<SimObject*>(obj); return simObject->mClassName != NULL && simObject->mClassName != StringTable->EmptyString; }
@@ -386,7 +386,7 @@ public:
     /// @param   slotName    Field to access.
     /// @param   array       String containing index into array
     ///                      (if field is an array); if NULL, it is ignored.
-    const char *getDataField(StringTableEntry slotName, const char *array);
+    ConsoleValuePtr getDataField(StringTableEntry slotName, const char *array);
 
     /// Set the value of a field on the object.
     ///
@@ -396,7 +396,7 @@ public:
     /// @param   slotName    Field to access.
     /// @param   array       String containing index into array; if NULL, it is ignored.
     /// @param   value       Value to store.
-    void setDataField(StringTableEntry slotName, const char *array, const char *value);
+    void setDataField(StringTableEntry slotName, const char *array, const ConsoleValuePtr &value);
 
     const char *getPrefixedDataField(StringTableEntry fieldName, const char *array);
 

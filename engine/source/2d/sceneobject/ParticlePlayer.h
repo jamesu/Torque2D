@@ -198,7 +198,7 @@ protected:
     /// Persistence.
     virtual void onTamlAddParent( SimObject* pParentObject );
 
-    static bool     setParticle(void *obj, const ConsoleValuePtr data)                                { static_cast<ParticlePlayer*>( obj )->setParticle(data.getTempStringValue()); return false; };
+    static bool     setParticle(void *obj, const ConsoleValuePtr &data)                                { static_cast<ParticlePlayer*>( obj )->setParticle(data.getTempStringValue()); return false; };
     static bool     writeCameraIdleDistance( void* obj, StringTableEntry pFieldName )       { return static_cast<ParticlePlayer*>( obj )->getCameraIdleDistance() > 0.0f; }
     static bool     writeParticleInterpolation( void* obj, StringTableEntry pFieldName )    { return static_cast<ParticlePlayer*>( obj )->getParticleInterpolation(); }
     static bool     writeEmissionRateScale( void* obj, StringTableEntry pFieldName )        { return !mIsOne( static_cast<ParticlePlayer*>( obj )->getEmissionRateScale() ); }

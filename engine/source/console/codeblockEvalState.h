@@ -27,7 +27,7 @@ public:
       const char* filename;
       const char* package;
       const char* ns;
-      ConsoleValue* constants;
+      ConsoleValuePtr* constants;
       U32 stackTop;
       U32 constantTop;
 
@@ -72,7 +72,7 @@ public:
    
    U32 getFrameEnd()
    {
-      if (currentFrame.isRoot)
+      if (frames.size() == 0)
          return 0;
       
       return currentFrame.function ? currentFrame.stackTop + currentFrame.function->maxStack : 0;

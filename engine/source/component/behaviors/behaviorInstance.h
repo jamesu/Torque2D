@@ -73,10 +73,10 @@ protected:
     U32                 mBehaviorId;
 
     // Set "Owner" via the field does nothing.
-    static bool setOwner( void *obj, const ConsoleValuePtr data ) { return true; }
+    static bool setOwner( void *obj, const ConsoleValuePtr &data ) { return true; }
 
     // Get template.
-    static ConsoleValuePtr getTemplate(void *obj, const ConsoleValuePtr data);
+    static ConsoleValuePtr getTemplate(void *obj, const ConsoleValuePtr &data);
 };
 
 #endif // _BEHAVIORINSTANCE_H_

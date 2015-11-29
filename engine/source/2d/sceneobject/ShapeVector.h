@@ -106,7 +106,7 @@ public:
     DECLARE_CONOBJECT(ShapeVector);
 
 protected:
-    static bool setPolyList(void *obj, const ConsoleValuePtr data)
+    static bool setPolyList(void *obj, const ConsoleValuePtr &data)
     {
        ConsoleStringValuePtr str = data.getStringValue();
        const U32 count = Utility::mGetStringElementCount(str.c_str()) >> 1;

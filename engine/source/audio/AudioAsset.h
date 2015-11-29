@@ -93,19 +93,19 @@ protected:
     virtual void onTamlPostWrite( void );
 
 protected:
-    static bool setAudioFile( void *obj, const ConsoleValuePtr data )                 { static_cast<AudioAsset*>(obj)->setAudioFile(data.getTempStringValue()); return false; }
-    static ConsoleValuePtr getAudioFile(void *obj, const ConsoleValuePtr data)            { return static_cast<AudioAsset*>(obj)->getAudioFile(); }
+    static bool setAudioFile( void *obj, const ConsoleValuePtr &data )                 { static_cast<AudioAsset*>(obj)->setAudioFile(data.getTempStringValue()); return false; }
+    static ConsoleValuePtr getAudioFile(void *obj, const ConsoleValuePtr &data)            { return static_cast<AudioAsset*>(obj)->getAudioFile(); }
 
-    static bool setVolume( void *obj, const ConsoleValuePtr data )                        { static_cast<AudioAsset*>(obj)->setVolume(dAtof(data)); return false; }
+    static bool setVolume( void *obj, const ConsoleValuePtr &data )                        { static_cast<AudioAsset*>(obj)->setVolume(dAtof(data)); return false; }
     static bool writeVolume( void* obj, StringTableEntry pFieldName )           { return mNotEqual(static_cast<AudioAsset*>(obj)->getVolume(), 1.0f); }
 
-    static bool setVolumeChannel( void *obj, const ConsoleValuePtr data )                 { static_cast<AudioAsset*>(obj)->setVolumeChannel(dAtoi(data)); return false; }
+    static bool setVolumeChannel( void *obj, const ConsoleValuePtr &data )                 { static_cast<AudioAsset*>(obj)->setVolumeChannel(dAtoi(data)); return false; }
     static bool writeVolumeChannel( void* obj, StringTableEntry pFieldName )    { return static_cast<AudioAsset*>(obj)->getVolumeChannel() != 0; }
 
-    static bool setLooping( void *obj, const ConsoleValuePtr data )                       { static_cast<AudioAsset*>(obj)->setLooping(dAtob(data)); return false; }
+    static bool setLooping( void *obj, const ConsoleValuePtr &data )                       { static_cast<AudioAsset*>(obj)->setLooping(dAtob(data)); return false; }
     static bool writeLooping( void* obj, StringTableEntry pFieldName )          { return static_cast<AudioAsset*>(obj)->getLooping() == true; }
 
-    static bool setStreaming( void *obj, const ConsoleValuePtr data )                     { static_cast<AudioAsset*>(obj)->setStreaming(dAtob(data)); return false; }
+    static bool setStreaming( void *obj, const ConsoleValuePtr &data )                     { static_cast<AudioAsset*>(obj)->setStreaming(dAtob(data)); return false; }
     static bool writeStreaming( void* obj, StringTableEntry pFieldName )        { return static_cast<AudioAsset*>(obj)->getStreaming() == true; }
 };
 

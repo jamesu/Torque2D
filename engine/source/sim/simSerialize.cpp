@@ -56,12 +56,10 @@ bool SimObject::writeObject(Stream *stream)
          continue;
       }
 
-      const char *field = getDataField(itr->pFieldname, NULL);
-      if(field == NULL)
-         field = "";
+      ConsoleStringValuePtr field = getDataField(itr->pFieldname, NULL).getStringValue();
 
       stream->writeString(itr->pFieldname);
-      stream->writeString(field);
+      stream->writeString(field.c_str());
    }
 
    // Dynamic Fields

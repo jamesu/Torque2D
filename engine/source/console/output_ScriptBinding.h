@@ -46,7 +46,6 @@ ConsoleFunctionWithDocs(echo, ConsoleVoid, 2, 0, ( text, [...]* ))
       dStrcat(ret, argv[i]);
 
    Con::printf("%s", ret);
-   ret[0] = 0;
 }
 
 /*! Prints a separator to the console.

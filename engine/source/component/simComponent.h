@@ -145,7 +145,7 @@ public:
    inline U32 getComponentCount() { return mComponentList.size(); }
    inline SimComponent *getComponent( const U32 index ) { return mComponentList[index]; }
 
-   static bool setEnabled( void *obj, const ConsoleValuePtr data ) { static_cast<SimComponent*>(obj)->setEnabled( dAtob( data ) ); return false; };
+   static bool setEnabled( void *obj, const ConsoleValuePtr &data ) { static_cast<SimComponent*>(obj)->setEnabled( dAtob( data ) ); return false; };
    virtual void setEnabled( const bool enabled ) { mEnabled = enabled; }
    bool isEnabled() const { return mEnabled; }
    static bool writeEnabled( void* obj, StringTableEntry pFieldName ) { return static_cast<SimComponent*>(obj)->mEnabled == false; }

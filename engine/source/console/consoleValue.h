@@ -16,6 +16,7 @@ extern char *typeValueEmpty;
 
 class ConsoleReferenceCountedType;
 class ConsoleValue;
+class ConsoleValuePtr;
 class ConsoleStringValue;
 class ConsoleBaseType;
 class ConsoleSerializationState;
@@ -134,13 +135,13 @@ public:
       }
    }
    
-   virtual bool getDataField(const StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue);
-   virtual void setDataField(const StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue);
+   virtual bool getDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
+   virtual void setDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
    
    virtual bool isEnumerable() { return false; }
    virtual S32 getIteratorLength() { return 0; }
-   virtual bool advanceIterator(ConsoleValue &iterator, ConsoleValue &iteratorValue) { return false; }
+   virtual bool advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr &iteratorValue) { return false; }
    
    virtual ConsoleStringValuePtr getString()
    {
@@ -311,7 +312,7 @@ public:
       AddRef();
    }
    
-   ConsoleValuePtr(ConsoleValue &other)
+   ConsoleValuePtr(ConsoleValuePtr &other)
    {
       value = other.value;
       type = other.type;
@@ -362,6 +363,12 @@ public:
       value.refValue = other;
    }
    
+   ConsoleValuePtr(const char* other)
+   {
+      type = ConsoleValue::TypeInternalNull;
+      setString(other);
+   }
+   
    ConsoleValuePtr(const ConsoleStringValuePtr &other)
    {
       type = ConsoleValue::TypeInternalNull;
@@ -382,7 +389,21 @@ public:
       value.ival = inValue;
    }
    
+   void setValue(U64 inValue)
+   {
+      DecRef();
+      type = ConsoleValue::TypeInternalInt;
+      value.ival = inValue;
+   }
+   
    void setValue(F32 inValue)
+   {
+      DecRef();
+      type = ConsoleValue::TypeInternalFloat;
+      value.fval = inValue;
+   }
+   
+   void setValue(F64 inValue)
    {
       DecRef();
       type = ConsoleValue::TypeInternalFloat;
@@ -448,7 +469,7 @@ public:
    /// Get string value
    ConsoleStringValuePtr getStringValue() const;
    
-   inline U32 getIntValue() const
+   inline U64 getIntValue() const
    {
       switch (type)
       {
@@ -510,7 +531,7 @@ public:
    
 #ifndef EXCLUDE_CONSOLEVALUE_CASTERS
    inline operator const char*() { return getStringValue().c_str(); } const
-   inline operator U32() { return getIntValue(); } const
+   inline operator U32() { return (U32)getIntValue(); } const
    inline operator S32() { return getSignedIntValue(); } const
    inline operator F64() { return getFloatValue(); } const
    inline operator bool() { return getBoolValue(); } const
@@ -564,12 +585,12 @@ public:
    virtual void read(Stream &s, ConsoleSerializationState &state);
    virtual void write(Stream &s, ConsoleSerializationState &state);
    
-   virtual bool getDataField(const StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue);
-   virtual void setDataField(const StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue);
+   virtual bool getDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
+   virtual void setDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
    
    virtual S32 getIteratorLength();
-   virtual bool advanceIterator(ConsoleValue &iterator, ConsoleValue &iteratorValue);
+   virtual bool advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr &iteratorValue);
    
    virtual ConsoleStringValuePtr getString();
    

@@ -188,8 +188,8 @@ class AbstractClassRep
 
 public:
     /// This is a function pointer typedef to support get/set callbacks for fields
-    typedef bool (*SetDataNotify)( void *obj, const ConsoleValuePtr data );
-    typedef ConsoleValuePtr (*GetDataNotify)( void *obj, const ConsoleValuePtr data );
+    typedef bool (*SetDataNotify)( void *obj, const ConsoleValuePtr &data );
+    typedef ConsoleValuePtr (*GetDataNotify)( void *obj, const ConsoleValuePtr &data );
 
     /// This is a function pointer typedef to support optional writing for fields.
     typedef bool (*WriteDataNotify)( void* obj, const char* pFieldName );
@@ -420,7 +420,7 @@ public:
 //-----------------------------------------------------------------------------
 
 // Forward declarations so they can be used in the class
-ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr data );
+ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr &data );
 bool defaultProtectedWriteFn( void* obj, StringTableEntry pFieldName );
 
 //-----------------------------------------------------------------------------
@@ -889,14 +889,14 @@ inline bool& ConsoleObject::getDynamicGroupExpand()
 
 //-----------------------------------------------------------------------------
 
-inline bool defaultProtectedSetFn( void *obj, const ConsoleValuePtr data )
+inline bool defaultProtectedSetFn( void *obj, const ConsoleValuePtr &data )
 {
     return true;
 }
 
 //-----------------------------------------------------------------------------
 
-inline ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr data )
+inline ConsoleValuePtr defaultProtectedGetFn( void *obj, const ConsoleValuePtr &data )
 {
     return data;
 }
@@ -910,7 +910,7 @@ inline bool defaultProtectedWriteFn( void* obj, StringTableEntry pFieldName )
 
 //-----------------------------------------------------------------------------
 
-inline bool defaultProtectedNotSetFn(void *obj, ConsoleValuePtr data)
+inline bool defaultProtectedNotSetFn(void *obj, const ConsoleValuePtr &data)
 {
     return false;
 }

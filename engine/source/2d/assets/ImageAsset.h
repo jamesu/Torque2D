@@ -290,43 +290,43 @@ protected:
 protected:
     static void textureEventCallback( const U32 eventCode, void *userData );
 
-    static bool setImageFile( void *obj, const ConsoleValuePtr data )                 { static_cast<ImageAsset*>(obj)->setImageFile(data.getTempStringValue()); return false; }
-    static ConsoleValuePtr getImageFile(void *obj, const ConsoleValuePtr data)            { return static_cast<ImageAsset*>(obj)->getImageFile(); }
+    static bool setImageFile( void *obj, const ConsoleValuePtr &data )                 { static_cast<ImageAsset*>(obj)->setImageFile(data.getTempStringValue()); return false; }
+    static ConsoleValuePtr getImageFile(void *obj, const ConsoleValuePtr &data)            { return static_cast<ImageAsset*>(obj)->getImageFile(); }
     static bool writeImageFile( void* obj, StringTableEntry pFieldName )    { return static_cast<ImageAsset*>(obj)->getImageFile() != StringTable->EmptyString; }
 
-    static bool setForce16Bit( void *obj, const ConsoleValuePtr data )                { static_cast<ImageAsset*>(obj)->setForce16Bit(dAtob(data)); return false; }
+    static bool setForce16Bit( void *obj, const ConsoleValuePtr &data )                { static_cast<ImageAsset*>(obj)->setForce16Bit(dAtob(data)); return false; }
     static bool writeForce16Bit( void* obj, StringTableEntry pFieldName )   { return static_cast<ImageAsset*>(obj)->getForce16Bit() == true; }
 
-    static bool setFilterMode( void *obj, const ConsoleValuePtr data );
+    static bool setFilterMode( void *obj, const ConsoleValuePtr &data );
     static bool writeFilterMode( void* obj, StringTableEntry pFieldName )   { return static_cast<ImageAsset*>(obj)->getFilterMode() != FILTER_BILINEAR; }
 
-    static bool setExplicitMode( void *obj, const ConsoleValuePtr data )              { static_cast<ImageAsset*>(obj)->setExplicitMode(dAtob(data)); return false; }
+    static bool setExplicitMode( void *obj, const ConsoleValuePtr &data )              { static_cast<ImageAsset*>(obj)->setExplicitMode(dAtob(data)); return false; }
 
-    static bool setCellRowOrder( void *obj, const ConsoleValuePtr data )              { static_cast<ImageAsset*>(obj)->setCellRowOrder(dAtob(data)); return false; }
+    static bool setCellRowOrder( void *obj, const ConsoleValuePtr &data )              { static_cast<ImageAsset*>(obj)->setCellRowOrder(dAtob(data)); return false; }
     static bool writeCellRowOrder( void* obj, StringTableEntry pFieldName ) { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && !pImageAsset->getCellRowOrder(); }
 
-    static bool setCellOffsetX( void *obj, const ConsoleValuePtr data )               { static_cast<ImageAsset*>(obj)->setCellOffsetX(dAtoi(data)); return false; }
+    static bool setCellOffsetX( void *obj, const ConsoleValuePtr &data )               { static_cast<ImageAsset*>(obj)->setCellOffsetX(dAtoi(data)); return false; }
     static bool writeCellOffsetX( void* obj, StringTableEntry pFieldName )  { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellOffsetX() != 0; }
 
-    static bool setCellOffsetY( void *obj, const ConsoleValuePtr data )               { static_cast<ImageAsset*>(obj)->setCellOffsetY(dAtoi(data)); return false; }
+    static bool setCellOffsetY( void *obj, const ConsoleValuePtr &data )               { static_cast<ImageAsset*>(obj)->setCellOffsetY(dAtoi(data)); return false; }
     static bool writeCellOffsetY( void* obj, StringTableEntry pFieldName )  { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellOffsetY() != 0; }
 
-    static bool setCellStrideX( void *obj, const ConsoleValuePtr data )               { static_cast<ImageAsset*>(obj)->setCellStrideX(dAtoi(data)); return false; }
+    static bool setCellStrideX( void *obj, const ConsoleValuePtr &data )               { static_cast<ImageAsset*>(obj)->setCellStrideX(dAtoi(data)); return false; }
     static bool writeCellStrideX( void* obj, StringTableEntry pFieldName )  { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellStrideX() != 0; }
 
-    static bool setCellStrideY( void *obj, const ConsoleValuePtr data )               { static_cast<ImageAsset*>(obj)->setCellStrideY(dAtoi(data)); return false; }
+    static bool setCellStrideY( void *obj, const ConsoleValuePtr &data )               { static_cast<ImageAsset*>(obj)->setCellStrideY(dAtoi(data)); return false; }
     static bool writeCellStrideY( void* obj, StringTableEntry pFieldName )  { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellStrideY() != 0; }
 
-    static bool setCellCountX( void *obj, const ConsoleValuePtr data )                { static_cast<ImageAsset*>(obj)->setCellCountX(dAtoi(data)); return false; }
+    static bool setCellCountX( void *obj, const ConsoleValuePtr &data )                { static_cast<ImageAsset*>(obj)->setCellCountX(dAtoi(data)); return false; }
     static bool writeCellCountX( void* obj, StringTableEntry pFieldName )   { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellCountX() != 0; }
 
-    static bool setCellCountY( void *obj, const ConsoleValuePtr data )                { static_cast<ImageAsset*>(obj)->setCellCountY(dAtoi(data)); return false; }
+    static bool setCellCountY( void *obj, const ConsoleValuePtr &data )                { static_cast<ImageAsset*>(obj)->setCellCountY(dAtoi(data)); return false; }
     static bool writeCellCountY( void* obj, StringTableEntry pFieldName )   { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellCountY() != 0; }
 
-    static bool setCellWidth( void *obj, const ConsoleValuePtr data )                 { static_cast<ImageAsset*>(obj)->setCellWidth(dAtoi(data)); return false; }
+    static bool setCellWidth( void *obj, const ConsoleValuePtr &data )                 { static_cast<ImageAsset*>(obj)->setCellWidth(dAtoi(data)); return false; }
     static bool writeCellWidth( void* obj, StringTableEntry pFieldName )    { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellWidth() != 0; }
 
-    static bool setCellHeight( void *obj, const ConsoleValuePtr data )                { static_cast<ImageAsset*>(obj)->setCellHeight(dAtoi(data)); return false; }
+    static bool setCellHeight( void *obj, const ConsoleValuePtr &data )                { static_cast<ImageAsset*>(obj)->setCellHeight(dAtoi(data)); return false; }
     static bool writeCellHeight( void* obj, StringTableEntry pFieldName )   { ImageAsset* pImageAsset = static_cast<ImageAsset*>(obj); return !pImageAsset->getExplicitMode() && pImageAsset->getCellHeight() != 0; }
 };
 

@@ -528,7 +528,7 @@ ConsoleTypeFromConsoleValue( TypeColorF )
       return;
    }
    
-   dSscanf(value.getTempStringValue(), "%.9g %.9g %.9g %.9g", &cr, &cg, &cb, &ca);
+   dSscanf(value.getTempStringValue(), "%f %f %f %f", &cr, &cg, &cb, &ca);
    *((ColorF *) dataPtr) = ColorF(cr, cg, cb, ca);
 }
 

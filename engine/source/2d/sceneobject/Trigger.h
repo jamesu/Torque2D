@@ -86,11 +86,11 @@ public:
 
 protected:
     /// Callback Management.
-    static bool             setEnterCallback(void *obj, const ConsoleValuePtr data) { static_cast<Trigger*>(obj)->setEnterCallback(dAtob(data)); return false; };
+    static bool             setEnterCallback(void *obj, const ConsoleValuePtr &data) { static_cast<Trigger*>(obj)->setEnterCallback(dAtob(data)); return false; };
     static bool             writeEnterCallback( void* obj, StringTableEntry pFieldName ) {return static_cast<Trigger*>(obj)->mEnterCallback == false; }
-    static bool             setStayCallback(void *obj, const ConsoleValuePtr data)  { static_cast<Trigger*>(obj)->setStayCallback(dAtob(data)); return false; };
+    static bool             setStayCallback(void *obj, const ConsoleValuePtr &data)  { static_cast<Trigger*>(obj)->setStayCallback(dAtob(data)); return false; };
     static bool             writeStayCallback( void* obj, StringTableEntry pFieldName ) { return  static_cast<Trigger*>(obj)->mStayCallback == true; }
-    static bool             setLeaveCallback(void *obj, const ConsoleValuePtr data) { static_cast<Trigger*>(obj)->setLeaveCallback(dAtob(data)); return false; };
+    static bool             setLeaveCallback(void *obj, const ConsoleValuePtr &data) { static_cast<Trigger*>(obj)->setLeaveCallback(dAtob(data)); return false; };
     static bool             writeLeaveCallback( void* obj, StringTableEntry pFieldName ) {return  static_cast<Trigger*>(obj)->mLeaveCallback == false; }
 };
 

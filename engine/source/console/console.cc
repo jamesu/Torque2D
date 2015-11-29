@@ -710,6 +710,24 @@ void setVariable(const char *name, const char *value)
    gNewEvalState.globalVars->setVariable(StringTable->insert(name), value);
 }
 
+void setValueVariable(const char *name, const ConsoleValuePtr& value)
+{
+   if (name && name[0] == '$')
+      name++;
+   name = StringTable->insert(name);
+   
+   gNewEvalState.globalVars->setValueVariable(StringTable->insert(name), value);
+}
+
+ConsoleValuePtr getConsoleValueVariable(const char *name)
+{
+   
+   if (name && name[0] == '$')
+      name++;
+   name = StringTable->insert(name);
+   return gNewEvalState.globalVars->getValueVariable(StringTable->insert(name));
+}
+
 void setLocalVariable(const char *name, const char *value)
 {
    if (name && name[0] == '%')
@@ -720,7 +738,7 @@ void setLocalVariable(const char *name, const char *value)
    CodeBlockFunction* func = gNewEvalState.currentFrame.function;
    if (func)
    {
-      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr; itr++)
+      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr != itrEnd; itr++)
       {
          if (itr->varName == name)
          {
@@ -1181,7 +1199,7 @@ ConsoleStringValuePtr getData(S32 type, void *dataPtr, S32 index, EnumTable *tbl
    return cbt->getData((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), tbl);
 }
    
-void setDataFromValue(S32 type, void *dataPtr, S32 index, ConsoleValue value, EnumTable *tbl)
+void setDataFromValue(S32 type, void *dataPtr, S32 index, const ConsoleValuePtr &value, EnumTable *tbl)
 {
    ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
    AssertFatal(cbt, "Con::setData - could not resolve type ID!");
@@ -1998,7 +2016,7 @@ ConsoleFunction(testExecute, void, 2, 2, "")
    }
 }
 
-ConsoleFunction(testReturnArray, ConsoleValuePtr, 1, 1, "")
+ConsoleFunction(createArray, ConsoleValuePtr, 1, 1, "")
 {
    return ConsoleValuePtr(ConsoleArrayValue::fromValues(0, NULL));
 }

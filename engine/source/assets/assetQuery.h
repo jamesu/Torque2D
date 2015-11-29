@@ -52,7 +52,7 @@ protected:
     virtual void onTamlCustomWrite( TamlCustomNodes& customNodes );
     virtual void onTamlCustomRead( const TamlCustomNodes& customNodes );
 
-    static ConsoleValuePtr getCount(void *obj, const ConsoleValuePtr data) { return Con::getIntArg(static_cast<AssetQuery*>(obj)->size()); }
+    static ConsoleValuePtr getCount(void *obj, const ConsoleValuePtr &data) { return Con::getIntArg(static_cast<AssetQuery*>(obj)->size()); }
     static bool writeCount( void* obj, StringTableEntry pFieldName ) { return false; }
 
 public:

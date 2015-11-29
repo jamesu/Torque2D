@@ -79,7 +79,7 @@ void FileDialog::initPersistFields()
 
 //-----------------------------------------------------------------------------
 // Dialog Filters
-bool FileDialog::setFilters(void *obj, const ConsoleValuePtr data)
+bool FileDialog::setFilters(void *obj, const ConsoleValuePtr &data)
 {
 	// Will do validate on write at some point.
 	if (data.type == ConsoleValue::TypeInternalNull)
@@ -90,7 +90,7 @@ bool FileDialog::setFilters(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // ChangePath Property - Change working path on successful file selection
-bool FileDialog::setChangePath(void *obj, const ConsoleValuePtr data)
+bool FileDialog::setChangePath(void *obj, const ConsoleValuePtr &data)
 {
 	bool bMustExist = dAtob(data);
 
@@ -106,7 +106,7 @@ bool FileDialog::setChangePath(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // ChangePath Property - Get the path change
-ConsoleValuePtr FileDialog::getChangePath(void *obj, const ConsoleValuePtr data)
+ConsoleValuePtr FileDialog::getChangePath(void *obj, const ConsoleValuePtr &data)
 {
 	FileDialog *pDlg = static_cast<FileDialog*>(obj);
    
@@ -118,7 +118,7 @@ ConsoleValuePtr FileDialog::getChangePath(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // Dead function. Let's clean this up in the next platform sweep
-bool FileDialog::setFile(void *obj, const ConsoleValuePtr data)
+bool FileDialog::setFile(void *obj, const ConsoleValuePtr &data)
 {
    return false;
 }
@@ -151,7 +151,7 @@ void OpenFileDialog::initPersistFields()
 
 //-----------------------------------------------------------------------------
 // Set the mData.mStyle to use the FDS_MUSTEXIST flag
-bool OpenFileDialog::setMustExist(void *obj, const ConsoleValuePtr data)
+bool OpenFileDialog::setMustExist(void *obj, const ConsoleValuePtr &data)
 {
 	bool bMustExist = dAtob(data);
 
@@ -167,7 +167,7 @@ bool OpenFileDialog::setMustExist(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // Check if the mData.mStyle has the FDS_MUSTEXIST flag
-ConsoleValuePtr OpenFileDialog::getMustExist(void *obj, const ConsoleValuePtr data)
+ConsoleValuePtr OpenFileDialog::getMustExist(void *obj, const ConsoleValuePtr &data)
 {
 	OpenFileDialog *pDlg = static_cast<OpenFileDialog*>(obj);
    
@@ -179,7 +179,7 @@ ConsoleValuePtr OpenFileDialog::getMustExist(void *obj, const ConsoleValuePtr da
 
 //-----------------------------------------------------------------------------
 // Set the the mData.mStyle property to use the FDS_MULTIPLEFILES flag
-bool OpenFileDialog::setMultipleFiles(void *obj, const ConsoleValuePtr data)
+bool OpenFileDialog::setMultipleFiles(void *obj, const ConsoleValuePtr &data)
 {
 	bool bMustExist = dAtob(data);
 
@@ -195,7 +195,7 @@ bool OpenFileDialog::setMultipleFiles(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // Check if the mData.mStyle has the FDS_MULTIPLEFILES flag
-ConsoleValuePtr OpenFileDialog::getMultipleFiles(void *obj, const ConsoleValuePtr data)
+ConsoleValuePtr OpenFileDialog::getMultipleFiles(void *obj, const ConsoleValuePtr &data)
 {
 	OpenFileDialog *pDlg = static_cast<OpenFileDialog*>(obj);
    
@@ -231,7 +231,7 @@ void SaveFileDialog::initPersistFields()
 
 //-----------------------------------------------------------------------------
 // Set the mData.mStyle property to use the FDS_OVERWRITEPROMPT flag
-bool SaveFileDialog::setOverwritePrompt(void *obj, const ConsoleValuePtr data)
+bool SaveFileDialog::setOverwritePrompt(void *obj, const ConsoleValuePtr &data)
 {
 	bool bMustExist = dAtob(data);
 
@@ -247,7 +247,7 @@ bool SaveFileDialog::setOverwritePrompt(void *obj, const ConsoleValuePtr data)
 
 //-----------------------------------------------------------------------------
 // Check if the mData.mStyle property uses the FDS_OVERWRITEPROMPT flag
-ConsoleValuePtr SaveFileDialog::getOverwritePrompt(void *obj, const ConsoleValuePtr data)
+ConsoleValuePtr SaveFileDialog::getOverwritePrompt(void *obj, const ConsoleValuePtr &data)
 {
 	SaveFileDialog *pDlg = static_cast<SaveFileDialog*>(obj);
 

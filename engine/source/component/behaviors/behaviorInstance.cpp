@@ -97,7 +97,7 @@ const char* BehaviorInstance::getTemplateName( void )
 }
 
 // Get template.
-ConsoleValuePtr BehaviorInstance::getTemplate(void *obj, const ConsoleValuePtr data)
+ConsoleValuePtr BehaviorInstance::getTemplate(void *obj, const ConsoleValuePtr &data)
 {
     return static_cast<BehaviorInstance*>(obj)->getTemplate();
 }

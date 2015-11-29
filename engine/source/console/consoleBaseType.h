@@ -51,7 +51,7 @@ typedef const char *(*ConsoleTypeToString)(void *dataPtr, EnumTable *tbl);
 typedef ConsoleValuePtr (*ConsoleTypeToConsoleValue)(void *dataPtr, EnumTable *tbl);
 
 /// Sets a value based on a ConsoleValue (may use a reference or plain string)
-typedef void (*ConsoleTypeFromConsoleValue)(void *dataPtr, ConsoleValue value, EnumTable *tbl);
+typedef void (*ConsoleTypeFromConsoleValue)(void *dataPtr, ConsoleValuePtr &value, EnumTable *tbl);
 
 /// Save value to stream
 typedef void (*ConsoleTypeSerializeToStream)(void *dataPtr, Stream& s, ConsoleSerializationState &state, EnumTable *tbl);
@@ -123,7 +123,7 @@ public:
    void setData(void *dataPtr, const char *value, EnumTable *tbl);
    ConsoleStringValuePtr getData(void *dataPtr, EnumTable *tbl);
    
-   void setDataFromValue(void *dataPtr, ConsoleValue value, EnumTable *tbl);
+   void setDataFromValue(void *dataPtr, const ConsoleValuePtr &value, EnumTable *tbl);
    ConsoleValuePtr getDataValue(void *dataPtr, EnumTable *tbl);
    
    virtual const char *getTypeClassName()=0;
@@ -301,9 +301,9 @@ ConsoleTypeToConsoleValueConstructor gConsoleType##type##_toConsoleValueConstruc
 ConsoleValuePtr ConsoleType##type##_toConsoleValue(void *dataPtr, EnumTable *tbl)
 
 #define ConsoleTypeFromConsoleValue( type ) \
-void ConsoleType##type##_fromConsoleValue(void *dataPtr, ConsoleValue value, EnumTable *tbl);\
+void ConsoleType##type##_fromConsoleValue(void *dataPtr, ConsoleValuePtr &value, EnumTable *tbl);\
 ConsoleTypeFromConsoleValueConstructor gConsoleType##type##_fromConsoleValueConstructor(&gConsoleType##type##Instance, &ConsoleType##type##_fromConsoleValue);\
-void ConsoleType##type##_fromConsoleValue(void *dataPtr, ConsoleValue value, EnumTable *tbl)
+void ConsoleType##type##_fromConsoleValue(void *dataPtr, ConsoleValuePtr &value, EnumTable *tbl)
 
 #define ConsoleTypeToStream( type ) \
 void ConsoleType##type##_toStream(void *dataPtr, Stream& s, ConsoleSerializationState &state, EnumTable *tbl);\
@@ -406,8 +406,8 @@ public:
    virtual ConsoleStringValuePtr getString();
    virtual ConsoleBaseType *getType();
    
-   virtual bool getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue);
-   virtual void setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue);
+   virtual bool getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
+   virtual void setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace *getNamespace() { return value; }
    
    virtual void read(Stream &s, ConsoleSerializationState &state);

@@ -227,14 +227,12 @@ ConsoleBaseType::~ConsoleBaseType()
 
 S32 ConsoleReferenceCountedType::getInternalType() { ConsoleBaseType* type = getType(); return type ? ConsoleValue::TypeCustomFieldStart + type->getTypeID() : ConsoleValue::TypeCustomFieldStart; }
 
-bool ConsoleReferenceCountedType::getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue)
+bool ConsoleReferenceCountedType::getDataField(StringTableEntry slotName, const ConsoleValuePtr& array, ConsoleValuePtr &outValue)
 {
    SimObject* obj = Sim::findObject<SimObject>(getString().c_str());
    if (obj)
    {
-      // TODO: directly pass through values
-      const char *res = obj->getDataField(slotName, array.getTempStringValue());
-      (ConsoleValuePtr&)outValue = ConsoleStringValue::fromString(res);
+      outValue.setValue(obj->getDataField(slotName, array.getTempStringValue()));
    }
    else
    {
@@ -245,13 +243,13 @@ bool ConsoleReferenceCountedType::getDataField(StringTableEntry slotName, const 
    return true;
 }
 
-void ConsoleReferenceCountedType::setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue)
+void ConsoleReferenceCountedType::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue)
 {
    SimObject* obj = Sim::findObject<SimObject>(getString().c_str());
    if (obj)
    {
       // TODO: directly pass through values
-      obj->setDataField(slotName, array.getTempStringValue(), newValue.getTempStringValue());
+      obj->setDataField(slotName, array.getTempStringValue(), newValue);
    }
    else
    {
@@ -261,7 +259,18 @@ void ConsoleReferenceCountedType::setDataField(StringTableEntry slotName, const 
 
 Namespace* ConsoleReferenceCountedType::getNamespace()
 {
-   return Namespace::find(StringTable->insert(getString().c_str()));
+   SimObject* obj = Sim::findObject<SimObject>(getString().c_str());
+   if (obj)
+   {
+      // TODO: directly pass through values
+      return obj->getNamespace();
+   }
+   else
+   {
+      Con::warnf("getNamespace: NS '%s' not found.", getString().c_str());
+      return NULL;
+   }
+   //return Namespace::find(StringTable->insert(getString().c_str()));
 }
 
 ConsoleStringValue* ConsoleStringValue::fromInt(S64 num)
@@ -318,7 +327,7 @@ ConsoleStringValuePtr ConsoleBaseType::getData(void *dataPtr, EnumTable *tbl)
    }
 }
 
-void ConsoleBaseType::setDataFromValue(void *dataPtr, ConsoleValue value, EnumTable *tbl)
+void ConsoleBaseType::setDataFromValue(void *dataPtr, const ConsoleValuePtr &value, EnumTable *tbl)
 {
    if (smTypeToConsoleValueFunc)
    {
@@ -326,7 +335,7 @@ void ConsoleBaseType::setDataFromValue(void *dataPtr, ConsoleValue value, EnumTa
    }
    else
    {
-      setData(dataPtr, "", tbl);
+      setData(dataPtr, value.getTempStringValue(), tbl);
    }
 }
 
@@ -370,7 +379,7 @@ void ConsoleArrayValue::write(Stream &s, ConsoleSerializationState &state)
    ConsoleValuePtr::writeStack(s, state, mValues);
 }
 
-bool ConsoleArrayValue::getDataField(StringTableEntry slotName, const ConsoleValue array, ConsoleValue &outValue)
+bool ConsoleArrayValue::getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue)
 {
    if (array.type != ConsoleValue::TypeInternalNull && slotName == NULL)
    {
@@ -398,7 +407,7 @@ bool ConsoleArrayValue::getDataField(StringTableEntry slotName, const ConsoleVal
    return true;
 }
 
-void ConsoleArrayValue::setDataField(StringTableEntry slotName, const ConsoleValue array, const ConsoleValue newValue)
+void ConsoleArrayValue::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue)
 {
    if (array.type != ConsoleValue::TypeInternalNull && slotName == NULL)
    {
@@ -437,7 +446,7 @@ S32 ConsoleArrayValue::getIteratorLength()
    return mValues.size();
 }
 
-bool ConsoleArrayValue::advanceIterator(ConsoleValue &iterator, ConsoleValue &iteratorValue)
+bool ConsoleArrayValue::advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr &iteratorValue)
 {
    S32 size = mValues.size();
    S32 iterValue = (S32)iterator.getIntValue()-1;

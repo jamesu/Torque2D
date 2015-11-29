@@ -75,8 +75,8 @@ public:
    const char *getText() { return (const char*)mText; }
 
    // Text Property Accessors
-   static bool setText(void *obj, const ConsoleValuePtr data) { static_cast<GuiTextCtrl*>(obj)->setText(data.getTempStringValue()); return true; }
-   static ConsoleValuePtr getTextProperty(void *obj, const ConsoleValuePtr data) { return static_cast<GuiTextCtrl*>(obj)->getText(); }
+   static bool setText(void *obj, const ConsoleValuePtr &data) { static_cast<GuiTextCtrl*>(obj)->setText(data.getTempStringValue()); return true; }
+   static ConsoleValuePtr getTextProperty(void *obj, const ConsoleValuePtr &data) { return static_cast<GuiTextCtrl*>(obj)->getText(); }
 
 
    void inspectPostApply();

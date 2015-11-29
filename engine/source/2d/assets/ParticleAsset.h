@@ -165,10 +165,10 @@ protected:
     void onTamlCustomRead( const TamlCustomNodes& customNodes );
 
 protected:
-    static bool setLifetime(void *obj, const ConsoleValuePtr data)                    { static_cast<ParticleAsset*>(obj)->setLifetime(dAtof(data)); return false; }
+    static bool setLifetime(void *obj, const ConsoleValuePtr &data)                    { static_cast<ParticleAsset*>(obj)->setLifetime(dAtof(data)); return false; }
     static bool writeLifetime( void* obj, StringTableEntry pFieldName )     { return mNotZero( static_cast<ParticleAsset*>(obj)->getLifetime() ); }
 
-    static bool setLifeMode(void *obj, const ConsoleValuePtr data)                    { static_cast<ParticleAsset*>(obj)->setLifeMode( ParticleAsset::getParticleAssetLifeModeEnum(data.getTempStringValue()) ); return false; }
+    static bool setLifeMode(void *obj, const ConsoleValuePtr &data)                    { static_cast<ParticleAsset*>(obj)->setLifeMode( ParticleAsset::getParticleAssetLifeModeEnum(data.getTempStringValue()) ); return false; }
     static bool writeLifeMode( void* obj, StringTableEntry pFieldName )     { return static_cast<ParticleAsset*>(obj)->getLifeMode() != INFINITE; }
 };
 
