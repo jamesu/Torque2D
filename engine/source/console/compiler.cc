@@ -501,9 +501,10 @@ Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::duplicateConstan
       walk = &list[currentPage];
    }
    
-   
+#ifdef DEBUG_COMPILER
    Con::printf("CompilerConstantsTable::duplicate(%i,%i) [page %i]", idx.idx, idx.page, currentPage);
-   
+#endif
+
    Entry *dupConst = (Entry *) consoleAlloc(sizeof(Entry));
    dMemset(dupConst, '\0', sizeof(Entry));
    dupConst->value.setValue(valueCheck);
