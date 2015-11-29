@@ -338,9 +338,9 @@ function SandboxInputController::performZoomGesture( %this )
 function Sandbox::resetManipulationModes( %this )
 {
     // These control which drag modes are available or not.
-    Sandbox.ManipulationModeState["off"] = true;
-    Sandbox.ManipulationModeState["pan"] = false;
-    Sandbox.ManipulationModeState["pull"] = false;
+    Sandbox.ManipulationModeStateoff = true;
+    Sandbox.ManipulationModeStatepan = false;
+    Sandbox.ManipulationModeStatepull = false;
     
     // Set the sandbox drag mode default.
     Sandbox.useManipulation( "off" ); 
@@ -351,9 +351,9 @@ function Sandbox::resetManipulationModes( %this )
 function Sandbox::resetManipulationModes( %this )
 {   
     // These control which drag modes are available or not.
-    Sandbox.ManipulationModeState["off"] = true;
-    Sandbox.ManipulationModeState["pan"] = false;
-    Sandbox.ManipulationModeState["pull"] = false;
+    Sandbox.ManipulationModeStateoff = true;
+    Sandbox.ManipulationModeStatepan = false;
+    Sandbox.ManipulationModeStatepull = false;
     
     // Set the sandbox drag mode default.
     Sandbox.useManipulation( "off" ); 
@@ -368,7 +368,8 @@ function Sandbox::allowManipulation( %this, %mode )
     if ( %mode $= "off" )
         return;
         
-    Sandbox.ManipulationModeState[%mode] = true;    
+    //Sandbox.ManipulationModeState[%mode] = true;  
+    Sandbox.setFieldValue(ManipulationModeState @ %mode, true);  
 }
 
 //-----------------------------------------------------------------------------
@@ -376,7 +377,7 @@ function Sandbox::allowManipulation( %this, %mode )
 function Sandbox::useManipulation( %this, %mode )
 {
     // Is the drag mode available?
-    if ( %mode !$= "off" && !Sandbox.ManipulationModeState[%mode] )
+    if ( %mode !$= "off" && !Sandbox.getFieldValue(ManipulationModeState @ %mode) )
         return;
     
     // Set the manipulation mode.
@@ -417,7 +418,7 @@ function cycleManipulation( %make )
     // "off" to "pan" transition.
     if ( Sandbox.ManipulationMode $= "off" )
     {
-        if ( Sandbox.ManipulationModeState["pan"] )
+        if ( Sandbox.ManipulationModeStatepan )
         {
             Sandbox.useManipulation("pan");
             return;
@@ -429,7 +430,7 @@ function cycleManipulation( %make )
     // "pan" to "pull" transition.
     if ( Sandbox.ManipulationMode $= "pan" )
     {
-        if ( Sandbox.ManipulationModeState["pull"] )
+        if ( Sandbox.ManipulationModeStatepull )
         {
             Sandbox.useManipulation("pull");
             return;

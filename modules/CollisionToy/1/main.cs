@@ -176,11 +176,11 @@ function CollisionToy::createBalls( %this )
 function CollisionToyBall::onCollision(%this, %object, %collisionDetails)
 {
     // Finish if there are no contact points (this happens with sensors).
-    if ( %collisionDetails.count <= 2 )
+    if ( len(%collisionDetails) <= 2 )
         return;
 
     // Fetch the first contact point (there may possibly be two but ignore that here).        
-    %contactPosition = %collisionDetails._4 SPC %collisionDetails._5;
+    %contactPosition = %collisionDetails[4] SPC %collisionDetails[5];
     
     // Create a marker sprite with a limited lifetime.
     // Also set this so that it can't be picked so you can't drag it via the Sandbox "pull" feature.

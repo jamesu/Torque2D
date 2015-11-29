@@ -145,7 +145,10 @@ function SoftbodyToy::createCubeSoftbody( %this )
     %nodeStride = SoftbodyToy.NodeSize * 0.8;
     %offsetX = %positionX - (( %nodeStride * (SoftbodyToy.NodeX-1)) * 0.5);
     %offsetY = %positionY - (( %nodeStride * (SoftbodyToy.NodeY-1)) * 0.5);
-        
+
+    $softBodyList = createArray();
+    %width = SoftbodyToy.NodeX;
+
     // Create the sprites.
     for ( %x = 0; %x < SoftbodyToy.NodeX; %x++ )
     {
@@ -180,7 +183,7 @@ function SoftbodyToy::createCubeSoftbody( %this )
             SandboxScene.add( %object );
             
             // Store object.
-            SoftbodyToy.body[%x,%y] = %object;
+            $softBodyList[(%y*%width) + %x] = %object;
         }
     }
       
@@ -190,8 +193,8 @@ function SoftbodyToy::createCubeSoftbody( %this )
         for ( %y = 0; %y < (SoftbodyToy.NodeY-1); %y++ )
         {
             // Fetch objects.
-            %objectA = SoftbodyToy.body[%x,%y];
-            %objectB = SoftbodyToy.body[%x,%y+1];
+            %objectA = $softBodyList[(%y*%width) + %x];
+            %objectB = $softBodyList[((%y+1)*%width) + %x];
             
             // Create a distance joint between them.
             %jointId = SandboxScene.createDistanceJoint( %objectA, %objectB );
@@ -208,8 +211,8 @@ function SoftbodyToy::createCubeSoftbody( %this )
         for ( %x = 0; %x < (SoftbodyToy.NodeX-1); %x++ )
         {
             // Fetch objects.
-            %objectA = SoftbodyToy.body[%x,%y];
-            %objectB = SoftbodyToy.body[%x+1,%y];
+            %objectA = $softBodyList[(%y*%width) + %x];
+            %objectB = $softBodyList[(%y*%width) + (%x+1)];
             
             // Create a distance joint between them.
             %jointId = SandboxScene.createDistanceJoint( %objectA, %objectB );
@@ -226,10 +229,10 @@ function SoftbodyToy::createCubeSoftbody( %this )
         for ( %x = 0; %x < (SoftbodyToy.NodeX-1); %x++ )
         {
             // Fetch objects.
-            %objectA = SoftbodyToy.body[%x,%y];
-            %objectB = SoftbodyToy.body[%x+1,%y];
-            %objectC = SoftbodyToy.body[%x+1,%y+1];
-            %objectD = SoftbodyToy.body[%x,%y+1];
+            %objectA = $softBodyList[(%y*%width) + %x];
+            %objectB = $softBodyList[(%y*%width) + (%x+1)];
+            %objectC = $softBodyList[((%y+1)*%width) + (%x+1)];
+            %objectD = $softBodyList[((%y+1)*%width) + %x];
             
             // Create a distance joint between them.
             %jointId1 = SandboxScene.createDistanceJoint( %objectA, %objectC );

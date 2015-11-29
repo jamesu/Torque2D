@@ -79,7 +79,7 @@ function CompositeSprite::onCustomLayout( %this, %args )
         return;
 
     // Fetch the first argument.    
-    %inputX = %args._0;
+    %inputX = getWord(%args, 0);
     
     // Calculate an angle from the first argument.
     %angle = %inputX * 10;

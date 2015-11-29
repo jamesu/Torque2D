@@ -25,6 +25,8 @@ function getFishAnimationList()
    %list = "TropicalAssets:angelfish1Anim" @ "," @ "TropicalAssets:angelfish2Anim" @ "," @ "TropicalAssets:butterflyfishAnim";
    %list = %list @ "," @ "TropicalAssets:pufferfishAnim" @ "," @ "TropicalAssets:rockfishAnim" @ "," @ "TropicalAssets:seahorseAnim";
    %list = %list @ "," @ "TropicalAssets:triggerfish1Anim" @ "," @ "TropicalAssets:eelAnim";
+
+   return %list;
 }
 
 //-----------------------------------------------------------------------------

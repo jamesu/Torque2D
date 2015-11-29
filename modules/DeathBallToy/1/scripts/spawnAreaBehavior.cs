@@ -58,8 +58,8 @@ function SpawnAreaBehavior::spawn(%this)
     %edges = "Top" TAB "Bottom" TAB "Left" TAB "Right";
 
     if (%spawnLocation $= "Edges")
-        %spawnLocation = getField(%edges, getRandom(0, 3));
-
+        %spawnLocation = getField(getWord(%edges, getRandom(0, 3)));
+    
     switch$ (%spawnLocation)
     {
         case "Area":

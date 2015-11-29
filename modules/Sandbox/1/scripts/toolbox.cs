@@ -149,6 +149,8 @@ function initializeToolbox()
         %resolutionCount = getWordCount( %resolutionList ) / 3;
         %inputIndex = 0;
         %outputIndex = 0;
+
+        $sandboxResolutions = createArray();
         for( %i = 0; %i < %resolutionCount; %i++ )
         {
             // Fetch the resolution entry.

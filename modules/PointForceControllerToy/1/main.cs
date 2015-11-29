@@ -168,10 +168,10 @@ function Planetoid::onCollision( %this, %object, %collisionDetails )
         %angle = mAtan( %positionDelta ) - 90;
         
         // Fetch contact position.
-        %contactPosition = %collisionDetails._4 SPC %collisionDetails._5;
+        %contactPosition = %collisionDetails[4] SPC %collisionDetails[5];
         
         // Calculate total impact force.
-        %impactForce = mAbs(%collisionDetails._6 / 100) + mAbs(%collisionDetails._7 / 20);
+        %impactForce = mAbs(%collisionDetails[6] / 100) + mAbs(%collisionDetails[7] / 20);
         
         // Create explosion.
         %player = new ParticlePlayer();
