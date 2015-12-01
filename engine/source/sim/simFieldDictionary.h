@@ -43,7 +43,7 @@ class SimFieldDictionary
    struct Entry
    {
       StringTableEntry slotName;
-      char *value;
+      ConsoleValuePtr value;
       Entry *next;
    };
    enum
@@ -67,8 +67,8 @@ public:
 
    SimFieldDictionary();
    ~SimFieldDictionary();
-   void setFieldValue(StringTableEntry slotName, const char *value);
-   const char *getFieldValue(StringTableEntry slotName);
+   void setFieldValue(StringTableEntry slotName, const ConsoleValuePtr &valuevalue);
+   ConsoleValuePtr getFieldValue(StringTableEntry slotName);
    void writeFields(SimObject *obj, Stream &strem, U32 tabStop);
    void printFields(SimObject *obj);
    void assignFrom(SimFieldDictionary *dict);

@@ -70,10 +70,10 @@ ConsoleFunctionWithDocs( copyBehaviorToComponent, ConsoleBool, 3, 3, (behavior, 
         pField = pTemplate->getBehaviorField( index );
 
         // Fetch field value from behavior (if any).
-        pFieldValue = pBehavior->getDataField( pField->mName, NULL );
+        pFieldValue = pBehavior->getDataField( pField->mName, ConsoleValuePtr() );
 
         // Set field value on component.
-        pComponent->setDataField( pField->mName, NULL, pFieldValue );
+        pComponent->setDataField( pField->mName, ConsoleValuePtr(), pFieldValue );
     }
 
     return true;

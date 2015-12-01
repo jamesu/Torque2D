@@ -221,7 +221,7 @@ void SimComponent::onComponentRemove(SimComponent *target)
 
 //////////////////////////////////////////////////////////////////////////
 
-bool SimComponent::writeField(StringTableEntry fieldname, const char* value)
+bool SimComponent::writeField(StringTableEntry fieldname, const ConsoleValuePtr &value)
 {
    if (!Parent::writeField(fieldname, value))
       return false;

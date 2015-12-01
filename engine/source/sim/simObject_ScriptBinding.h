@@ -483,7 +483,7 @@ ConsoleMethodWithDocs(SimObject, getClassName, ConsoleString, 2, 2, ())
 ConsoleMethodWithDocs(SimObject, getFieldValue, ConsoleValuePtr, 3, 3, (fieldName))
 {
    const char *fieldName = StringTable->insert( argv[2] );
-   return object->getDataField( fieldName, NULL );
+   return object->getDataField( fieldName, ConsoleValuePtr() );
 }
 
 /*! Set the value of any field.
@@ -533,7 +533,7 @@ ConsoleMethodWithDocs(SimObject, setFieldValue, ConsoleBool, 4, 4, (fieldName,va
    const char *fieldName = StringTable->insert(argv[2]);
    const char *value = argv[3];
 
-   object->setDataField( fieldName, NULL, value );
+   object->setDataField( fieldName, ConsoleValuePtr(), value );
 
    return true;
 

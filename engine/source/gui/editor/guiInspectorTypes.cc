@@ -74,7 +74,7 @@ void GuiInspectorTypeEnum::setData( StringTableEntry data )
    if( mField == NULL || mTarget == NULL )
       return;
 
-   mTarget->setDataField( mField->pFieldname, NULL, data );
+   mTarget->setDataField( mField->pFieldname, ConsoleValuePtr(), data );
 
    // Force our edit to update
    updateValue( data );
@@ -85,7 +85,7 @@ ConsoleStringValuePtr  GuiInspectorTypeEnum::getData()
    if( mField == NULL || mTarget == NULL )
       return ConsoleStringValuePtr();
 
-   return mTarget->getDataField( mField->pFieldname, NULL ).getStringValue();
+   return mTarget->getDataField( mField->pFieldname, ConsoleValuePtr() ).getStringValue();
 }
 
 //////////////////////////////////////////////////////////////////////////

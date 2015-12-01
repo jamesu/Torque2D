@@ -975,7 +975,7 @@ ConsoleMethodWithDocs(SceneWindow, setBackgroundColor, ConsoleVoid, 3, 6, (float
         // Has a single argument been specified?
         if ( elementCount == 1 )
         {
-            object->setDataField( StringTable->insert("BackgroundColor"), NULL, argv[2] );
+            object->setDataField( StringTable->insert("BackgroundColor"), ConsoleValuePtr(), argv[2] );
             return;
         }
 

@@ -562,7 +562,7 @@ public:
     inline U32              getSerialId( void ) const                   { return mSerialId; }
 
     // Read / Write fields.
-    virtual bool            writeField(StringTableEntry fieldname, const char* value);
+    virtual bool            writeField(StringTableEntry fieldname, const ConsoleValuePtr &value);
 
     static b2BodyType getBodyTypeEnum(const char* label);
     static const char* getBodyTypeDescription(const b2BodyType bodyType);

@@ -63,14 +63,14 @@ bool NameTags::onAdd()
 
     // Fetch tag count.
     StringTableEntry tagCountFieldName = StringTable->insert("TagCount");
-    const S32 tagCount = getDataField( tagCountFieldName, NULL ).getFloatValue();
+    const S32 tagCount = getDataField( tagCountFieldName, ConsoleValuePtr() ).getFloatValue();
 
     // Finish if not tags to add.
     if ( tagCount <= 0 )
         return true;
 
     // Clear tag count field.
-    setDataField( tagCountFieldName, NULL, "" );
+    setDataField( tagCountFieldName, ConsoleValuePtr(), "" );
 
     // Read tags.
     StringTableEntry tagFieldName = StringTable->insert("Tag");
@@ -261,7 +261,7 @@ bool NameTags::tag( const SimObjectId objId, const TagId tagId )
     char newTagsBuffer[4096];
 
     // Fetch tags.
-    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
+    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, ConsoleValuePtr() ).getStringValue();
 
     // Check if already tagged.
     if ( dStrlen( pOldTags.c_str() ) != 0 )
@@ -290,7 +290,7 @@ bool NameTags::tag( const SimObjectId objId, const TagId tagId )
     }
 
     // Update field.
-    pSimObject->setDataField( mNameTagsFieldEntry, NULL, newTagsBuffer );
+    pSimObject->setDataField( mNameTagsFieldEntry, ConsoleValuePtr(), newTagsBuffer );
 
     return true;
 }
@@ -314,7 +314,7 @@ bool NameTags::untag( const SimObjectId objId, const TagId tagId )
     }
 
     // Fetch tags.
-    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
+    ConsoleStringValuePtr pOldTags = pSimObject->getDataField( mNameTagsFieldEntry, ConsoleValuePtr() ).getStringValue();
 
     // Finish if no tags.
     if ( dStrlen( pOldTags.c_str() ) == 0 )
@@ -336,7 +336,7 @@ bool NameTags::untag( const SimObjectId objId, const TagId tagId )
             const char* pNewTags = StringUnit::removeUnit( pOldTags.c_str(), index, " \t\n" );
 
             // Update field.
-            pSimObject->setDataField( mNameTagsFieldEntry, NULL, pNewTags );
+            pSimObject->setDataField( mNameTagsFieldEntry, ConsoleValuePtr(), pNewTags );
 
             // Done.
             return true;
@@ -365,7 +365,7 @@ bool NameTags::hasTag( const SimObjectId objId, const TagId tagId ) const
     }
 
     // Fetch tags.
-    ConsoleStringValuePtr pTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
+    ConsoleStringValuePtr pTags = pSimObject->getDataField( mNameTagsFieldEntry, ConsoleValuePtr() ).getStringValue();
 
     // Finish if no tags.
     if ( dStrlen( pTags.c_str() ) == 0 )
@@ -444,7 +444,7 @@ void NameTags::queryTags( const char* pTags )
             SimObject* pSimObject = itr->value;
 
             // Fetch tags.
-            ConsoleStringValuePtr pFieldTags = pSimObject->getDataField( mNameTagsFieldEntry, NULL ).getStringValue();
+            ConsoleStringValuePtr pFieldTags = pSimObject->getDataField( mNameTagsFieldEntry, ConsoleValuePtr() ).getStringValue();
 
             // Any field tags?
             if ( dStrlen( pFieldTags.c_str() ) > 0 )
@@ -532,7 +532,7 @@ void NameTags::writeFields(Stream& stream, U32 tabStop)
 
         // Tag count.
         dSprintf( tempBuffer, 16, "%d", tagCount );
-        setDataField( StringTable->insert("TagCount"), NULL, tempBuffer );
+        setDataField( StringTable->insert("TagCount"), ConsoleValuePtr(), tempBuffer );
 
         // Write tags.
         StringTableEntry tagFieldName = StringTable->insert("Tag");

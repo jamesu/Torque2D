@@ -210,10 +210,10 @@ void GuiGridControl::resize(const Point2I &newPosition, const Point2I &newExtent
 
 RectI GuiGridControl::GetGridRect(GuiControl* ctrl)
 {
-	S32 col = ctrl->getDataField( StringTable->insert("Col"), NULL).getSignedIntValue();
-	S32 row = ctrl->getDataField( StringTable->insert("Row"), NULL).getSignedIntValue();
-	S32 colSpan = ctrl->getDataField( StringTable->insert("ColSpan"), NULL).getSignedIntValue();
-	S32 rowSpan = ctrl->getDataField( StringTable->insert("RowSpan"), NULL).getSignedIntValue();
+	S32 col = ctrl->getDataField( StringTable->insert("Col"), ConsoleValuePtr()).getSignedIntValue();
+	S32 row = ctrl->getDataField( StringTable->insert("Row"), ConsoleValuePtr()).getSignedIntValue();
+	S32 colSpan = ctrl->getDataField( StringTable->insert("ColSpan"), ConsoleValuePtr()).getSignedIntValue();
+	S32 rowSpan = ctrl->getDataField( StringTable->insert("RowSpan"), ConsoleValuePtr()).getSignedIntValue();
 
 	AssertFatal (col < mColSizes.size(), "Col is out of bounds");
 	AssertFatal (row < mRowSizes.size(), "Row is out of bounds");

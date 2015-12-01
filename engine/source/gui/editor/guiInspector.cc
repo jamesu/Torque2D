@@ -686,10 +686,10 @@ bool GuiInspectorGroup::inspectGroup()
          {
             for(S32 nI = 0; nI < itr->elementCount; nI++)
             {
-               FrameTemp<char> intToStr( 64 );
-               dSprintf( intToStr, 64, "%d", nI );
+               ConsoleValuePtr indexValue;
+               indexValue.setValue(nI);
 
-               ConsoleStringValuePtr val = mTarget->getDataField( itr->pFieldname, intToStr ).getStringValue();
+               ConsoleStringValuePtr val = mTarget->getDataField( itr->pFieldname, indexValue ).getStringValue();
                
                // Copy Val and construct proper ValueName[nI] format 
                //      which is "ValueName0" for index 0, etc.
@@ -712,13 +712,13 @@ bool GuiInspectorGroup::inspectGroup()
                if( field == NULL )
                {
                   field = new GuiInspectorField( this, mTarget, itr );
-                  field->setInspectorField( itr, intToStr );
+                  field->setInspectorField( itr, indexValue );
                }
                else
                {
                   field->setTarget( mTarget );
                   field->setParent( this );
-                  field->setInspectorField( itr, intToStr );
+                  field->setInspectorField( itr, indexValue );
                }
 
                field->registerObject();
@@ -920,7 +920,7 @@ void GuiInspectorDynamicGroup::addDynamicField()
    }
 
    //Con::evaluatef( "%d.%s = \"defaultValue\";", mTarget->getId(), buf );
-   mTarget->setDataField(StringTable->insert(buf), NULL, "defaultValue");
+   mTarget->setDataField(StringTable->insert(buf), ConsoleValuePtr(), "defaultValue");
 
    // now we simply re-inspect the object, to see the new field.
    this->inspectGroup();
@@ -970,7 +970,7 @@ ConsoleStringValuePtr GuiInspectorDynamicField::getData()
    if( mTarget == NULL || mDynField == NULL )
       return ConsoleStringValuePtr();
 
-   return mTarget->getFieldDictionary()->getFieldValue( mDynField->slotName );
+   return mTarget->getFieldDictionary()->getFieldValue( mDynField->slotName ).getStringValue();
 }
 
 void GuiInspectorDynamicField::renameField( StringTableEntry newFieldName )
@@ -1004,7 +1004,7 @@ void GuiInspectorDynamicField::renameField( StringTableEntry newFieldName )
    ConsoleStringValuePtr currentValue = getData();
 
    // Create our new field with the value of our old field and the new fields name!
-   mTarget->setDataField( newFieldName, NULL, currentValue );
+   mTarget->setDataField( newFieldName, ConsoleValuePtr(), currentValue );
 
    // Configure our field to grab data from the new dynamic field
    SimFieldDictionary::Entry *newEntry = group->findDynamicFieldInDictionary( newFieldName );
@@ -1016,7 +1016,7 @@ void GuiInspectorDynamicField::renameField( StringTableEntry newFieldName )
    }
 
    // Set our old fields data to "" (which will effectively erase the field)
-   mTarget->setDataField( getFieldName(), NULL, "" );
+   mTarget->setDataField( getFieldName(), ConsoleValuePtr(), "" );
    
    // Assign our dynamic field pointer (where we retrieve field information from) to our new field pointer
    mDynField = newEntry;

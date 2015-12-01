@@ -52,7 +52,7 @@ BehaviorInstance::BehaviorInstance( BehaviorTemplate* pTemplate ) :
             BehaviorTemplate::BehaviorField* pField = pTemplate->getBehaviorField( index );
 
             // Set cloned field.
-            setDataField( pField->mName, NULL, pField->mDefaultValue );
+            setDataField( pField->mName, ConsoleValuePtr(), pField->mDefaultValue );
         }
     }
 }

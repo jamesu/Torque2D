@@ -569,8 +569,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  SimObject *obj = Sim::findObject<SimObject>(targetObject);
                  if (obj)
                  {
-                    // TODO: direct access
-                    ((ConsoleValuePtr*)(ra))->setValue(ConsoleStringValue::fromString(obj->getDataField(targetSlot.getSTEStringValue(), NULL)));
+                    ((ConsoleValuePtr*)(ra))->setValue(obj->getDataField(targetSlot.getSTEStringValue(), arrayValue));
                  }
                  else
                  {
@@ -597,7 +596,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  SimObject *obj = Sim::findObject<SimObject>(targetObject);
                  if (obj)
                  {
-                     ((ConsoleValuePtr*)(ra))->setValue(obj->getDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue()));
+                     ((ConsoleValuePtr*)(ra))->setValue(obj->getDataField(targetSlot.getSTEStringValue(), targetArray));
                  }
                  else
                  {
@@ -641,8 +640,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                   SimObject *obj = Sim::findObject<SimObject>(targetObject);
                   if (obj)
                   {
-                     // TODO: direct set
-                     obj->setDataField(targetSlot.getSTEStringValue(), NULL, newValue);
+                     obj->setDataField(targetSlot.getSTEStringValue(), arrayValue, newValue);
                   }
                }
                
@@ -668,8 +666,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                   SimObject *obj = Sim::findObject<SimObject>(targetObject);
                   if (obj)
                   {
-                     // TODO: direct set
-                     obj->setDataField(targetSlot.getSTEStringValue(), targetArray.getTempStringValue(), newValue.getTempStringValue());
+                     obj->setDataField(targetSlot.getSTEStringValue(), targetArray, newValue);
                   }
                   else
                   {

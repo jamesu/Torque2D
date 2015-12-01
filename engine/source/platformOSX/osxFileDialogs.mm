@@ -59,7 +59,7 @@ bool FileDialog::Execute()
             setDataField(StringTable->insert("files"), Con::getIntArg(i), StringTable->insert(file));
         }
 
-        setDataField(StringTable->insert("fileCount"), NULL, Con::getIntArg((S32)[nsFileArray count]));
+        setDataField(StringTable->insert("fileCount"), ConsoleValuePtr(), Con::getIntArg((S32)[nsFileArray count]));
     }
     else
     {

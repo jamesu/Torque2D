@@ -69,13 +69,13 @@ SimFieldDictionary::~SimFieldDictionary()
          Entry *temp = walk;
          walk = temp->next;
 
-         dFree(temp->value);
+         temp->value.setNull();
          freeEntry(temp);
       }
    }
 }
 
-void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const char *value)
+void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const ConsoleValuePtr &value)
 {
    U32 bucket = HashPointer(slotName) % HashTableSize;
    Entry **walk = &mHashTable[bucket];
@@ -83,13 +83,13 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const char *va
       walk = &((*walk)->next);
 
    Entry *field = *walk;
-   if(!*value)
+   if(value.isNull() || value.getTempStringValue()[0] == '\0')
    {
       if(field)
       {
          mVersion++;
 
-         dFree(field->value);
+         field->value.setNull();
          *walk = field->next;
          freeEntry(field);
       }
@@ -98,15 +98,15 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const char *va
    {
       if(field)
       {
-         dFree(field->value);
-         field->value = dStrdup(value);
+        field->value.setNull();
+        field->value.setValue(value);
       }
       else
       {
          mVersion++;
 
          field = allocEntry();
-         field->value = dStrdup(value);
+         field->value.setValue(value);
          field->slotName = slotName;
          field->next = NULL;
          *walk = field;
@@ -114,7 +114,7 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const char *va
    }
 }
 
-const char *SimFieldDictionary::getFieldValue(StringTableEntry slotName)
+ConsoleValuePtr SimFieldDictionary::getFieldValue(StringTableEntry slotName)
 {
    U32 bucket = HashPointer(slotName) % HashTableSize;
 
@@ -122,7 +122,7 @@ const char *SimFieldDictionary::getFieldValue(StringTableEntry slotName)
       if(walk->slotName == slotName)
          return walk->value;
 
-   return NULL;
+   return ConsoleValuePtr();
 }
 
 

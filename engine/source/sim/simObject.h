@@ -386,7 +386,7 @@ public:
     /// @param   slotName    Field to access.
     /// @param   array       String containing index into array
     ///                      (if field is an array); if NULL, it is ignored.
-    ConsoleValuePtr getDataField(StringTableEntry slotName, const char *array);
+    ConsoleValuePtr getDataField(StringTableEntry slotName, const ConsoleValuePtr &array);
 
     /// Set the value of a field on the object.
     ///
@@ -396,7 +396,7 @@ public:
     /// @param   slotName    Field to access.
     /// @param   array       String containing index into array; if NULL, it is ignored.
     /// @param   value       Value to store.
-    void setDataField(StringTableEntry slotName, const char *array, const ConsoleValuePtr &value);
+    void setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &value);
 
     const char *getPrefixedDataField(StringTableEntry fieldName, const char *array);
 
@@ -651,7 +651,7 @@ public:
     ///
     /// @param   fieldname The name of the field being written.
     /// @param   value The value of the field.
-    virtual bool writeField(StringTableEntry fieldname, const char* value);
+    virtual bool writeField(StringTableEntry fieldname, const ConsoleValuePtr &value);
 
     /// Output the TorqueScript to recreate this object.
     ///

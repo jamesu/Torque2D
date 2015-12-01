@@ -549,13 +549,19 @@ void SimXMLDocument::setObjectAttributes(const char* objectID)
 
             FrameTemp<char> valCopy( dStrlen( val.c_str() ) + 1 );
             dStrcpy( (char *)valCopy, val.c_str() );
+            
+            ConsoleValuePtr valStr;
+            valStr.setValue(val);
 
-            if (!pObject->writeField(itr->pFieldname, valCopy))
+            if (!pObject->writeField(itr->pFieldname, valStr))
                continue;
 
             expandEscape(textbuf, valCopy);
+            
+            val.setString(valCopy);
+            valStr.setValue(val);
 
-            if( !pObject->writeField( itr->pFieldname, textbuf ) )
+            if( !pObject->writeField( itr->pFieldname, valStr) )
                continue;
 
             field.SetValue( "Property" );

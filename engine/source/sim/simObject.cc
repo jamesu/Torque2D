@@ -301,10 +301,10 @@ void SimObject::assignFieldsFrom(SimObject *parent)
    assignDynamicFieldsFrom(parent);
 }
 
-bool SimObject::writeField(StringTableEntry fieldname, const char* value)
+bool SimObject::writeField(StringTableEntry fieldname, const ConsoleValuePtr &value)
 {
    // Don't write empty fields.
-   if (!value || !*value)
+   if (value.isNull() || value.getTempStringValue()[0] == '\0')
       return false;
 
    // Don't write ParentGroup
@@ -351,7 +351,7 @@ void SimObject::writeFields(Stream &stream, U32 tabStop)
          if (val.type == ConsoleValue::TypeInternalNull)
             continue;
          
-         if (!writeField(fieldName, valCopy.c_str()))
+         if (!writeField(fieldName, val))
             continue;
          
          U32 nBufferSize = dStrlen( valCopy.c_str() ) + 1;
@@ -493,7 +493,7 @@ const char *SimObject::tabComplete(const char *prevText, S32 baseLen, bool fForw
 
 //-----------------------------------------------------------------------------
 
-void SimObject::setDataField(StringTableEntry slotName, const char *array, const ConsoleValuePtr &value)
+void SimObject::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &value)
 {
    // first search the static fields if enabled
    if(mFlags.test(ModStaticFields))
@@ -506,7 +506,7 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
             fld->type == AbstractClassRep::EndGroupFieldType) 
             return;
 
-         S32 array1 = array ? dAtoi(array) : 0;
+         S32 array1 = array.getSignedIntValue();
 
          if(array1 >= 0 && array1 < fld->elementCount && fld->elementCount >= 1)
          {
@@ -547,26 +547,40 @@ void SimObject::setDataField(StringTableEntry slotName, const char *array, const
       if(!mFieldDictionary)
          mFieldDictionary = new SimFieldDictionary;
 
-      if(!array)
-         mFieldDictionary->setFieldValue(slotName, value.getTempStringValue());
+      if(array.isNull())
+      {
+         mFieldDictionary->setFieldValue(slotName, value);
+      }
       else
       {
-         char buf[256];
-         dStrcpy(buf, slotName);
-         dStrcat(buf, array);
-         mFieldDictionary->setFieldValue(StringTable->insert(buf), value.getTempStringValue());
+         ConsoleValuePtr value = mFieldDictionary->getFieldValue(slotName);
+         if (value.isNull())
+         {
+            // Make an array
+            value.setValue(ConsoleArrayValue::fromValues(0, NULL));
+         }
+         
+         if (ConsoleValue::isRefType(value.type))
+         {
+            ConsoleReferenceCountedType *refValue = value.value.refValue;
+            refValue->setDataField(NULL, array, value);
+         }
+         else
+         {
+            Con::warnf("Attempted to index a field in object %s which is not an array.", getIdString());
+         }
       }
    }
 }
 
 //-----------------------------------------------------------------------------
 
-ConsoleValuePtr SimObject::getDataField(StringTableEntry slotName, const char *array)
+ConsoleValuePtr SimObject::getDataField(StringTableEntry slotName, const ConsoleValuePtr &array)
 {
    ConsoleValuePtr result;
    if(mFlags.test(ModStaticFields))
    {
-      S32 array1 = array ? dAtoi(array) : -1;
+      S32 array1 = array.getSignedIntValue();
       const AbstractClassRep::Field *fld = findField(slotName);
    
       if(fld)
@@ -583,19 +597,25 @@ ConsoleValuePtr SimObject::getDataField(StringTableEntry slotName, const char *a
    {
       if(!mFieldDictionary)
          return ConsoleValuePtr();
-
-      if(!array) 
+      
+      if (!array.isNull())
       {
-         if (const char* val = mFieldDictionary->getFieldValue(slotName))
-            return val;
+         ConsoleValuePtr value = mFieldDictionary->getFieldValue(slotName);
+         if (ConsoleValue::isRefType(value.type))
+         {
+            ConsoleReferenceCountedType *refValue = value.value.refValue;
+            refValue->getDataField(NULL, array, value);
+            return value;
+         }
+         else
+         {
+            Con::warnf("Attempted to index field %s in object %s which is not an array.", slotName, getIdString());
+            return ConsoleValuePtr();
+         }
       }
       else
       {
-         static char buf[256];
-         dStrcpy(buf, slotName);
-         dStrcat(buf, array);
-         if (const char* val = mFieldDictionary->getFieldValue(StringTable->insert(buf)))
-            return val;
+         return mFieldDictionary->getFieldValue(slotName);
       }
    }
 
@@ -650,7 +670,7 @@ void SimObject::setPrefixedDataField(StringTableEntry fieldName, const char *arr
     // Set value without prefix if there's no value.
     if ( *value == 0 )
     {
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
@@ -664,7 +684,7 @@ void SimObject::setPrefixedDataField(StringTableEntry fieldName, const char *arr
     if ( fieldPrefix == StringTable->EmptyString )
     {
         // No, so set the data field in the usual way.
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
@@ -675,12 +695,12 @@ void SimObject::setPrefixedDataField(StringTableEntry fieldName, const char *arr
     if ( dStrnicmp( value, fieldPrefix, fieldPrefixLength ) != 0 )
     {
         // No, so set the data field in the usual way.
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
     // Yes, so set the data excluding the prefix.
-    setDataField( fieldName, NULL, value + fieldPrefixLength );
+    setDataField( fieldName, ConsoleValuePtr(), value + fieldPrefixLength );
 }
 
 //-----------------------------------------------------------------------------
@@ -746,7 +766,7 @@ void SimObject::setPrefixedDynamicDataField(StringTableEntry fieldName, const ch
     // Set value without prefix if no field type was specified.
     if ( fieldType == -1 )
     {
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
@@ -764,7 +784,7 @@ void SimObject::setPrefixedDynamicDataField(StringTableEntry fieldName, const ch
     // Set value without prefix if there's no value or we didn't find the console base type.
     if ( *value == 0 || pConsoleBaseType == NULL )
     {
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
@@ -778,7 +798,7 @@ void SimObject::setPrefixedDynamicDataField(StringTableEntry fieldName, const ch
     if ( fieldPrefix == StringTable->EmptyString )
     {
         // No, so set the data field in the usual way.
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
@@ -789,12 +809,12 @@ void SimObject::setPrefixedDynamicDataField(StringTableEntry fieldName, const ch
     if ( dStrnicmp( value, fieldPrefix, fieldPrefixLength ) != 0 )
     {
         // No, so set the data field in the usual way.
-        setDataField( fieldName, NULL, value );
+        setDataField( fieldName, ConsoleValuePtr(), value );
         return;
     }
 
     // Yes, so set the data excluding the prefix.
-    setDataField( fieldName, NULL, value + fieldPrefixLength );
+    setDataField( fieldName, ConsoleValuePtr(), value + fieldPrefixLength );
 }
 
 //-----------------------------------------------------------------------------
@@ -857,7 +877,7 @@ bool SimObject::isLocked()
 
 void SimObject::setLocked( bool b = true )
 {
-   setDataField(StringTable->insert("locked", false), NULL, b ? "true" : "false" );
+   setDataField(StringTable->insert("locked", false), ConsoleValuePtr(), b ? "true" : "false" );
 }
 
 bool SimObject::isHidden()
@@ -871,7 +891,11 @@ bool SimObject::isHidden()
 
 void SimObject::setHidden(bool b = true)
 {
-   setDataField(StringTable->insert("hidden", false), NULL, b ? "true" : "false" );
+   ConsoleValuePtr trueValue;
+   trueValue.setValue(1);
+   ConsoleValuePtr falseValue;
+   falseValue.setValue(0);
+   setDataField(StringTable->insert("hidden", false), ConsoleValuePtr(), b ? trueValue : falseValue );
 }
 
 //---------------------------------------------------------------------------

@@ -56,7 +56,7 @@ bool SimObject::writeObject(Stream *stream)
          continue;
       }
 
-      ConsoleStringValuePtr field = getDataField(itr->pFieldname, NULL).getStringValue();
+      ConsoleStringValuePtr field = getDataField(itr->pFieldname, ConsoleValuePtr()).getStringValue();
 
       stream->writeString(itr->pFieldname);
       stream->writeString(field.c_str());
@@ -102,7 +102,7 @@ bool SimObject::readObject(Stream *stream)
       const char *fieldName = stream->readSTString();
       const char *data = stream->readSTString();
 
-      setDataField(fieldName, NULL, data);
+      setDataField(fieldName, ConsoleValuePtr(), data);
    }
    return true;
 }

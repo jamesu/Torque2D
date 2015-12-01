@@ -101,6 +101,8 @@ public:
    inline bool isNull();
    inline void setNull();
    
+   inline void setString(const char *str);
+   
    inline ConsoleStringValuePtr& operator=(const ConsoleStringValuePtr& other);
    
    inline const char* c_str();
@@ -536,9 +538,10 @@ public:
    inline operator F64() { return getFloatValue(); } const
    inline operator bool() { return getBoolValue(); } const
    
-   inline bool isString() { return (type >= ConsoleValue::TypeInternalStringTableEntry && type <= ConsoleValue::TypeInternalNamespaceName) || type == TypeBufferString; }
-   inline bool isInt() { return type == TypeInternalInt; }
-   inline bool isFloat() { return type == TypeInternalFloat; }
+   inline bool isString() const  { return (type >= ConsoleValue::TypeInternalStringTableEntry && type <= ConsoleValue::TypeInternalNamespaceName) || type == TypeBufferString; }
+   inline bool isInt() const  { return type == TypeInternalInt; }
+   inline bool isFloat() const  { return type == TypeInternalFloat; }
+   inline bool isNull() const { return type == TypeInternalNull; }
 #endif
    
    /// Read a serialized stack
@@ -753,6 +756,17 @@ inline void ConsoleStringValuePtr::DecRef()
    {
       value->decRef();
    }
+}
+
+inline void ConsoleStringValuePtr::setString(const char *str)
+{
+   if (value)
+   {
+      value->decRef();
+   }
+   
+   value = ConsoleStringValue::fromString(str);
+   value->addRef();
 }
 
 inline bool ConsoleStringValuePtr::isNull() { return value == NULL; }

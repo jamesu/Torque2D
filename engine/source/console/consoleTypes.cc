@@ -663,7 +663,7 @@ bool ConsoleSimObjectPtr::getDataField(StringTableEntry slotName, const ConsoleV
    
    if (value)
    {
-      outValue.setValue(value->getDataField(slotName, array.getTempStringValue()));
+      outValue.setValue(value->getDataField(slotName, array));
    }
    else
    {
@@ -678,7 +678,7 @@ void ConsoleSimObjectPtr::setDataField(StringTableEntry slotName, const ConsoleV
    if (value)
    {
       // TODO: directly pass through values
-      value->setDataField(slotName, array.getTempStringValue(), newValue);
+      value->setDataField(slotName, array, newValue);
    }
 }
 

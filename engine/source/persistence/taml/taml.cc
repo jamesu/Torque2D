@@ -686,9 +686,13 @@ void Taml::compileStaticFields( TamlWriteNode* pTamlWriteNode )
             U32 nBufferSize = dStrlen( pFieldValue ) + 1;
             FrameTemp<char> valueCopy( nBufferSize );
             dStrcpy( (char *)valueCopy, pFieldValue );
+           
+            ConsoleValuePtr val;
+            val.type = ConsoleValue::TypeInternalStringTableEntry;
+            val.value.string = valueCopy;
 
             // Skip if field should not be written.
-            if (!pSimObject->writeField(fieldName, valueCopy))
+            if (!pSimObject->writeField(fieldName, val))
                 continue;
 
             // Reassign field value.

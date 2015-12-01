@@ -3861,7 +3861,7 @@ void SceneObject::onTamlCustomRead( const TamlCustomNodes& customNodes )
 
 //-----------------------------------------------------------------------------
 
-bool SceneObject::writeField(StringTableEntry fieldname, const char* value)
+bool SceneObject::writeField(StringTableEntry fieldname, const ConsoleValuePtr &value)
 {
    if (!Parent::writeField(fieldname, value))
       return false;
