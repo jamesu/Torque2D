@@ -189,7 +189,7 @@ function PickingToy::onTouchDown(%this, %touchID, %worldPosition)
     }
         
     // Fetch pick count.
-    %pickCount = %picked.Count;
+    %pickCount = getWordCount(%picked);
     
     // See if the target object is amongst those picked.
     for( %i = 0; %i < %pickCount; %i++ )
@@ -241,7 +241,7 @@ function PickingToy::onTouchDragged(%this, %touchID, %worldPosition)
     }
         
     // Fetch pick count.
-    %pickCount = %picked.Count;
+    %pickCount = getWordCount(%picked);
     
     // See if the target object is amongst those picked.
     for( %i = 0; %i < %pickCount; %i++ )

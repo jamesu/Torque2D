@@ -34,14 +34,21 @@ Sandbox.InputController = new ScriptObject()
 {
     class = SandboxInputController;
     TouchEventCount = 0;
-    TouchEventActive[0] = false;
-    TouchEventActive[1] = false;
-    TouchEventActive[2] = false;
-    TouchEventActive[3] = false;
-    TouchEventActive[4] = false;
     LastTouchId = -1;
     LatestTouchId = -1;
 };
+
+$TouchEventActive = createArray();
+$TouchEventActive[0] = false;
+$TouchEventActive[1] = false;
+$TouchEventActive[2] = false;
+$TouchEventActive[3] = false;
+$TouchEventActive[4] = false;
+
+$OldTouchPosition = createArray();
+$NewTouchPosition = createArray();
+$ManipulationPullObject = createArray();
+$ManipulationPullJointId = createArray();
 
 //-----------------------------------------------------------------------------
 
@@ -60,20 +67,20 @@ function SandboxInputController::onTouchDown(%this, %touchID, %worldPosition)
         return;
         
     // Sanity!
-    if ( %this.TouchEventActive[%touchId] == true )
+    if ( $TouchEventActive[%touchId] == true )
         return;
         
     // Calculate window position.
     %windowPosition = SandboxWindow.getWindowPoint( %worldPosition );
 
     // Store the new touch position.
-    %this.NewTouchPosition[%touchId] = %windowPosition;
+    $NewTouchPosition[%touchId] = %windowPosition;
         
     // Set the old touch position as new touch position.
-    %this.OldTouchPosition[%touchId] = %windowPosition;
+    $OldTouchPosition[%touchId] = %windowPosition;
     
     // Flag event as active.
-    %this.TouchEventActive[%touchId] = true;
+    $TouchEventActive[%touchId] = true;
 
     // Insert the new touch Id.
     %this.PreviousTouchId = %this.CurrentTouchId;
@@ -86,8 +93,8 @@ function SandboxInputController::onTouchDown(%this, %touchID, %worldPosition)
     if ( Sandbox.ManipulationMode $= "pull" )
     {
         // Reset the pull
-        Sandbox.ManipulationPullObject[%touchID] = "";
-        Sandbox.ManipulationPullJointId[%touchID] = "";
+        $ManipulationPullObject[%touchID] = "";
+        $ManipulationPullJointId[%touchID] = "";
         
         // Pick an object.
         %picked = SandboxScene.pickPoint( %worldPosition );
@@ -97,7 +104,7 @@ function SandboxInputController::onTouchDown(%this, %touchID, %worldPosition)
             return;
         
         // Fetch the pick count.
-        %pickCount = %picked.Count;
+        %pickCount = getWordCount(%picked);
         
         for( %n = 0; %n < %pickCount; %n++ )
         {
@@ -109,8 +116,8 @@ function SandboxInputController::onTouchDown(%this, %touchID, %worldPosition)
                 continue;
                 
             // Set the pull object.
-            Sandbox.ManipulationPullObject[%touchID] = %pickedObject;
-            Sandbox.ManipulationPullJointId[%touchID] = SandboxScene.createTargetJoint( %pickedObject, %worldPosition, Sandbox.ManipulationPullMaxForce );            
+            $ManipulationPullObject[%touchID] = %pickedObject;
+            $ManipulationPullJointId[%touchID] = SandboxScene.createTargetJoint( %pickedObject, %worldPosition, Sandbox.ManipulationPullMaxForce );            
             return;
         }
         
@@ -127,17 +134,17 @@ function SandboxInputController::onTouchUp(%this, %touchID, %worldPosition)
         return;
         
     // Sanity!
-    if ( %this.TouchEventActive[%touchId] == false )
+    if ( $TouchEventActive[%touchId] == false )
         return;
         
     // Reset previous touch.
-    %this.OldTouchPosition[%touchId] = "";
+    $OldTouchPosition[%touchId] = "";
     
     // Reset current touch.
-    %this.NewTouchPosition[%touchId] = "";
+    $NewTouchPosition[%touchId] = "";
     
     // Flag event as inactive.
-    %this.TouchEventActive[%touchId] = false;
+    $TouchEventActive[%touchId] = false;
 
     // Remove the touch Id.
     if ( %this.PreviousTouchId == %touchId )
@@ -157,15 +164,15 @@ function SandboxInputController::onTouchUp(%this, %touchID, %worldPosition)
     if ( Sandbox.ManipulationMode $= "pull" )
     {       
         // Finish if nothing is being pulled.
-        if ( !isObject(Sandbox.ManipulationPullObject[%touchID]) )
+        if ( !isObject($ManipulationPullObject[%touchID]) )
             return;
         
         // Reset the pull object.
-        Sandbox.ManipulationPullObject[%touchID] = "";
+        $ManipulationPullObject[%touchID] = "";
         
         // Remove the pull joint.
-        SandboxScene.deleteJoint( Sandbox.ManipulationPullJointId[%touchID] );
-        Sandbox.ManipulationPullJointId[%touchID] = "";        
+        SandboxScene.deleteJoint( $ManipulationPullJointId[%touchID] );
+        $ManipulationPullJointId[%touchID] = "";        
         return;
     }      
 }
@@ -179,17 +186,17 @@ function SandboxInputController::onTouchDragged(%this, %touchID, %worldPosition)
         return;
 
     // Sanity!
-    if ( %this.TouchEventActive[%touchId] == false )
+    if ( $TouchEventActive[%touchId] == false )
         return;
         
     // Calculate window position.
     %windowPosition = SandboxWindow.getWindowPoint( %worldPosition );
 
     // Set the current touch as the previous touch.
-    %this.OldTouchPosition[%touchId] = %this.NewTouchPosition[%touchId];
+    $OldTouchPosition[%touchId] = $NewTouchPosition[%touchId];
     
     // Store the touch event.
-    %this.NewTouchPosition[%touchId] = %windowPosition;
+    $NewTouchPosition[%touchId] = %windowPosition;
         
     // Handle "pan" mode.
     if ( Sandbox.ManipulationMode $= "pan" )
@@ -220,11 +227,11 @@ function SandboxInputController::onTouchDragged(%this, %touchID, %worldPosition)
     if ( Sandbox.ManipulationMode $= "pull" )
     {
         // Finish if nothing is being pulled.
-        if ( !isObject(Sandbox.ManipulationPullObject[%touchID]) )
+        if ( !isObject($ManipulationPullObject[%touchID]) )
             return;
               
         // Set a new target for the target joint.
-        SandboxScene.setTargetJointTarget( Sandbox.ManipulationPullJointId[%touchID], %worldPosition );
+        SandboxScene.setTargetJointTarget( $ManipulationPullJointId[%touchID], %worldPosition );
         
         return;
     }
@@ -279,7 +286,7 @@ function SandboxInputController::performPanGesture( %this )
         return;
 
     // Calculate pan offset.
-    %panOffset = Vector2Sub( %this.NewTouchPosition[%touchId], %this.OldTouchPosition[%touchId] );
+    %panOffset = Vector2Sub( $NewTouchPosition[%touchId], $OldTouchPosition[%touchId] );
 
     // Inverse the Y offset.
     %panOffset = Vector2InverseY( %panOffset );
@@ -304,13 +311,13 @@ function SandboxInputController::performZoomGesture( %this )
     %previousTouchId = %this.PreviousTouchId;
 
     // Finish if we don't have touch Ids active.
-    if ( !%this.TouchEventActive[%currentTouchId] || !%this.TouchEventActive[%previousTouchId] )
+    if ( !$TouchEventActive[%currentTouchId] || !$TouchEventActive[%previousTouchId] )
         return;
 
-    %currentNewPosition = %this.NewTouchPosition[%currentTouchId];
-    %currentOldPosition = %this.OldTouchPosition[%currentTouchId];
-    %previousNewPosition = %this.NewTouchPosition[%previousTouchId];
-    %previousOldPosition = %this.OldTouchPosition[%previousTouchId];
+    %currentNewPosition = $NewTouchPosition[%currentTouchId];
+    %currentOldPosition = $OldTouchPosition[%currentTouchId];
+    %previousNewPosition = $NewTouchPosition[%previousTouchId];
+    %previousOldPosition = $OldTouchPosition[%previousTouchId];
 
     // Calculate the last and current separations.
     %lastLength = Vector2Length( Vector2Abs( %currentOldPosition, %previousOldPosition ) );
@@ -392,7 +399,7 @@ function Sandbox::useManipulation( %this, %mode )
         else if ( %mode $= "pan" )
             %mode = "Pan";
         else if ( %mode $= "pull" )
-        %mode = "Pull";
+            %mode = "Pull";
         
         // Make the mode consistent when showed.
         ManipulationModeButton.Text = %mode;

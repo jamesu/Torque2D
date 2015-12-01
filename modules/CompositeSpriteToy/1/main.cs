@@ -147,7 +147,7 @@ function CompositeSpriteToy::onTouchDown(%this, %touchID, %worldPosition)
     %sprites = %compositeSprite.pickPoint( %worldPosition );    
 
     // Fetch sprite count.    
-    %spriteCount = %sprites.count;
+    %spriteCount = getWordCount(%sprites);
     
     // Finish if no sprites picked.
     if ( %spriteCount == 0 )
