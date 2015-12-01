@@ -40,6 +40,7 @@
 
 class CodeBlockEvalState;
 class CodeBlock;
+class CodeBlockFunction;
 
 //-----------------------------------------------------------------------------
 
@@ -138,6 +139,8 @@ public:
     void setState(CodeBlockEvalState *state, Dictionary* ref=NULL);
     void remove(Entry *);
     void reset();
+   
+    bool isRoot() { return hashTable->owner == this; }
 
     void exportVariables(const char *varString, const char *fileName, bool append);
     void deleteVariables(const char *varString);
@@ -149,6 +152,8 @@ public:
 
     void addVariable(const char *name, S32 type, void *dataPtr);
     bool removeVariable(StringTableEntry name);
+   
+    void setFrame(const CodeBlockFunction* function, ConsoleValuePtr *outStack) const;
 
     /// Return the best tab completion for prevText, with the length
     /// of the pre-tab string in baseLen.

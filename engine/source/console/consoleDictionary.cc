@@ -26,6 +26,7 @@
 
 #include "console/consoleDictionary.h"
 #include "console/consoleNamespace.h"
+#include "console/codeblockEvalState.h"
 
 #include "console/ast.h"
 #include "collection/findIterator.h"
@@ -383,6 +384,30 @@ bool Dictionary::removeVariable(StringTableEntry name)
       return true;
    }
    return false;
+}
+
+void Dictionary::setFrame(const CodeBlockFunction* function, ConsoleValuePtr *outStack) const
+{
+   const Vector<CodeBlockFunction::Symbol> &vars = function->vars;
+   
+   for(S32 i = 0; i < hashTable->size;i ++)
+   {
+      Entry *walk = hashTable->data[i];
+      while(walk)
+      {
+         for (U32 j=0; j<vars.size(); j++)
+         {
+            if (vars[j].varName == walk->name)
+            {
+               //Con::printf("setFrame(%s) REG %i abs %i", walk->name, vars[j].registerIdx, vars[j].registerIdx + (outStack - gNewEvalState.stack.address()));
+               outStack[vars[j].registerIdx].setValue(walk->value);
+               break;
+            }
+         }
+         
+         walk = walk->nextEntry;
+      }
+   }
 }
 
 

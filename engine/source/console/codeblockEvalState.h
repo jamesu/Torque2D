@@ -21,7 +21,7 @@ public:
       /// {
       Dictionary* globalVars;
       /// }
-
+      
       /// @name Execution state
       /// {
       const char* filename;
@@ -34,6 +34,9 @@ public:
       /// Current function
       CodeBlockFunction* function;
       CodeBlock* code;
+      
+      /// Copy of local vars for exec
+      Dictionary* localVars;
 
       U32 savedIP;
       U32 returnReg;
@@ -80,6 +83,21 @@ public:
    
    void pushFunction(CodeBlockFunction* function, CodeBlock* code, Namespace::Entry* entry, U32 numParams);
    void popFunction();
+   
+   /// @name Local var handling
+   /// {
+   /// Create locals dict for free-floating vars
+   Dictionary* createLocals(Dictionary* base);
+   
+   /// Copy frame locals to dictionary
+   void copyFrameToLocals(Dictionary* locals, InternalState* srcFrame);
+   
+   /// Copy locals from dictionary to a frame
+   void copyLocalsToFrame(Dictionary* locals, InternalState* destFrame);
+   
+   /// Gets rid of a free-floating variable dictionary
+   void disposeLocals(Dictionary* locals);
+   /// }
 };
 
 #endif // _CONSOLE_EXPREVALSTATE_H_

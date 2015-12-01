@@ -2501,7 +2501,6 @@ U32 FunctionDeclStmtNode::compileFunction(CodeStream& codeStream, U32 ip)
    for (S32 i=walkVarList.size()-1; i>=0; i--)
    {
       codeStream.addLocalVariable(walkVarList[i]);
-      
    }
    
    CodeBlock::smInFunction = true;

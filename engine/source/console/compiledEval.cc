@@ -1651,6 +1651,12 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               base[state->currentFrame.returnReg].setValue(state->yieldValue);
               code = state->currentFrame.code ? state->currentFrame.code->code : NULL;
               
+              // Copy our locals from the dict if we have it
+              if (state->currentFrame.localVars)
+              {
+                 state->copyLocalsToFrame(state->currentFrame.localVars, &state->currentFrame);
+              }
+              
               if (state->currentFrame.isRoot || code == NULL || state->frames.size() < startFrameSize)
               {
 #ifdef DEBUG_COMPILER

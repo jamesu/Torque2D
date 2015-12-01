@@ -400,6 +400,7 @@ public:
       var.name = name;
       var.index = pos;
       mVarInfo.push_back(var);
+      mMaxStackSize = pos > mMaxStackSize ? pos : mMaxStackSize;
       return pos;
    }
    

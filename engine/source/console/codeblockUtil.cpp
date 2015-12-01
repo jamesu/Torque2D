@@ -109,7 +109,7 @@ namespace CodeblockUtil
          scriptFileName = StringTable->insert(fileNameBuf);
          
          Con::printf("Executing (journal-read) %s.", scriptFileName);
-         newCodeBlock->compileExec(scriptFileName, script, noCalls, 0);
+         newCodeBlock->compileExec(scriptFileName, script, noCalls, -1);
          
          delete [] script;
          execDepth--;
@@ -318,7 +318,7 @@ namespace CodeblockUtil
          // We're all doCompile, so let's run it.
          F32 st1 = (F32)Platform::getRealMilliseconds();
          {
-            runtimeBlock->execRoot(noCalls, 0);
+            runtimeBlock->execRoot(noCalls, -1);
          }
          F32 et1 = (F32)Platform::getRealMilliseconds();
          

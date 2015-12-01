@@ -692,5 +692,25 @@ echo("doThis done");
 
 Frodo.dump();
 
+// Eval test
+
+function testExecFunc()
+{
+	%var1 = 123; // (reg 1)
+	%var2 = 456; // (reg 2)
+
+	echo("Eval test");
+	echo(%var1 SPC %var2);
+
+
+	eval("%var1 += 1; %var3 = 4;");
+	echo(%var1 SPC %var2);
+	eval("%var2 += 2; echo(var3,%var3);");
+	echo(%var1 SPC %var2);
+}
+
+testExecFunc();
+
+
 $ScriptErrorHash = 100;
 quit();

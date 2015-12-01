@@ -23,6 +23,7 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    if (frames.size() == 0)
    {
       currentFrame.isRoot = true;
+      currentFrame.localVars = NULL;
    }
    else
    {
@@ -31,6 +32,7 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    
    frames.push_back(currentFrame);
    
+   currentFrame.localVars = NULL;
    currentFrame.function = function;
    currentFrame.filename = code->modPath;
    currentFrame.savedIP = function->ip;
@@ -130,6 +132,16 @@ void CodeBlockEvalState::popFunction()
    
    //Con::printf("Popping codeblock %s", currentFrame.code->fullPath);
    
+   // Copy locals to dictionary if applicable
+   if (currentFrame.localVars)
+   {
+      if (!currentFrame.localVars->isRoot())
+      {
+         copyFrameToLocals(currentFrame.localVars, &currentFrame);
+      }
+      disposeLocals(currentFrame.localVars);
+   }
+   
    currentFrame = frames[frames.size()-1];
    frames.pop_back();
    //Con::printf("Codeblock now %s", currentFrame.code->fullPath);
@@ -147,4 +159,37 @@ void CodeBlockEvalState::popFunction()
       pRemoteDebugger->popStackFrame();
 }
 
+
+Dictionary *CodeBlockEvalState::createLocals(Dictionary* base)
+{
+   return new Dictionary(this, base);
+}
+
+void CodeBlockEvalState::copyFrameToLocals(Dictionary* locals, InternalState* srcFrame)
+{
+   CodeBlockFunction* func = srcFrame->function;
+   if (!func)
+      return;
+   
+   for (U32 i=0, sz=func->vars.size(); i<sz; i++)
+   {
+      CodeBlockFunction::Symbol &symbol = func->vars[i];
+      //Con::printf("copyFrame(%s) = REG %i (abs %i)", symbol.varName, symbol.registerIdx, srcFrame->stackTop + symbol.registerIdx);
+      locals->setValueVariable(symbol.varName, this->stack[srcFrame->stackTop + symbol.registerIdx]);
+   }
+}
+
+void CodeBlockEvalState::copyLocalsToFrame(Dictionary* locals, InternalState* dstFrame)
+{
+   CodeBlockFunction* func = dstFrame->function;
+   if (!func)
+      return;
+   
+   locals->setFrame(func, stack.address()+dstFrame->stackTop);
+}
+
+void CodeBlockEvalState::disposeLocals(Dictionary* locals)
+{
+   delete locals;
+}
 

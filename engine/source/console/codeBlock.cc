@@ -480,6 +480,23 @@ bool CodeBlock::compile(const char *fileName, const char *script)
    U32 lastIp = compileBlock(gStatementList, codeStream, 0);
    codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
    
+   // Emit vars
+   for (U32 i=codeStream.mCurrentFunctionState.startVar; i<codeStream.mVarInfo.size(); i++)
+   {
+      CodeBlockFunction::Symbol sym;
+      sym.registerIdx = codeStream.mVarInfo[i].index;
+      if (codeStream.mVarInfo[i].name)
+      {
+         sym.varName = codeStream.mVarInfo[i].name;
+      }
+      else
+      {
+         sym.varName = NULL;
+         continue;
+      }
+      mFunctions[0]->vars.push_back(sym);
+   }
+   
    mFunctions[0]->name = StringTable->insert("");
    mFunctions[0]->numArgs = 0;
    mFunctions[0]->maxStack = codeStream.getMaxStack();
@@ -513,13 +530,34 @@ bool CodeBlock::compile(const char *fileName, const char *script)
 
 ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
 {
-   // jamesu - new exec function
-   
+   // Execute the root codeblock function
    CodeBlockFunction* newFunction = mFunctions[0];
+   CodeBlockEvalState::InternalState setState;
+   Dictionary* newLocals = NULL;
    
    gNewEvalState.currentFrame.returnReg = gNewEvalState.getFrameEnd();
    gNewEvalState.pushFunction(newFunction, this, NULL, 0);
    gNewEvalState.currentFrame.globalVars = gNewEvalState.globalVars;
+   
+   // If we are using eval, create the relevant local variable dictionary
+   if (setFrame >= 0)
+   {
+      S32 realFrameIdx = ((S32)gNewEvalState.frames.size()-1)-setFrame; // 0 == end onwards
+      if (realFrameIdx >= 0)
+      {
+         if (!gNewEvalState.frames[realFrameIdx].localVars)
+         {
+            gNewEvalState.frames[realFrameIdx].localVars = gNewEvalState.createLocals(NULL);
+         }
+         
+         // Make sure we have an up-to-date list of local vars from the source function
+         newLocals = gNewEvalState.createLocals(gNewEvalState.frames[realFrameIdx].localVars);
+         gNewEvalState.copyFrameToLocals(newLocals, &gNewEvalState.frames[realFrameIdx]);
+      }
+   }
+   
+   gNewEvalState.currentFrame.localVars = newLocals;
+   setState = gNewEvalState.currentFrame;
    
    U32 currentTop = gNewEvalState.currentFrame.stackTop;
    // Reset local stack for function
@@ -528,46 +566,15 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
       ((ConsoleValuePtr*)(gNewEvalState.stack.address()+i))->setNull();
    }
    
-   /*
-    
-    CodeBlockFunction* oldFunction = gNewEvalState.function;
-    CodeBlockFunction* newFunction = functions[0];
-    
-    // Merge in exec block
-    if (newFunction)
-    {
-    mergeLocalVars(oldFunction, newFunction, false);
-    }
-    
-    S32 currentTop = gNewEvalState.stackTop;
-    U32 currentIP = gNewEvalState.savedIP;
-    ConsoleValue* currentConstants = gNewEvalState.constants;
-    const char* filename = currentFilename;
-    
-    gNewEvalState.filename = fileName;
-    gNewEvalState.globalVars = &gEvalState.globalVars;
-    
-    // Reset local stack for function
-    for (U32 i=currentTop; i<currentTop+newFunction->maxStack; i++)
-    {
-    ((ConsoleValuePtr*)(gNewEvalState.stack.address()+i))->setNull();
-    }
-    
-    gNewEvalState.constants = outConstants.address();
-    gNewEvalState.stackTop = currentTop;
-    gNewEvalState.function = functions[0];
-    */
+   // Set locals from local dict
+   if (newLocals)
+   {
+      gNewEvalState.copyLocalsToFrame(newLocals, &gNewEvalState.currentFrame);
+   }
    
    CodeBlock::smCurrentCodeBlock = NULL;
    
    CodeBlock::execBlock(&gNewEvalState);
-   
-   /*
-    // Merge in exec block
-    if (oldFunction)
-    {
-    mergeLocalVars(newFunction, oldFunction, true);
-    }*/
    
    return gNewEvalState.yieldValue;
 }
