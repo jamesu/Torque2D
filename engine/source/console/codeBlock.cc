@@ -67,7 +67,12 @@ CodeBlock::~CodeBlock()
 {
     // Make sure we aren't lingering in the current code block...
     AssertFatal(smCurrentCodeBlock != this, "CodeBlock::~CodeBlock - Caught lingering in smCurrentCodeBlock!")
-    
+   
+    for (U32 i=0; i<mFunctions.size(); i++)
+    {
+       delete mFunctions[i];
+    }
+   
     if(name)
         removeFromCodeList();
 }
@@ -317,35 +322,33 @@ void CodeBlock::calcBreakList()
         TelDebugger->addAllBreakpoints( this );
 }
 
-bool CodeBlock::save(Stream &s)
+bool CodeBlock::save(Stream &st)
 {
-   // TODO
-   /*
-    
-    FileStream st;
-    if(!ResourceManager->openFileForWrite(st, codeFileName))
-    return false;
-    st.write(DSO_VERSION);
-    
-    ConsoleSerializationState serializationState;
-    st.write(outConstants.size());
-    ConsoleValuePtr::writeStack(st, serializationState, outConstants);
-    
-    st.write(mFunctions.size());
-    st.write(codeSize);
-    st.write(lineBreakPairCount);
-    
-    for (U32 i=0; i<functions.size(); i++)
-    {
-    CodeBlockFunction* func = functions[i];
-    func->write(st, serializationState);
-    }
-    
-    st.write(sizeof(U32) * codeSize, code);
-    
-    */
+   st.write((U32)DSO_VERSION);
    
-   return false;
+   ConsoleSerializationState serializationState;
+   ConsoleValuePtr::writeStack(st, serializationState, mConstants);
+   
+   st.write(mFunctions.size());
+   st.write(codeSize);
+   st.write(lineBreakPairCount);
+   
+   for (U32 i=0; i<mFunctions.size(); i++)
+   {
+      CodeBlockFunction* func = mFunctions[i];
+      func->write(st, serializationState);
+   }
+   
+#ifdef TORQUE_BIG_ENDIAN
+   for (U32 i=0; i<codeSize; i++)
+   {
+      st.write(code[i]);
+   }
+#else
+   st.write(sizeof(U32) * codeSize, code);
+#endif
+   
+   return true;
 }
 
 void CodeBlock::setFilename(const char *fileName)
@@ -396,25 +399,47 @@ bool CodeBlock::read(Stream &s, const char *fileName)
 {
    setFilename(fileName);
    
-   //
-   addToCodeList();
+   if(name)
+      addToCodeList();
    
-   U32 codeLength;
-   s.read(&codeLength);
-   s.read(&lineBreakPairCount);
+   U32 version;
+   s.read(&version);
    
-   U32 totSize = codeLength + lineBreakPairCount * 2;
-   code = new U32[totSize];
-   
-   s.read(codeLength * sizeof(U32), code);
+   if (version != DSO_VERSION)
+   {
+      Con::errorf("Invalid DSO version!");
+      return false;
+   }
    
    ConsoleSerializationState serializationState;
    ConsoleValuePtr::readStack(s, serializationState, mConstants);
    
-   for(U32 i = codeLength; i < totSize; i++)
-      s.read(&code[i]);
+   U32 numFunctions;
    
-   lineBreakPairs = code + codeLength;
+   s.read(&numFunctions);
+   s.read(&codeSize);
+   s.read(&lineBreakPairCount);
+   
+   mFunctions.setSize(numFunctions);
+   for (U32 i=0; i<numFunctions; i++)
+   {
+      mFunctions[i] = new CodeBlockFunction();
+      mFunctions[i]->read(s, serializationState);
+   }
+   
+   U32 totSize = codeSize + lineBreakPairCount * 2;
+   code = new U32[totSize];
+   
+   s.read(codeSize * sizeof(U32), code);
+   
+#ifdef TORQUE_BIG_ENDIAN
+   for (U32 i=0; i<codeLength; i++)
+   {
+      mCode[i] = convertLEndianToHost(mCode[i]);
+   }
+#endif
+   
+   lineBreakPairs = code + codeSize;
    
    if(lineBreakPairCount)
       calcBreakList();

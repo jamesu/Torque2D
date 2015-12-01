@@ -208,15 +208,16 @@ public:
     void write(Stream &s, ConsoleSerializationState &serializationState)
     {
         s.writeString(name);
-        s.write(&numArgs);
-        s.write(&maxStack);
-        s.write(&ip);
+        s.write(numArgs);
+        s.write(maxStack);
+        s.write(ip);
         
         // vars
         U8 numVars = vars.size();
+        s.write(numVars);
         for (U32 i=0; i<numVars; i++)
         {
-            s.write(&vars[i].registerIdx);
+            s.write(vars[i].registerIdx);
             s.writeString(vars[i].varName);
         }
     }

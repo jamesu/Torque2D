@@ -200,8 +200,9 @@ namespace Con
       //  02/16/07 - THB - 40->41 newmsg operator
       //  02/16/07 - PAUP - 41->42 DSOs are read with a pointer before every string(ASTnodes changed). Namespace and HashTable revamped
       //  05/17/10 - Luma - 42-43 Adding proper sceneObject physics flags, fixes in general
-      //  02/07/13 - JU   - 43->44 Expanded the width of stringtable entries to  64bits 
-      DSOVersion = 44,
+      //  02/07/13 - JU   - 43->44 Expanded the width of stringtable entries to  64bits
+      //  12/01/15 - JU   - 44->45 Complete revamp of bytecode
+      DSOVersion = 45,
       MaxLineLength = 512,  ///< Maximum length of a line of console input.
       MaxDataTypes = 256    ///< Maximum number of registered data types.
    };

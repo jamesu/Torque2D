@@ -11,6 +11,8 @@
 #include "console/codeblockUtil.h"
 #include "io/resource/resourceManager.h"
 
+#define TORQUE_ALLOW_DSO_GENERATION
+
 extern bool scriptExecutionEcho;
 
 namespace CodeblockUtil
