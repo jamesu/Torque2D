@@ -462,7 +462,6 @@ bool CodeBlock::compile(const char *fileName, const char *script)
    
    gSyntaxError = false;
    gStatementList = NULL;
-   gCodeblockFunctionList = NULL;
    
    gCurrentLocalVariables = NULL;
    gLocalVariableStackIdx = 0;
@@ -502,7 +501,7 @@ bool CodeBlock::compile(const char *fileName, const char *script)
       }
    }
    
-   U32 lastIp = compileBlock(gStatementList, codeStream, 0);
+   compileBlock(gStatementList, codeStream);
    codeStream.emitOpcodeABC(Compiler::OP_RETURN, 0, 0, 0);
    
    // Emit vars
@@ -536,7 +535,7 @@ bool CodeBlock::compile(const char *fileName, const char *script)
       
       mFunctions[i]->ip = codeStream.tell();
       CodeBlock::smCurrentFunction = mFunctions[i];
-      mFunctions[i]->stmt->compileFunction(codeStream, codeStream.tell());
+      mFunctions[i]->stmt->compileFunction(codeStream);
    }
    
    lineBreakPairCount = codeStream.getNumLineBreaks();

@@ -54,7 +54,6 @@ static Mutex* sLogMutex;
 extern StringStack STR;
 
 StmtNode *gStatementList;
-StmtNode *gCodeblockFunctionList;
 U32 gAnonFunctionID = 0;
 ConsoleConstructor *ConsoleConstructor::first = NULL;
 bool gWarnUndefinedScriptVariables;
