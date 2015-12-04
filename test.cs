@@ -1,5 +1,8 @@
 // TwistScript basic test
 
+/// @class TwistScript
+/// Script with a twist
+
 //echo("Test conditional block");
 
 $shazbot = 1;
@@ -666,6 +669,7 @@ new SimGroup(Frodo, 1, 2, 3)
     };
 };
 
+/// doThis is a nice function
 function Frodo::doThis(%this)
 {
     echo("Dothis called");
