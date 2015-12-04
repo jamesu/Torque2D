@@ -238,14 +238,13 @@ FloatNode *FloatNode::alloc( S32 lineNumber, F64 value )
     return ret;
 }
 
-StrConstNode *StrConstNode::alloc( S32 lineNumber, char *str, bool tag, bool doc )
+StrConstNode *StrConstNode::alloc( S32 lineNumber, char *str, bool tag )
 {
     StrConstNode *ret = (StrConstNode *) consoleAlloc(sizeof(StrConstNode));
     constructInPlace(ret);
     ret->dbgLineNumber = lineNumber;
     ret->str = (char *) consoleAlloc(dStrlen(str) + 1);
     ret->tag = tag;
-    ret->doc = doc;
     dStrcpy(ret->str, str);
     
     return ret;
@@ -253,10 +252,23 @@ StrConstNode *StrConstNode::alloc( S32 lineNumber, char *str, bool tag, bool doc
 
 ConstantNode *ConstantNode::alloc( S32 lineNumber, StringTableEntry value )
 {
-    ConstantNode *ret = (ConstantNode *) consoleAlloc(sizeof(ConstantNode));
+   ConstantNode *ret = (ConstantNode *) consoleAlloc(sizeof(ConstantNode));
+   constructInPlace(ret);
+   ret->dbgLineNumber = lineNumber;
+   ret->value = value;
+   
+   return ret;
+}
+
+DocBlockNode *DocBlockNode::alloc( S32 lineNumber, char *value )
+{
+    DocBlockNode *ret = (DocBlockNode *) consoleAlloc(sizeof(DocBlockNode));
     constructInPlace(ret);
     ret->dbgLineNumber = lineNumber;
-    ret->value = value;
+    ret->doc = value;
+   
+    gCurrentDocBlock = ret;
+   
     return ret;
 }
 
@@ -407,11 +419,13 @@ FunctionDeclStmtNode *FunctionDeclStmtNode::alloc( S32 lineNumber, StringTableEn
     ret->nameSpace = nameSpace;
     ret->package = NULL;
     ret->localVars = gCurrentLocalVariables;
+    ret->doc = gCurrentDocBlock;
+    gCurrentDocBlock = NULL;
    
-   for(VarNode* walk = args; walk; walk = static_cast<VarNode*>(walk->next))
-   {
-      FunctionDeclStmtNode::referenceLocalVariable(walk->varName);
-   }
+    for(VarNode* walk = args; walk; walk = static_cast<VarNode*>(walk->next))
+    {
+       FunctionDeclStmtNode::referenceLocalVariable(walk->varName);
+    }
    
     return ret;
 }

@@ -348,9 +348,8 @@ struct StrConstNode : ExprNode
     F64 fVal;
     U32 index;
     bool tag;
-    bool doc; // Specifies that this string is a documentation block.
     
-    static StrConstNode *alloc( S32 lineNumber, char *str, bool tag, bool doc = false );
+    static StrConstNode *alloc( S32 lineNumber, char *str, bool tag );
     
     void compile(CodeStream &codeStream, TypeReq type);
     TypeReq getPreferredType();
@@ -368,6 +367,19 @@ struct ConstantNode : ExprNode
     void compile(CodeStream &codeStream, TypeReq type);
     TypeReq getPreferredType();
     DBG_STMT_TYPE(ConstantNode);
+};
+
+struct DocBlockNode : ExprNode
+{
+   const char *doc;
+   
+   static DocBlockNode *alloc( S32 lineNumber, char *value );
+   
+   void compile(CodeStream &codeStream, TypeReq type);
+   TypeReq getPreferredType();
+   bool isClassDoc();
+   
+   DBG_STMT_TYPE(StrConstNode);
 };
 
 struct AssignExprNode : ExprNode
@@ -555,7 +567,8 @@ struct FunctionDeclStmtNode : StmtNode
     U32 argc;
     
     VarNode *vars;
-    ReferencedVariableNode* localVars;
+    ReferencedVariableNode *localVars;
+    DocBlockNode *doc;
     
     static FunctionDeclStmtNode *alloc( S32 lineNumber, StringTableEntry fnName, StringTableEntry nameSpace, VarNode *args, StmtNode *stmts );
    
@@ -571,6 +584,8 @@ struct FunctionDeclStmtNode : StmtNode
 
 class CodeBlockEvalState;
 extern StmtNode *gStatementList;
+extern DocBlockNode *gCurrentDocBlock;
+
 extern ReferencedVariableNode *gCurrentLocalVariables;
 extern ReferencedVariableNode *gLocalVariableStack[16];
 extern U32 gLocalVariableStackIdx;

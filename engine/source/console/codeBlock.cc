@@ -462,6 +462,7 @@ bool CodeBlock::compile(const char *fileName, const char *script)
    
    gSyntaxError = false;
    gStatementList = NULL;
+   gCurrentDocBlock = NULL;
    
    gCurrentLocalVariables = NULL;
    gLocalVariableStackIdx = 0;

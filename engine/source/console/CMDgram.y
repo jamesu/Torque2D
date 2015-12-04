@@ -215,7 +215,7 @@ stmt
    | expression_stmt ';'
       { $$ = $1; }
    | DOCBLOCK
-      { $$ = StrConstNode::alloc( $1.lineNumber, $1.value, false, true ); }
+      { $$ = DocBlockNode::alloc( $1.lineNumber, $1.value ); }
    ;
 
 fn_decl_stmt

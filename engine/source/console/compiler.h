@@ -159,6 +159,8 @@ namespace Compiler
 
       OP_ASSERT,      // fire assert
       OP_BREAK,       // breakpoint (used internally by debugger)
+      
+      OP_DOCNSFUNC,       //  a b c [b(ns or func), c(docstring) set doc for ns entry b (a == flags)]
 
       OP_NUM_INST
    };

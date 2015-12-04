@@ -449,6 +449,13 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
                vmbreak;
             }
             
+            vmcase(Compiler::OP_DOCNSFUNC) {
+               U32 flags = TS2_OP_DEC_A(i);
+               
+               Con::printf("[%i] OP_DOCNSFUNC %s %s %i", j, ts2PrintKonstOrRef(TS2_OP_DEC_B(i), konst), ts2PrintKonstOrRef(TS2_OP_DEC_C(i), konst), flags );
+               vmbreak;
+            }
+            
             vmcase(Compiler::OP_COPYFIELDS) {
                Con::printf("[%i] OP_COPYFIELDS R%i <- ", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i));
                vmbreak;
@@ -1449,20 +1456,15 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               StringTableEntry fnNamespace  = base[defStart+1].getSTEStringValue();
               StringTableEntry fnName       = base[defStart+2].getSTEStringValue();
               
+              if (fnNamespace == StringTable->EmptyString)
+              {
+                 fnNamespace = NULL;
+              }
+              
               Namespace::unlinkPackages();
               Namespace *ns = Namespace::find(fnNamespace, fnPackage);
+              Namespace* nsg = Namespace::global();
               ns->addFunction(fnName, state->currentFrame.code, funcIdx, NULL );// TODO: docblock
-              /*if( curNSDocBlock )
-              {
-                 if( fnNamespace == StringTable->lookup( nsDocBlockClass ) )
-                 {
-                    char *usageStr = dStrdup( curNSDocBlock );
-                    usageStr[dStrlen(usageStr)] = '\0';
-                    ns->mUsage = usageStr;
-                    ns->mCleanUpUsage = true;
-                    curNSDocBlock = NULL;
-                 }
-              }*/
               Namespace::relinkPackages();
               
               //Con::printf("Adding function %s::%s (%d)", fnNamespace, fnName, func->ip);
@@ -1487,6 +1489,34 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                     Con::warnf("CopyFields: couldn't find destination object %s", destObject.getTempStringValue());
                  else
                     Con::warnf("CopyFields: couldn't src object %s", srcObject.getTempStringValue());
+              }
+              
+              vmbreak;
+           }
+           
+           vmcase(Compiler::OP_DOCNSFUNC) {
+              U32 flags = TS2_OP_DEC_A(i);
+              ConsoleValuePtr docNS = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+              ConsoleValuePtr docSTR = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+              
+              if (docNS.type == ConsoleValue::TypeInternalNamespaceName)
+              {
+                 // @class
+                 Namespace *ns = Namespace::find(docNS.getSTEStringValue());
+                 if (ns)
+                 {
+                    ns->setUsage(docSTR.getTempStringValue());
+                 }
+              }
+              else if (docNS.type == ConsoleValue::TypeInternalNamespaceEntry)
+              {
+                 // function
+                 Namespace::Entry *entry = (Namespace::Entry *)docNS.value.ptrValue;
+                 entry->setUsage(docSTR.getTempStringValue());
+              }
+              else
+              {
+                 Con::warnf("Invalid docblock");
               }
               
               vmbreak;

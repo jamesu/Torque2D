@@ -82,9 +82,13 @@ public:
       Entry *mNext;
       StringTableEntry mFunctionName;
       S32 mType;
-      S32 mMinArgs;
-      S32 mMaxArgs;
+      
+      S16 mMinArgs;
+      S16 mMaxArgs;
+      
       const char *mUsage;
+      bool mCleanUpUsage;
+      
       StringTableEntry mPackage;
 
       CodeBlock *mCode;
@@ -100,6 +104,7 @@ public:
       } cb;
       Entry();
       void clear();
+      void setUsage(const char *usage);
 
       ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state);
    };
@@ -136,6 +141,8 @@ public:
    bool unlinkClass(Namespace *parent);
 
    const char *tabComplete(const char *prevText, S32 baseLen, bool fForward);
+   
+   void setUsage(const char *usage);
 
    static U32 mCacheSequence;
    static DataChunker mCacheAllocator;

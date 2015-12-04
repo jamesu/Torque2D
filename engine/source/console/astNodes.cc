@@ -400,12 +400,6 @@ void IterStmtNode::compileStmt(CodeStream &codeStream)
 
 void ConditionalExprNode::compile(CodeStream &codeStream, TypeReq type)
 {
-   // code is testExpr
-   // JMPIFNOT falseStart
-   // trueExpr
-   // JMP end
-   // falseExpr
-   
    U32 startTarget = codeStream.mTargetList.size();
    U32 ip = codeStream.tell();
    
@@ -453,9 +447,6 @@ void ConditionalExprNode::compile(CodeStream &codeStream, TypeReq type)
    
    // If we are assigning a target register we need to
    // emit it for each branch, otherwise store the result in our own temp target.
-   
-   //targetRegister = codeStream.pushTargetReference(targetRegister); // temp clone
-   // TOFIX should this push for varnode?
    
    codeStream.pushTargetReference(targetRegister);
    trueExpr->compile(codeStream, TypeReqTargetRegister);
@@ -662,8 +653,8 @@ void IntBinaryExprNode::compile(CodeStream &codeStream, TypeReq type)
    
    if (type == TypeReqConditional)
    {
-      CodeStream::RegisterTarget leftReg;// = codeStream.popTarget();
-      CodeStream::RegisterTarget rightReg;// = codeStream.popTarget();
+      CodeStream::RegisterTarget leftReg;
+      CodeStream::RegisterTarget rightReg;
       
       if(operand == Compiler::COND_OR || operand == Compiler::COND_AND)
       {
@@ -1399,13 +1390,60 @@ void StrConstNode::compile(CodeStream &codeStream, TypeReq type)
       Con::printf("StrConstNode target == %s", targetRegister.toString());
 #endif
    }
-   
-   // TODO: handle doc (OP_DOCBLOCK_STR)
 }
 
 TypeReq StrConstNode::getPreferredType()
 {
     return TypeReqString;
+}
+
+//------------------------------------------------------------
+
+void DocBlockNode::compile(CodeStream &codeStream, TypeReq type)
+{
+   AssertFatal(type == TypeReqNone, "Unhandled case");
+   
+   // NOTE: we only emit code here if we have a class doc
+   if (isClassDoc())
+   {
+      char nsDocBlockClass[128];
+      char* sansClass = dStrstr( doc, "@class" );
+      if( !sansClass )
+         sansClass = dStrstr( doc, "\\class" );
+      
+      // Don't save the class declaration. Scan past the 'class'
+      // keyword and up to the first whitespace.
+      sansClass += 7;
+      S32 index = 0;
+      while( ( *sansClass != ' ' ) && ( *sansClass != '\n' ) && *sansClass && ( index < ( sizeof(nsDocBlockClass) - 1 ) ) )
+      {
+         nsDocBlockClass[index++] = *sansClass;
+         sansClass++;
+      }
+      nsDocBlockClass[index] = '\0';
+      sansClass++;
+      
+      Compiler::CompilerConstantRef nsIdx = codeStream.getConstantsTable()->addNamespace(nsDocBlockClass);
+      Compiler::CompilerConstantRef docIdx = codeStream.getConstantsTable()->addString(sansClass);
+      codeStream.emitOpcodeABCRef(Compiler::OP_DOCNSFUNC, 0, nsIdx, docIdx);
+   }
+}
+
+TypeReq DocBlockNode::getPreferredType()
+{
+   return TypeReqNone;
+}
+
+bool DocBlockNode::isClassDoc()
+{
+   if (!doc)
+      return false;
+   
+   char* sansClass = dStrstr( doc, "@class" );
+   if( !sansClass )
+      sansClass = dStrstr( doc, "\\class" );
+   
+   return sansClass != NULL;
 }
 
 //------------------------------------------------------------
@@ -2345,17 +2383,6 @@ TypeReq ObjectDeclNode::getPreferredType()
 
 void FunctionDeclStmtNode::compileStmt(CodeStream &codeStream)
 {
-    // OP_FUNC_DECL
-    // func name
-    // namespace
-    // package
-    // hasBody?
-    // func end ip
-    // argc
-    // ident array[argc]
-    // code
-    // OP_RETURN_VOID
-   
     // Defined with
     // OP_BINDNSFUNC <ns> <pkg> <name> <entry idx>
    CodeBlockFunction* func = new CodeBlockFunction;
@@ -2367,7 +2394,8 @@ void FunctionDeclStmtNode::compileStmt(CodeStream &codeStream)
    
    // Emit code to assign the function to the namespace
    
-   Compiler::CompilerConstantRef nsIdx = nameSpace == NULL ? codeStream.getConstantsTable()->addNull() : codeStream.getConstantsTable()->addString(nameSpace);
+   
+   Compiler::CompilerConstantRef nsIdx = nameSpace == NULL ? codeStream.getConstantsTable()->addNamespace(StringTable->EmptyString) : codeStream.getConstantsTable()->addNamespace(nameSpace);
    Compiler::CompilerConstantRef pkgIdx = package == NULL ? codeStream.getConstantsTable()->addNull() : codeStream.getConstantsTable()->addString(package);
    Compiler::CompilerConstantRef funcIdx = codeStream.getConstantsTable()->addString(fnName);
    
@@ -2384,6 +2412,18 @@ void FunctionDeclStmtNode::compileStmt(CodeStream &codeStream)
    codeStream.popTarget();
    codeStream.popTarget();
    codeStream.popTarget();
+   
+   // assign the doc if there is one
+   if (doc)
+   {
+      // NOTE: we only emit function docs here
+      if (!doc->isClassDoc())
+      {
+         Compiler::CompilerConstantRef docIdx = codeStream.getConstantsTable()->addString(doc->doc);
+         codeStream.emitOpcodeABCRef(Compiler::OP_GETFUNC, r1.regNum, nsIdx, funcIdx);
+         codeStream.emitOpcodeABCRef(Compiler::OP_DOCNSFUNC, 0, r1, docIdx);
+      }
+   }
 }
 
 void FunctionDeclStmtNode::compileFunction(CodeStream& codeStream)

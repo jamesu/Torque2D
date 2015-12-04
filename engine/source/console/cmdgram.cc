@@ -2425,7 +2425,7 @@ yyreduce:
 
   case 24:
 #line 218 "CMDgram.y"
-    { (yyval.stmt) = StrConstNode::alloc( (yyvsp[(1) - (1)].str).lineNumber, (yyvsp[(1) - (1)].str).value, false, true ); ;}
+    { (yyval.stmt) = DocBlockNode::alloc( (yyvsp[(1) - (1)].str).lineNumber, (yyvsp[(1) - (1)].str).value ); ;}
     break;
 
   case 25:

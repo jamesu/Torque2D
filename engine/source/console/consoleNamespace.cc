@@ -49,6 +49,7 @@ Namespace::Entry::Entry()
 {
    mCode = NULL;
    mType = InvalidFunctionType;
+   mCleanUpUsage = false;
 }
 
 void Namespace::Entry::clear()
@@ -60,11 +61,23 @@ void Namespace::Entry::clear()
    }
 
    // Clean up usage strings generated for script functions.
-   if( ( mType == Namespace::Entry::ScriptFunctionType ) && mUsage )
+   if( mCleanUpUsage && mUsage )
    {
-      delete mUsage;
+      dFree (const_cast <char *> (mUsage));
       mUsage = NULL;
+      mCleanUpUsage = false;
    }
+}
+
+void Namespace::Entry::setUsage(const char *usage)
+{
+   if (mCleanUpUsage)
+   {
+      dFree(const_cast <char *> (mUsage));
+   }
+   
+   mUsage = dStrdup(usage);
+   mCleanUpUsage = true;
 }
 
 Namespace::Namespace()
@@ -277,6 +290,17 @@ const char *Namespace::tabComplete(const char *prevText, S32 baseLen, bool fForw
       if(mHashTable[i] && canTabComplete(prevText, bestMatch, mHashTable[i]->mFunctionName, baseLen, fForward))
          bestMatch = mHashTable[i]->mFunctionName;
    return bestMatch;
+}
+
+void Namespace::setUsage(const char *usage)
+{
+   if (mCleanUpUsage)
+   {
+      dFree(const_cast <char *> (mUsage));
+   }
+   
+   mUsage = dStrdup(usage);
+   mCleanUpUsage = true;
 }
 
 Namespace::Entry *Namespace::lookupRecursive(StringTableEntry name)
