@@ -281,7 +281,7 @@ bool NameTags::tag( const SimObjectId objId, const TagId tagId )
         }
 
         // Format new tag Id.
-        dSprintf( newTagsBuffer, 4096, "%s %d", pOldTags, tagId );
+        dSprintf( newTagsBuffer, 4096, "%s %d", pOldTags.c_str(), tagId );
     }
     else
     {

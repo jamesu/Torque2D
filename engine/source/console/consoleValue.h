@@ -533,7 +533,7 @@ public:
    }
    
 #ifndef EXCLUDE_CONSOLEVALUE_CASTERS
-   inline operator const char*() { return getStringValue().c_str(); } const
+   inline operator const char*() { return getTempStringValue(); } const
    inline operator U32() { return (U32)getIntValue(); } const
    inline operator S32() { return getSignedIntValue(); } const
    inline operator F64() { return getFloatValue(); } const

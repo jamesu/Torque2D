@@ -90,6 +90,7 @@ namespace CodeblockUtil
          Game->journalRead(&fileSize);
          
          CodeBlock *newCodeBlock = new CodeBlock();
+         newCodeBlock->incRefCount();
          
          const char *ext = dStrrchr(filenameBuf, '.');
          char *script = new char[fileSize + 1];
@@ -112,6 +113,7 @@ namespace CodeblockUtil
          
          Con::printf("Executing (journal-read) %s.", scriptFileName);
          newCodeBlock->compileExec(scriptFileName, script, noCalls, -1);
+         newCodeBlock->decRefCount();
          
          delete [] script;
          execDepth--;
@@ -248,6 +250,7 @@ namespace CodeblockUtil
          
          // Compile script
          runtimeBlock = new CodeBlock();
+         runtimeBlock->incRefCount();
          runtimeBlock->compile(scriptFileName, script);
          
          if(doCompile)
@@ -300,6 +303,7 @@ namespace CodeblockUtil
          if (compiledStream)
          {
             runtimeBlock = new CodeBlock;
+            runtimeBlock->incRefCount();
             runtimeBlock->read(*compiledStream, scriptFileName);
             doCompile = false;
             ResourceManager->closeStream(compiledStream);
@@ -330,6 +334,7 @@ namespace CodeblockUtil
             Con::printf("Loaded compiled script %s. Took %.0f ms", scriptFileName, etf);
          
          ret = true;
+         runtimeBlock->decRefCount();
       }
       else
       {

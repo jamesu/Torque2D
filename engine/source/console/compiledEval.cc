@@ -1374,7 +1374,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                      state->currentFrame.constantTop = (U32)(konst - konstBase);
                      state->currentFrame.stackTop = base - state->stack.address();
                      
-                     
                      switch(nsEntry->mType)
                      {
                         case Namespace::Entry::ScriptFunctionType:

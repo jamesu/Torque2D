@@ -49,6 +49,7 @@ SimFieldDictionary::Entry *SimFieldDictionary::allocEntry()
 void SimFieldDictionary::freeEntry(SimFieldDictionary::Entry *ent)
 {
    ent->next = mFreeList;
+   ent->value.setNull();
    mFreeList = ent;
 }
 
@@ -68,8 +69,7 @@ SimFieldDictionary::~SimFieldDictionary()
       {
          Entry *temp = walk;
          walk = temp->next;
-
-         temp->value.setNull();
+         
          freeEntry(temp);
       }
    }
@@ -89,7 +89,6 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const ConsoleV
       {
          mVersion++;
 
-         field->value.setNull();
          *walk = field->next;
          freeEntry(field);
       }

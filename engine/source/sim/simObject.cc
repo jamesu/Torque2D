@@ -558,6 +558,7 @@ void SimObject::setDataField(StringTableEntry slotName, const ConsoleValuePtr &a
          {
             // Make an array
             value.setValue(ConsoleArrayValue::fromValues(0, NULL));
+            mFieldDictionary->setFieldValue(slotName, value);
          }
          
          if (ConsoleValue::isRefType(value.type))

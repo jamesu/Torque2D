@@ -61,6 +61,7 @@ CodeBlock::CodeBlock()
     fullPath = NULL;
     modPath = NULL;
     mRoot = StringTable->EmptyString;
+    code = NULL;
 }
 
 CodeBlock::~CodeBlock()
@@ -74,7 +75,17 @@ CodeBlock::~CodeBlock()
     }
    
     if(name)
-        removeFromCodeList();
+       removeFromCodeList();
+   
+    if (breakList)
+    {
+       delete[] breakList;
+    }
+    
+    if (code)
+    {
+       delete[] code;
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -568,8 +579,9 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
    if (setFrame >= 0)
    {
       S32 realFrameIdx = ((S32)gNewEvalState.frames.size()-1)-setFrame; // 0 == end onwards
-      if (realFrameIdx >= 0)
+      if (realFrameIdx > 0) // root frame is 0, it should have no locals
       {
+         AssertFatal(realFrameIdx != 0, "Something weird is going on");
          if (!gNewEvalState.frames[realFrameIdx].localVars)
          {
             gNewEvalState.frames[realFrameIdx].localVars = gNewEvalState.createLocals(NULL);

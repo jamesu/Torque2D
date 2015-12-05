@@ -1011,7 +1011,10 @@ ConsoleValuePtr evaluate(const char *string, bool echo, const char *fileName)
       fileName = StringTable->insert(fileName);
 
    CodeBlock *newCodeBlock = new CodeBlock();
-   return newCodeBlock->compileExec(fileName, string, false, fileName ? -1 : 0);
+   newCodeBlock->incRefCount();
+   ConsoleValuePtr ret = newCodeBlock->compileExec(fileName, string, false, fileName ? -1 : 0);
+   newCodeBlock->decRefCount();
+   return ret;
 }
 
 //------------------------------------------------------------------------------
@@ -1027,10 +1030,12 @@ ConsoleValuePtr evaluatef(const char *string, ...)
       va_end (args);
 
       CodeBlock *newCodeBlock = new CodeBlock();
+      newCodeBlock->incRefCount();
       result = newCodeBlock->compileExec(NULL, buffer, false, 0);
 
       delete [] buffer;
       buffer = NULL;
+      newCodeBlock->decRefCount();
    }
 
    return result;

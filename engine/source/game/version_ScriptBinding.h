@@ -102,8 +102,8 @@ ConsoleFunctionWithDocs( getiPhoneToolsVersion, ConsoleString, 1, 1, ())
 */
 ConsoleFunctionWithDocs(setCompanyAndProduct, ConsoleVoid, 3, 3, (company, product))
 {
-   setCompanyName(StringTable->insert(argv[1]));
-   setProductName(StringTable->insert(argv[2]));
+   setCompanyName(argv[1].getSTEStringValue());
+   setProductName(argv[2].getSTEStringValue());
 
    Con::setVariable("$Game::CompanyName", getCompanyName());
    Con::setVariable("$Game::ProductName", getProductName());
