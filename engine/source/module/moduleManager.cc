@@ -612,7 +612,7 @@ bool ModuleManager::unloadModuleGroup( const char* pModuleGroup )
 
             // Remove scope set.
             pScopeSet->deleteObjects();
-            pScopeSet->unregisterObject();
+            pScopeSet->deleteObject();
             pLoadReadyModuleDefinition->mScopeSet = 0;
 
             // Remove path expando for module.
@@ -963,7 +963,7 @@ bool ModuleManager::unloadModuleExplicit( const char* pModuleId )
 
             // Remove scope set.
             pScopeSet->deleteObjects();
-            pScopeSet->unregisterObject();
+            pScopeSet->deleteObject();
             pLoadReadyModuleDefinition->mScopeSet = 0;
 
             // Remove path expando for module.

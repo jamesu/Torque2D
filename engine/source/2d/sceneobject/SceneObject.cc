@@ -354,6 +354,13 @@ bool SceneObject::onAdd()
 
 void SceneObject::onRemove()
 {
+    // Destroy collision fixture defs
+    for (U32 i=0; i<mCollisionFixtureDefs.size(); i++)
+    {
+       delete mCollisionFixtureDefs[i];
+    }
+    mCollisionFixtureDefs.clear();
+   
     // Detach Any GUI Control.
     detachGui();
 
