@@ -257,6 +257,8 @@ ConsoleMethodWithDocs(Taml, read, ConsoleValuePtr, 3, 3, (filename))
     {
        ret.setValue(ConsoleSimObjectPtr::fromObject(pSimObject));
     }
+   
+   return ret;
 }
 
 //-----------------------------------------------------------------------------

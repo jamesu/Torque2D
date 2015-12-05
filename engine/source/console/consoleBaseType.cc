@@ -491,6 +491,10 @@ ConsoleArrayValue* ConsoleArrayValue::fromValues(int argc, ConsoleValue* argv)
 {
    ConsoleArrayValue* values = new ConsoleArrayValue();
    values->mValues.setSize(argc);
+   if (argc > 0)
+   {
+      dMemset(values->mValues.address(), '\0', sizeof(ConsoleValuePtr) * argc);
+   }
    
    for (U32 i=0; i<argc; i++)
    {
