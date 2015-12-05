@@ -595,7 +595,7 @@ void Scene::dispatchBeginContactCallbacks( void )
             args[1].setNull();
             args[2].setValue(sceneObjectABuffer);
             args[3].setValue(sceneObjectBBuffer);
-            args[4].setString(miscInfoBuffer);
+            args[4].setValue(miscInfoBuffer);
             callOnBehaviors( 5, args );
         }
 
@@ -618,7 +618,7 @@ void Scene::dispatchBeginContactCallbacks( void )
                 args[0].setSTE(StringTable->insert("onCollision"));
                 args[1].setNull();
                 args[2].setValue(sceneObjectBBuffer);
-                args[3].setString(miscInfoBuffer);
+                args[3].setValue(miscInfoBuffer);
                 pSceneObjectA->callOnBehaviors( 4, args );
             }
         }
@@ -642,7 +642,7 @@ void Scene::dispatchBeginContactCallbacks( void )
                 args[0].setSTE(StringTable->insert("onCollision"));
                 args[1].setNull();
                 args[2].setValue(sceneObjectABuffer);
-                args[3].setString(miscInfoBuffer);
+                args[3].setValue(miscInfoBuffer);
                 pSceneObjectB->callOnBehaviors( 4, args );
             }
         }
@@ -699,8 +699,11 @@ void Scene::dispatchEndContactCallbacks( void )
         sceneObjectBBuffer.setValue(ConsoleSimObjectPtr::fromObject(pSceneObjectB));
 
         // Format miscellaneous information.
-        char miscInfoBuffer[32];
-        dSprintf(miscInfoBuffer, sizeof(miscInfoBuffer), "%d %d", shapeIndexA, shapeIndexB );
+        ConsoleValuePtr miscInfoBuffer;
+        ConsoleValuePtr values[2];
+        values[0].setValue(shapeIndexA);
+        values[1].setValue(shapeIndexB);
+        miscInfoBuffer.setValue(ConsoleArrayValue::fromValues(2, values));
 
         // Does the scene handle the collision callback?
         Namespace* pNamespace = getNamespace();
@@ -721,7 +724,7 @@ void Scene::dispatchEndContactCallbacks( void )
            args[1].setNull();
            args[2].setValue(sceneObjectABuffer);
            args[3].setValue(sceneObjectBBuffer);
-           args[4].setString(miscInfoBuffer);
+           args[4].setValue(miscInfoBuffer);
            callOnBehaviors( 5, args );
         }
 
@@ -745,7 +748,7 @@ void Scene::dispatchEndContactCallbacks( void )
                 args[0].setSTE(StringTable->insert("onEndCollision"));
                 args[1].setNull();
                 args[2].setValue(sceneObjectBBuffer);
-                args[3].setString(miscInfoBuffer);
+                args[3].setValue(miscInfoBuffer);
                 pSceneObjectA->callOnBehaviors( 4, args );
             }
         }
@@ -769,7 +772,7 @@ void Scene::dispatchEndContactCallbacks( void )
                 args[0].setSTE(StringTable->insert("onEndCollision"));
                 args[1].setNull();
                 args[2].setValue(sceneObjectABuffer);
-                args[3].setString(miscInfoBuffer);
+                args[3].setValue(miscInfoBuffer);
                 pSceneObjectB->callOnBehaviors( 4, args );
             }
         }

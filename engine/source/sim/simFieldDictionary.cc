@@ -83,7 +83,7 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const ConsoleV
       walk = &((*walk)->next);
 
    Entry *field = *walk;
-   if(value.isNull() || value.getTempStringValue()[0] == '\0')
+   if(value.isNull() || (!ConsoleValue::isRefType(value.type) && value.getTempStringValue()[0] == '\0') )
    {
       if(field)
       {
