@@ -228,7 +228,7 @@ GuiControl* GuiInspectorTypeFileName::constructEditControl()
    {
       RectI browseRect( Point2I( ( mBounds.point.x + mBounds.extent.x) - 26, mBounds.point.y + 2), Point2I(20, mBounds.extent.y - 4) );
       char szBuffer[512];
-      dSprintf( szBuffer, 512, "getLoadFilename(\"*.*\", \"%d.apply\", \"%s\");",getId(), getData());
+      dSprintf( szBuffer, 512, "getLoadFilename(\"*.*\", \"%d.apply\", \"%s\");",getId(), getData().c_str());
       mBrowseButton->setField( "Command", szBuffer );
       mBrowseButton->setField( "text", "..." );
       mBrowseButton->setField( "Profile", "GuiInspectorTypeFileNameProfile" );
@@ -294,7 +294,7 @@ GuiControl* GuiInspectorTypeColor::constructEditControl()
    {
       RectI browseRect( Point2I( ( mBounds.point.x + mBounds.extent.x) - 26, mBounds.point.y + 2), Point2I(20, mBounds.extent.y - 4) );
       char szBuffer[512];
-      dSprintf( szBuffer, 512, "%s(\"%s\", \"%d.apply\");", mColorFunction, getData(), getId());
+      dSprintf( szBuffer, 512, "%s(\"%s\", \"%d.apply\");", mColorFunction, getData().c_str(), getId());
       mBrowseButton->setField( "Command", szBuffer );
       mBrowseButton->setField( "text", "..." );
       mBrowseButton->setField( "Profile", "GuiInspectorTypeFileNameProfile" );

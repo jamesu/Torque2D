@@ -307,7 +307,7 @@ void CMDerror(char *format, ...)
       // Update the script-visible error buffer.
       ConsoleStringValuePtr prevStr = Con::getVariable("$ScriptError");
       if (prevStr.c_str()[0])
-         dSprintf(tempBuf, sizeof(tempBuf), "%s\n%s Line: %d - Syntax error.", prevStr, fileName, lineIndex);
+         dSprintf(tempBuf, sizeof(tempBuf), "%s\n%s Line: %d - Syntax error.", prevStr.c_str(), fileName, lineIndex);
       else
          dSprintf(tempBuf, sizeof(tempBuf), "%s Line: %d - Syntax error.", fileName, lineIndex);
       Con::setVariable("$ScriptError", tempBuf);

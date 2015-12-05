@@ -94,6 +94,7 @@ public:
    ConsoleStringValuePtr(SimpleString* str);
    ConsoleStringValuePtr(ConsoleStringValuePtr* other);
    ConsoleStringValuePtr(ConsoleStringValue* other);
+   ~ConsoleStringValuePtr() { DecRef(); }
    
    inline void AddRef();
    inline void DecRef();

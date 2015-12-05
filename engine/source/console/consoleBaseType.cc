@@ -105,20 +105,20 @@ void cbtDefaultOperatorFunc(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inPara
     if (Sim::findObject(inParam->getStringValue().c_str(), obj))
     {
         Namespace *ns = obj->getNamespace();
-        Namespace::Entry *entry = ns->lookup(StringTable->insert(inSubParam->getStringValue().c_str()));
+        Namespace::Entry *entry = ns->lookup(inSubParam->getSTEStringValue());
         if (entry)
         {
             //inOutParam->setNSEValue(entry);
         }
         else
         {
-            Con::errorf("Couldn't find entry %s!", inSubParam->getStringValue());
+            Con::errorf("Couldn't find entry %s!", inSubParam->getTempStringValue());
         }
         //= inParam->getStringValue();
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inParam->getTempStringValue());
     }
 }
 
@@ -131,7 +131,7 @@ void cbtDefaultOperatorProperty(ConsoleValuePtr *inOutParam, ConsoleValuePtr *in
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inParam->getTempStringValue());
     }
 }
 
@@ -144,7 +144,7 @@ void cbtDefaultOperatorPropertySet(ConsoleValuePtr *inOutParam, ConsoleValuePtr 
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inOutParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inOutParam->getTempStringValue());
     }
 }
 
@@ -158,7 +158,7 @@ void cbtDefaultOperatorSubObject(ConsoleValuePtr *inOutParam, ConsoleValuePtr *i
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inParam->getTempStringValue());
     }
 }
 
@@ -171,7 +171,7 @@ void cbtDefaultOperatorIndex(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inPar
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inParam->getTempStringValue());
     }
 }
 
@@ -184,7 +184,7 @@ void cbtDefaultOperatorIndexSet(ConsoleValuePtr *inOutParam, ConsoleValuePtr *in
     }
     else
     {
-        Con::errorf("Couldn't find object %s", inOutParam->getStringValue());
+        Con::errorf("Couldn't find object %s", inOutParam->getTempStringValue());
     }
 }
 

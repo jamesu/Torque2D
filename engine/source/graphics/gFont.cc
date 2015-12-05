@@ -96,7 +96,7 @@ ResourceInstance* constructNewFont(Stream& stream)
 
 void GFont::getFontCacheFilename(const char *faceName, U32 size, U32 buffLen, char *outBuff)
 {
-   dSprintf(outBuff, buffLen, "%s/%s %d (%s).uft", Con::getVariable("$GUI::fontCacheDirectory"), faceName, size, getFontCharSetName(0));
+   dSprintf(outBuff, buffLen, "%s/%s %d (%s).uft", Con::getVariable("$GUI::fontCacheDirectory").c_str(), faceName, size, getFontCharSetName(0));
 }
 
 Resource<GFont> GFont::create(const char *faceName, U32 size, const char *cacheDirectory, U32 charset /* = TGE_ANSI_CHARSET */)
@@ -1213,7 +1213,7 @@ bool GFont::readBMFont(Stream& io_rStream)
     for(U32 i = 0; i < numSheets; i++)
     {
         char buf[1024];
-        dSprintf(buf, sizeof(buf), "%s/%s", Con::getVariable("$GUI::fontCacheDirectory"), fileName);
+        dSprintf(buf, sizeof(buf), "%s/%s", Con::getVariable("$GUI::fontCacheDirectory").c_str(), fileName);
         Con::printf("Platform::makeFullPathName %s", buf);
         
         GBitmap *bmp = dynamic_cast<GBitmap*>(ResourceManager->loadInstance(buf));

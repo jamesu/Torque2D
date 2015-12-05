@@ -106,6 +106,7 @@ void SimFieldDictionary::setFieldValue(StringTableEntry slotName, const ConsoleV
          mVersion++;
 
          field = allocEntry();
+         field->value.type = ConsoleValue::TypeInternalNull;
          field->value.setValue(value);
          field->slotName = slotName;
          field->next = NULL;

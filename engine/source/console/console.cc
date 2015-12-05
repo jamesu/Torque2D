@@ -1005,7 +1005,7 @@ void addCommand(const char *name,BoolCallback cb,const char *usage, S32 minArgs,
 ConsoleValuePtr evaluate(const char *string, bool echo, const char *fileName)
 {
    if (echo)
-      Con::printf("%s%s", getVariable( "$Con::Prompt" ), string);
+      Con::printf("%s%s", getVariable( "$Con::Prompt" ).c_str(), string);
 
    if(fileName)
       fileName = StringTable->insert(fileName);
@@ -1999,7 +1999,7 @@ void testStackWrite()
     
     for (U32 i=0; i<stack.size(); i++)
     {
-       Con::printf("Stack[%u] type == %u value == %s refCount == %i", i, stack[i].type, stack[i].getStringValue(), ConsoleValue::isRefType(stack[i].type) ? stack[i].value.refValue->refCount : 0);
+       Con::printf("Stack[%u] type == %u value == %s refCount == %i", i, stack[i].type, stack[i].getTempStringValue(), ConsoleValue::isRefType(stack[i].type) ? stack[i].value.refValue->refCount : 0);
     }
     stack.clearAndReset();
     

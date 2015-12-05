@@ -1089,7 +1089,7 @@ bool ActionMap::processBind(const U32 argc, ConsoleValuePtr argv[], SimObject* o
 
    if(!getDeviceTypeAndInstance(argv[0], deviceType, deviceInst))
    {
-      Con::printf("processBind: unknown device: %s", pDeviceName);
+      Con::printf("processBind: unknown device: %s", pDeviceName.c_str());
       return false;
    }
 
@@ -1098,7 +1098,7 @@ bool ActionMap::processBind(const U32 argc, ConsoleValuePtr argv[], SimObject* o
    //
    EventDescriptor eventDescriptor;
    if (createEventDescriptor(pEvent.c_str(), &eventDescriptor) == false) {
-      Con::printf("Could not create a description for binding: %s", pEvent);
+      Con::printf("Could not create a description for binding: %s", pEvent.c_str());
       return false;
    }
 
