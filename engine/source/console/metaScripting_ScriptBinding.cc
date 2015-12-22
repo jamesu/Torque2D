@@ -238,7 +238,7 @@ ConsoleFunctionWithDocs(export, ConsoleVoid, 2, 4, ( wildCard, [fileName]?, [app
     const bool append = argc >= 4 ? dAtob(argv[3] ) : false;
 
     // Export the variables.
-    gNewEvalState.globalVars->exportVariables( pWildcard, pFilename, append );
+    CodeBlockEvalState::getCurrent()->globalVars->exportVariables( pWildcard, pFilename, append );
 }
 
 /*! Use the deleteVariables function to delete any global variable matching the wildCard statement.
@@ -248,7 +248,7 @@ ConsoleFunctionWithDocs(export, ConsoleVoid, 2, 4, ( wildCard, [fileName]?, [app
 ConsoleFunctionWithDocs(deleteVariables, ConsoleVoid, 2, 2, ( wildCard ))
 {
    TORQUE_UNUSED( argc );
-   gNewEvalState.globalVars->deleteVariables(argv[1]);
+   CodeBlockEvalState::getCurrent()->globalVars->deleteVariables(argv[1]);
 }
 
 //----------------------------------------------------------------
@@ -260,8 +260,9 @@ ConsoleFunctionWithDocs(deleteVariables, ConsoleVoid, 2, 2, ( wildCard ))
 ConsoleFunctionWithDocs(trace, ConsoleVoid, 2, 2, ( enable ))
 {
    TORQUE_UNUSED( argc );
-   gNewEvalState.traceOn = dAtob(argv[1]);
-   Con::printf("Console trace is %s", gNewEvalState.traceOn ? "on." : "off.");
+   CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
+   evalState->traceOn = dAtob(argv[1]);
+   Con::printf("Console trace is %s", evalState->traceOn ? "on." : "off.");
 }
 
 //----------------------------------------------------------------

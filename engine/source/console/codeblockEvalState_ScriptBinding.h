@@ -34,25 +34,26 @@
 ConsoleFunctionWithDocs(backtrace, ConsoleVoid, 1, 1, ())
 {
    U32 totalSize = 1;
+	CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
 
-   for(U32 i = 0; i < (U32)gNewEvalState.frames.size(); i++)
+   for(U32 i = 0; i < (U32)evalState->frames.size(); i++)
    {
-      totalSize += dStrlen(gNewEvalState.frames[i].function->name) + 3;
-      if(gNewEvalState.frames[i].ns)
-         totalSize += dStrlen(gNewEvalState.frames[i].ns) + 2;
+      totalSize += dStrlen(evalState->frames[i].function->name) + 3;
+      if(evalState->frames[i].ns)
+         totalSize += dStrlen(evalState->frames[i].ns) + 2;
    }
 
    char *buf = Con::getReturnBuffer(totalSize);
    buf[0] = 0;
-   for(U32 i = 0; i < (U32)gNewEvalState.frames.size(); i++)
+   for(U32 i = 0; i < (U32)evalState->frames.size(); i++)
    {
       dStrcat(buf, "->");
-      if(gNewEvalState.frames[i].ns && gNewEvalState.frames[i].function->name)
+      if(evalState->frames[i].ns && evalState->frames[i].function->name)
       {
-         dStrcat(buf, gNewEvalState.frames[i].ns);
+         dStrcat(buf, evalState->frames[i].ns);
          dStrcat(buf, "::");
       }
-      dStrcat(buf, gNewEvalState.frames[i].function->name);
+      dStrcat(buf, evalState->frames[i].function->name);
    }
    Con::printf("BackTrace: %s", buf);
 }

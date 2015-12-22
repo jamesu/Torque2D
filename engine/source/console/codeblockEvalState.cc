@@ -17,6 +17,10 @@
 #include "debug/telnetDebugger.h"
 #include "debug/remote/RemoteDebuggerBase.h"
 
+CodeBlockEvalState gRootEvalState;
+CodeBlockEvalState* gCurrentEvalState = NULL;
+
+Vector<CodeBlockCoroutineState*> gCoroutineStack;
 
 void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* code, Namespace::Entry* entry, U32 numParams)
 {
@@ -159,6 +163,117 @@ void CodeBlockEvalState::popFunction()
       pRemoteDebugger->popStackFrame();
 }
 
+bool CodeBlockEvalState::createCoroutine(CodeBlockCoroutineState &outState, Namespace::Entry* nsRef)
+{
+   outState.reset();
+   
+   if (nsRef->mType != Namespace::Entry::ScriptFunctionType)
+   {
+      Con::errorf("Cant create a coroutine, must point to a script function.");
+      return false;
+   }
+   
+   outState.nsEntry = nsRef;
+   return true;
+}
+
+bool CodeBlockEvalState::saveCoroutine(CodeBlockCoroutineState &outState)
+{
+   outState.currentState = CodeBlockCoroutineState::SUSPENDED;
+   
+   bool inStack = false;
+   for (S32 i=gCoroutineStack.size()-1; i>=0; i--)
+   {
+      if (gCoroutineStack[i] == &outState)
+      {
+         inStack = true;
+      }
+   }
+   
+   if (!inStack)
+   {
+      Con::errorf("Couldn't save coroutine, not in stack");
+      return false;
+   }
+   
+   // Pop until we've got to the correct level
+   for (S32 i=gCoroutineStack.size()-1; i>=0; i--)
+   {
+      if (gCoroutineStack[i] == &outState)
+      {
+         gCoroutineStack.pop_back();
+         break;
+      }
+      else
+      {
+         gCoroutineStack[gCoroutineStack.size()-1]->currentState = CodeBlockCoroutineState::SUSPENDED;
+         gCoroutineStack.pop_back();
+      }
+   }
+   
+   gCurrentEvalState = gCoroutineStack.size() > 0 ? &gCoroutineStack[gCoroutineStack.size()-1]->evalState : &gRootEvalState;
+   return true;
+}
+
+bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 argc, ConsoleValuePtr *argv)
+{
+   // Check we're not already active
+   if (gCurrentEvalState == &inState.evalState)
+   {
+      return false;
+   }
+   else
+   {
+      if (!inState.nsEntry->mCode)
+      {
+         Con::errorf("Coroutine: nsEntry is no longer valid");
+         return false;
+      }
+      
+      for (U32 i=0, sz=gCoroutineStack.size(); i<sz; i++)
+      {
+         if (gCoroutineStack[i] == &inState)
+         {
+            return false;
+         }
+      }
+   }
+   
+   // Now active, so we can evaluate the nsEntry
+   
+   if (inState.currentState == CodeBlockCoroutineState::WAIT_INITIAL_CALL)
+   {
+      gCurrentEvalState = &inState.evalState;
+      gCoroutineStack.push_back(&inState);
+      if (inState.nsEntry->mType != Namespace::Entry::ScriptFunctionType)
+      {
+         Con::errorf("Cant restore coroutine, must point to a script function.");
+         return false;
+      }
+      
+      inState.currentState = CodeBlockCoroutineState::RUNNING;
+      inState.nsEntry->mCode->prepCoroutine(inState.nsEntry->mFunctionOffset, inState.nsEntry->mFunctionName, inState.nsEntry->mNamespace, argc, argv, false, NULL);
+   }
+   else if (inState.currentState == CodeBlockCoroutineState::SUSPENDED)
+   {
+      inState.currentState = CodeBlockCoroutineState::RUNNING;
+      gCurrentEvalState = &inState.evalState;
+      gCoroutineStack.push_back(&inState);
+      
+      // 
+   }
+   else
+   {
+      Con::errorf("Coroutine is in an invalid state!");
+      return false;
+   }
+   
+   //const bool telDebuggerOn = TelDebugger && TelDebugger->isConnected();
+   //RemoteDebuggerBase* pRemoteDebugger = RemoteDebuggerBase::getRemoteDebugger();
+   
+   return true;
+}
+
 
 Dictionary *CodeBlockEvalState::createLocals(Dictionary* base)
 {
@@ -192,4 +307,112 @@ void CodeBlockEvalState::disposeLocals(Dictionary* locals)
 {
    delete locals;
 }
+
+CodeBlockEvalState* CodeBlockEvalState::getCurrent()
+{
+   if (gCurrentEvalState == NULL)
+   {
+      gCurrentEvalState = &gRootEvalState;
+   }
+   return gCurrentEvalState;
+}
+
+//
+
+
+//////////////////////////////////////////////////////////////////////////
+// TypeCoroutineRef
+//////////////////////////////////////////////////////////////////////////
+ConsoleType( TypeCoroutineRef, TypeCoroutineRef, sizeof(ConsoleValuePtr), "" )
+ConsoleSetReferenceType( TypeCoroutineRef, CodeBlockCoroutineState )
+
+ConsoleTypeFromConsoleValue( TypeCoroutineRef )
+{
+   if (ConsoleValue::isRefType(value.type))
+   {
+      if (value.value.refValue->isEnumerable())
+      {
+         Con::warnf( "(TypeCoroutineRef) Cannot set multiple args to a single SimObject." );
+         return;
+      }
+   }
+   
+   ConsoleValuePtr *obj = (ConsoleValuePtr*)dataPtr;
+   obj->setValue(value);
+}
+
+ConsoleTypeToString( TypeCoroutineRef )
+{
+   return "[[COROUTINE]]";
+}
+
+CodeBlockCoroutineState::CodeBlockCoroutineState()
+{
+   reset();
+}
+
+CodeBlockCoroutineState::~CodeBlockCoroutineState()
+{
+   
+}
+
+void CodeBlockCoroutineState::reset()
+{
+   ConsoleValuePtr nullValue;
+   
+   for (U32 i=0, sz=evalState.stack.size(); i<sz; i++)
+   {
+      evalState.stack[i].setValue(nullValue);
+   }
+   
+   for (U32 i=0, sz=evalState.frames.size(); i<sz; i++)
+   {
+      evalState.frames[i].code = NULL;
+   }
+   
+   evalState.frames.clear();
+   evalState.yieldValue.setValue(nullValue);
+   evalState.coroutine = this;
+   currentState = CodeBlockCoroutineState::DEAD;
+}
+
+ConsoleStringValuePtr CodeBlockCoroutineState::getString()
+{
+   return "[[COROUTINE]]";
+}
+
+ConsoleBaseType *CodeBlockCoroutineState::getType()
+{
+   return ConsoleTypeTypeCoroutineRef::getInstance();
+}
+
+bool CodeBlockCoroutineState::getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue)
+{
+   outValue.setNull();
+   return false;
+}
+
+void CodeBlockCoroutineState::setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue)
+{
+   return;
+}
+
+Namespace *CodeBlockCoroutineState::getNamespace()
+{
+   return Namespace::find(StringTable->insert("Coroutine"));
+}
+
+void CodeBlockCoroutineState::read(Stream &s, ConsoleSerializationState &state)
+{
+   ConsoleValuePtr::readStack(s, state, evalState.stack);
+   // TODO
+}
+
+void CodeBlockCoroutineState::write(Stream &s, ConsoleSerializationState &state)
+{
+   ConsoleValuePtr::writeStack(s, state, evalState.stack);
+   // TODO
+}
+
+
 

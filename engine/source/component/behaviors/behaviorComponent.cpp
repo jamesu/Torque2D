@@ -942,22 +942,19 @@ bool BehaviorComponent::handlesConsoleMethod( const char *fname, S32 *routingId 
 
 //-----------------------------------------------------------------------------
 
-// Needed to be able to directly call execute on a Namespace::Entry
-extern CodeBlockEvalState gNewEvalState;
-
 ConsoleValuePtr BehaviorComponent::callOnBehaviors( U32 argc, ConsoleValuePtr argv[] )
 {   
     if( mBehaviors.empty() )   
         return Parent::callOnBehaviors( argc, argv );
       
     // Copy the arguments to avoid weird clobbery situations.
-	 ConsoleValuePtr argPtrs[128];
-	
-	 StringTableEntry cbName = argv[0].getSTEStringValue();
+    ConsoleValuePtr argPtrs[128];
+   
+    StringTableEntry cbName = argv[0].getSTEStringValue();
     U32 strdupWatermark = FrameAllocator::getWaterMark();
     for( U32 i = 0; i < argc; i++ )
     {
-		 argPtrs[i].setValue(argv[i]);
+       argPtrs[i].setValue(argv[i]);
     }
 
     // Walk backwards through the list just as with components
@@ -980,10 +977,10 @@ ConsoleValuePtr BehaviorComponent::callOnBehaviors( U32 argc, ConsoleValuePtr ar
         {
             // Set %this to our BehaviorInstance's Object ID
             argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
-			  
-			   //ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state);
-            result.setValue(pNSEntry->execute(argc, argPtrs, &gNewEvalState));
-			  
+           
+            //ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[], CodeBlockEvalState *state);
+           result.setValue(pNSEntry->execute(argc, argPtrs, CodeBlockEvalState::getCurrent()));
+           
             handled = true;
             break;
         }
@@ -1011,10 +1008,10 @@ ConsoleValuePtr BehaviorComponent::_callMethod( U32 argc, ConsoleValuePtr argv[]
      
     // Copy the arguments to avoid weird clobbery situations.
     ConsoleValuePtr argPtrs[128];
-	
+   
     for( U32 i = 0; i < argc; i++ )
     {
-		  argPtrs[i].setValue(argv[i]);
+        argPtrs[i].setValue(argv[i]);
     }
 
     for( SimSet::iterator i = mBehaviors.begin(); i != mBehaviors.end(); i++ )
@@ -1034,9 +1031,9 @@ ConsoleValuePtr BehaviorComponent::_callMethod( U32 argc, ConsoleValuePtr argv[]
         if( pNSEntry )
         {
             // Set %this to our BehaviorInstance's Object ID
-			   argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
+            argPtrs[1].setValue(ConsoleSimObjectPtr::fromObject(pBehavior));
 
-            pNSEntry->execute(argc, argPtrs, &gNewEvalState);
+            pNSEntry->execute(argc, argPtrs, CodeBlockEvalState::getCurrent());
         }
     }
 

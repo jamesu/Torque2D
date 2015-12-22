@@ -9,6 +9,7 @@
 #define _CONSOLESERIALIZATION_H_
 
 class SimGroup;
+class CodeBlock;
 
 struct ConsoleSerializationState
 {
@@ -17,6 +18,7 @@ struct ConsoleSerializationState
    
    /// Lookup of loaded values
    Vector<ConsoleValue*> loadedValues;
+   Vector<CodeBlock*> loadedCodeblocks;
    
    HashTable<U32, SimObject*> simObjectsById;
    HashTable<SimObject*, U32> simObjectsByObject;
@@ -32,6 +34,10 @@ struct ConsoleSerializationState
    void addSavedConsoleObject(SimObject* object);
    void addSimObjects(SimGroup* group);
    
+   CodeBlock *getSavedCodeblock(S32 objectId);
+   S32 getSavedCodeblockIdx(CodeBlock* block);
+   S32 addReferencedCodeblock(CodeBlock* block);
+   
    ConsoleSerializationState() : savedObjectCount(0)
    {
       
@@ -45,6 +51,7 @@ struct ConsoleSerializationState
       loadedValues.clear();
       simObjectsById.clear();
       simObjectsByObject.clear();
+      loadedCodeblocks.clear();
    }
 };
 

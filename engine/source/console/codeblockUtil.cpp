@@ -44,7 +44,7 @@ namespace CodeblockUtil
    
    bool execFile(const char *filename, bool noCalls, bool journal, bool allowCompiled)
    {
-      CodeBlockEvalState* state = &gNewEvalState;
+      CodeBlockEvalState* state = CodeBlockEvalState::getCurrent();
       
       bool doJournal = false;
       

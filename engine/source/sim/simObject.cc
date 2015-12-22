@@ -66,7 +66,7 @@ SimObject::SimObject( const U8 namespaceLinkMask ) : mNSLinkMask( namespaceLinkM
     mClassName               = NULL;
     mSuperClassName          = NULL;
     mProgenitorFile          = NULL;
-    CodeBlockEvalState *state = &gNewEvalState;
+    CodeBlockEvalState *state = CodeBlockEvalState::getCurrent();
     if (state->currentFrame.code)
     {
        mProgenitorFile = state->currentFrame.code->fullPath;

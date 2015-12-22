@@ -392,7 +392,7 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
       // In the global namespace, we can complete on global vars as well as functions.
       if (inputBuffer[completionBaseStart] == '$')
       {
-         newText = gNewEvalState.globalVars->tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
+         newText = CodeBlockEvalState::getCurrent()->globalVars->tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
       }
       else 
       {
@@ -532,9 +532,10 @@ static void _printf(ConsoleLogEntry::Level level, ConsoleLogEntry::Type type, co
 
    char buffer[4096];
    U32 offset = 0;
-   if(gNewEvalState.traceOn && gNewEvalState.frames.size() > 0)
+   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   if(evalState->traceOn && evalState->frames.size() > 0)
    {
-      offset = gNewEvalState.frames.size() * 3;
+      offset = evalState->frames.size() * 3;
       for(U32 i = 0; i < offset; i++)
          buffer[i] = ' ';
    }
@@ -708,7 +709,7 @@ void setVariable(const char *name, const char *value)
       name++;
    name = StringTable->insert(name);
    
-   gNewEvalState.globalVars->setVariable(StringTable->insert(name), value);
+   CodeBlockEvalState::getCurrent()->globalVars->setVariable(StringTable->insert(name), value);
 }
 
 void setValueVariable(const char *name, const ConsoleValuePtr& value)
@@ -717,7 +718,7 @@ void setValueVariable(const char *name, const ConsoleValuePtr& value)
       name++;
    name = StringTable->insert(name);
    
-   gNewEvalState.globalVars->setValueVariable(StringTable->insert(name), value);
+   CodeBlockEvalState::getCurrent()->globalVars->setValueVariable(StringTable->insert(name), value);
 }
 
 ConsoleValuePtr getConsoleValueVariable(const char *name)
@@ -726,7 +727,7 @@ ConsoleValuePtr getConsoleValueVariable(const char *name)
    if (name && name[0] == '$')
       name++;
    name = StringTable->insert(name);
-   return gNewEvalState.globalVars->getValueVariable(StringTable->insert(name));
+   return CodeBlockEvalState::getCurrent()->globalVars->getValueVariable(StringTable->insert(name));
 }
 
 void setLocalVariable(const char *name, const char *value)
@@ -734,16 +735,17 @@ void setLocalVariable(const char *name, const char *value)
    if (name && name[0] == '%')
       name++;
    name = StringTable->insert(name);
+   CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
    
    //
-   CodeBlockFunction* func = gNewEvalState.currentFrame.function;
+   CodeBlockFunction* func = evalState->currentFrame.function;
    if (func)
    {
       for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr != itrEnd; itr++)
       {
          if (itr->varName == name)
          {
-            gNewEvalState.globalVars->setVariable(name, value);
+            evalState->globalVars->setVariable(name, value);
             return;
          }
       }
@@ -820,7 +822,7 @@ ConsoleStringValuePtr getVariable(const char *name)
       name++;
    
    name = StringTable->insert(name);
-   return gNewEvalState.globalVars->getVariable(StringTable->insert(name));
+   return CodeBlockEvalState::getCurrent()->globalVars->getVariable(StringTable->insert(name));
 }
 
 ConsoleStringValuePtr getLocalVariable(const char *name)
@@ -829,16 +831,17 @@ ConsoleStringValuePtr getLocalVariable(const char *name)
       name++;
    
    name = StringTable->insert(name);
+   CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
    
    //
-   CodeBlockFunction* func = gNewEvalState.currentFrame.function;
+   CodeBlockFunction* func = evalState->currentFrame.function;
    if (func)
    {
       for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr; itr++)
       {
          if (itr->varName == name)
          {
-            return gNewEvalState.globalVars->getVariable(name);
+            return evalState->globalVars->getVariable(name);
          }
       }
    }
@@ -852,7 +855,7 @@ bool getBoolVariable(const char *varName, bool def)
       varName++;
    
    StringTableEntry name = StringTable->insert(varName);
-   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   Dictionary::Entry* entry = CodeBlockEvalState::getCurrent()->globalVars->lookup(name);
    if (entry)
    {
       return dAtob(entry->getStringValue().c_str());
@@ -869,7 +872,7 @@ S32 getIntVariable(const char *varName, S32 def)
       varName++;
    
    StringTableEntry name = StringTable->insert(varName);
-   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   Dictionary::Entry* entry = CodeBlockEvalState::getCurrent()->globalVars->lookup(name);
    if (entry)
    {
       return entry->getIntValue();
@@ -886,7 +889,7 @@ F32 getFloatVariable(const char *varName, F32 def)
       varName++;
    
    StringTableEntry name = StringTable->insert(varName);
-   Dictionary::Entry* entry = gNewEvalState.globalVars->lookup(name);
+   Dictionary::Entry* entry = CodeBlockEvalState::getCurrent()->globalVars->lookup(name);
    if (entry)
    {
       return entry->getFloatValue();
@@ -904,7 +907,7 @@ bool addVariable(const char *name, S32 t, void *dp)
    if (name && name[0] == '$')
       name++;
    
-   gNewEvalState.globalVars->addVariable(name, t, dp);
+   CodeBlockEvalState::getCurrent()->globalVars->addVariable(name, t, dp);
    return true;
 }
 
@@ -914,7 +917,7 @@ bool removeVariable(const char *name)
       name++;
    
    name = StringTable->lookup(name);
-   return name!=0 && gNewEvalState.globalVars->removeVariable(name);
+   return name!=0 && CodeBlockEvalState::getCurrent()->globalVars->removeVariable(name);
 }
 
 //---------------------------------------------------------------------------
@@ -1049,7 +1052,7 @@ ConsoleValuePtr execute(S32 argc, ConsoleValuePtr argv[])
    
    if (entry)
    {
-      return entry->execute(argc, argv, &gNewEvalState);
+      return entry->execute(argc, argv, CodeBlockEvalState::getCurrent());
    }
    else
    {
@@ -1067,7 +1070,7 @@ ConsoleValuePtr execute(SimObject *object, S32 argc, ConsoleValuePtr argv[],bool
    
    if (entry)
    {
-      return entry->execute(argc, argv, &gNewEvalState);
+      return entry->execute(argc, argv, CodeBlockEvalState::getCurrent());
    }
    else
    {
@@ -1091,7 +1094,7 @@ ConsoleStringValuePtr executeS(S32 argc, const char *argv[])
       {
          argvValue[i].setString(argv[i]);
       }
-      return entry->execute(argc, argvValue, &gNewEvalState).getStringValue();
+      return entry->execute(argc, argvValue, CodeBlockEvalState::getCurrent()).getStringValue();
    }
    else
    {
@@ -1115,7 +1118,7 @@ ConsoleStringValuePtr executeS(SimObject *object, S32 argc, const char *argv[],b
       {
          argvValue[i].setString(argv[i]);
       }
-      return entry->execute(argc, argvValue, &gNewEvalState).getStringValue();
+      return entry->execute(argc, argvValue, CodeBlockEvalState::getCurrent()).getStringValue();
    }
    else
    {
@@ -1520,7 +1523,7 @@ bool expandPath( char* pDstPath, U32 size, const char* pSrcPath, const char* pWo
     {
         // Fetch the code-block file-path.
        StringTableEntry codeblockFullPath = NULL;
-       CodeBlockEvalState *state = &gNewEvalState;
+       CodeBlockEvalState *state = CodeBlockEvalState::getCurrent();
        if (state->currentFrame.code)
        {
           codeblockFullPath = state->currentFrame.code->fullPath;
@@ -2052,7 +2055,7 @@ ConsoleValuePtr _BaseEngineConsoleCallbackHelper::_exec()
          
          if (entry)
          {
-            returnValue.setValue(entry->execute(mArgc, mArgv, &gNewEvalState));
+            returnValue.setValue(entry->execute(mArgc, mArgv, CodeBlockEvalState::getCurrent()));
          }
          else
          {
@@ -2071,7 +2074,7 @@ ConsoleValuePtr _BaseEngineConsoleCallbackHelper::_exec()
       
       if (entry)
       {
-         returnValue.setValue(entry->execute(mArgc, mArgv, &gNewEvalState));
+         returnValue.setValue(entry->execute(mArgc, mArgv, CodeBlockEvalState::getCurrent()));
       }
       else
       {

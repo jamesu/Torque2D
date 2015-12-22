@@ -41,8 +41,6 @@ CodeBlock *    CodeBlock::smCurrentCodeBlock = NULL;
 CodeBlockFunction* CodeBlock::smCurrentFunction = NULL;
 CodeBlockFunction* CodeBlock::smCurrentCodeblockFunction = NULL;
 
-CodeBlockEvalState gNewEvalState;
-
 
 extern void CMDSetScanBuffer(const char *sb, const char *fn);
 extern void CMD_reset();
@@ -571,49 +569,50 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
    CodeBlockEvalState::InternalState setState;
    Dictionary* newLocals = NULL;
    
-   gNewEvalState.currentFrame.returnReg = gNewEvalState.getFrameEnd();
-   gNewEvalState.pushFunction(newFunction, this, NULL, 0);
-   gNewEvalState.currentFrame.globalVars = gNewEvalState.globalVars;
+   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   evalState->currentFrame.returnReg = evalState->getFrameEnd();
+   evalState->pushFunction(newFunction, this, NULL, 0);
+   evalState->currentFrame.globalVars = evalState->globalVars;
    
    // If we are using eval, create the relevant local variable dictionary
    if (setFrame >= 0)
    {
-      S32 realFrameIdx = ((S32)gNewEvalState.frames.size()-1)-setFrame; // 0 == end onwards
+      S32 realFrameIdx = ((S32)evalState->frames.size()-1)-setFrame; // 0 == end onwards
       if (realFrameIdx > 0) // root frame is 0, it should have no locals
       {
          AssertFatal(realFrameIdx != 0, "Something weird is going on");
-         if (!gNewEvalState.frames[realFrameIdx].localVars)
+         if (!evalState->frames[realFrameIdx].localVars)
          {
-            gNewEvalState.frames[realFrameIdx].localVars = gNewEvalState.createLocals(NULL);
+            evalState->frames[realFrameIdx].localVars = evalState->createLocals(NULL);
          }
          
          // Make sure we have an up-to-date list of local vars from the source function
-         newLocals = gNewEvalState.createLocals(gNewEvalState.frames[realFrameIdx].localVars);
-         gNewEvalState.copyFrameToLocals(newLocals, &gNewEvalState.frames[realFrameIdx]);
+         newLocals = evalState->createLocals(evalState->frames[realFrameIdx].localVars);
+         evalState->copyFrameToLocals(newLocals, &evalState->frames[realFrameIdx]);
       }
    }
    
-   gNewEvalState.currentFrame.localVars = newLocals;
-   setState = gNewEvalState.currentFrame;
+   evalState->currentFrame.localVars = newLocals;
+   setState = evalState->currentFrame;
    
-   U32 currentTop = gNewEvalState.currentFrame.stackTop;
+   U32 currentTop = evalState->currentFrame.stackTop;
    // Reset local stack for function
    for (U32 i=currentTop; i<currentTop+newFunction->maxStack; i++)
    {
-      ((ConsoleValuePtr*)(gNewEvalState.stack.address()+i))->setNull();
+      ((ConsoleValuePtr*)(evalState->stack.address()+i))->setNull();
    }
    
    // Set locals from local dict
    if (newLocals)
    {
-      gNewEvalState.copyLocalsToFrame(newLocals, &gNewEvalState.currentFrame);
+      evalState->copyLocalsToFrame(newLocals, &evalState->currentFrame);
    }
    
    CodeBlock::smCurrentCodeBlock = NULL;
    
-   CodeBlock::execBlock(&gNewEvalState);
+   CodeBlock::execBlock(CodeBlockEvalState::getCurrent());
    
-   return gNewEvalState.yieldValue;
+   return evalState->yieldValue;
 }
 
 ConsoleValuePtr CodeBlock::compileExec(StringTableEntry fileName, const char *script, bool noCalls, S32 setFrame)

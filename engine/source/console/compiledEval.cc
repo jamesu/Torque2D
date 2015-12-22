@@ -49,8 +49,6 @@
 
 using namespace Compiler;
 
-extern CodeBlockEvalState gNewEvalState;
-
 namespace Con
 {
 // Current script file name and root, these are registered as
@@ -503,8 +501,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
     ConsoleValuePtr *konst = state->currentFrame.constants;
     ConsoleValuePtr *konstBase = konst;
     ConsoleValuePtr *base = state->stack.address() + state->currentFrame.stackTop;
-    
-    char temp1[256];
     
     ConsoleValuePtr acc;
    acc.type = ConsoleValue::TypeInternalFloat;
@@ -1381,13 +1377,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
                            state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
                            
-                           // Set appropriate state based on current frame
-                           ip = state->currentFrame.savedIP;
-                           konstBase = state->currentFrame.constants;
-                           konst = konstBase + state->currentFrame.constantTop;
-                           code = state->currentFrame.code->code;
-                           base = state->stack.address() + state->currentFrame.stackTop;
-                           
                            vmbreak;
                         }
                         case Namespace::Entry::StringCallbackType:
@@ -1395,7 +1384,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            ConsoleStringValuePtr ret = nsEntry->cb.mStringCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setValue(ret.value);
+                           base[state->currentFrame.returnReg].setValue(ret.value);
                            vmbreak;
                         }
                         case Namespace::Entry::IntCallbackType:
@@ -1403,7 +1392,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            S32 result = nsEntry->cb.mIntCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setValue(result);
+                           base[state->currentFrame.returnReg].setValue(result);
                            vmbreak;
                         }
                         case Namespace::Entry::FloatCallbackType:
@@ -1411,7 +1400,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            F64 result = nsEntry->cb.mFloatCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setValue((F32)result);
+                           base[state->currentFrame.returnReg].setValue((F32)result);
                            vmbreak;
                         }
                         case Namespace::Entry::VoidCallbackType:
@@ -1419,15 +1408,23 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            nsEntry->cb.mVoidCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setNull();
+                           base[state->currentFrame.returnReg].setNull();
                            vmbreak;
                         }
                         case Namespace::Entry::ValueCallbackType:
                         {
                            ConsoleValuePtr result = nsEntry->cb.mValueCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
+                           // Set appropriate state based on current frame
+                           // (in case continuation stuff or script has changed it)
+                           state = CodeBlockEvalState::getCurrent(); // in case coroutine is set
+                           ip = state->currentFrame.savedIP;
+                           konstBase = state->currentFrame.constants;
+                           konst = konstBase + state->currentFrame.constantTop;
+                           code = state->currentFrame.code->code;
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setValue(result);
+                           
+                           base[state->currentFrame.returnReg].setValue(result);
                            break;
                         }
                         case Namespace::Entry::BoolCallbackType:
@@ -1435,10 +1432,19 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                            bool result = nsEntry->cb.mBoolCallbackFunc(thisObject, numParams+1, base+returnStart);
                            
                            base = state->stack.address() + state->currentFrame.stackTop;
-                           base[returnStart].setValue(result ? 1 : 0);
+                           base[state->currentFrame.returnReg].setValue(result ? 1 : 0);
                            vmbreak;
                         }
                      }
+                     
+                     // Set appropriate state based on current frame
+                     // (in case continuation stuff or script has changed it)
+                     state = CodeBlockEvalState::getCurrent(); // in case coroutine is set
+                     ip = state->currentFrame.savedIP;
+                     konstBase = state->currentFrame.constants;
+                     konst = konstBase + state->currentFrame.constantTop;
+                     code = state->currentFrame.code->code;
+                     base = state->stack.address() + state->currentFrame.stackTop;
                   }
                }
                
@@ -1655,18 +1661,21 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_RETURN) {
               
+              ConsoleValuePtr returnValue;
+              
 #ifdef TS2_VM_DEBUG
               Con::printf("OP_RETURN %i", ra);
 #endif
               if (TS2_OP_DEC_A(i) > 0)
               {
-                 state->yieldValue.setValue(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)));
+                 returnValue.setValue(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)));
               }
               else
               {
-                 state->yieldValue.setNull();
+                 returnValue.setNull();
               }
               
+              state->yieldValue.setValue(returnValue);
               state->popFunction();
               
               // Set appropriate state based on current frame
@@ -1683,11 +1692,31 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  state->copyLocalsToFrame(state->currentFrame.localVars, &state->currentFrame);
               }
               
-              if (state->currentFrame.isRoot || code == NULL || state->frames.size() < startFrameSize)
+              // Check if we are in a coroutine, in which case restore it.
+              // @note this will also kill the coroutine
+              if (state->coroutine)
+              {
+                 state->saveCoroutine(*state->coroutine);
+                 state->coroutine->currentState = CodeBlockCoroutineState::DEAD;
+                 state = CodeBlockEvalState::getCurrent();
+                 state->yieldValue.setValue(returnValue); // have to set this again since we're in parent
+                 
+                 // Set appropriate state based on current frame
+                 ip = state->currentFrame.savedIP;
+                 konstBase = state->currentFrame.constants;
+                 konst = konstBase + state->currentFrame.constantTop;
+                 base = state->stack.address() + state->currentFrame.stackTop;
+                 base[state->currentFrame.returnReg].setValue(state->yieldValue);
+                 code = state->currentFrame.code ? state->currentFrame.code->code : NULL;
+                 vmbreak;
+              }
+              
+              if (state->currentFrame.isRoot || code == NULL)
               {
 #ifdef DEBUG_COMPILER
                  Con::printf("Return from execBlock");
 #endif
+                 
                  return;
               }
               
@@ -1743,7 +1772,7 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
    // Push exec state
    
    // jamesu - new exec function
-   CodeBlockEvalState *state = &gNewEvalState;
+   CodeBlockEvalState *state = CodeBlockEvalState::getCurrent();
    CodeBlockFunction *newFunc = mFunctions[ip];
    
    // As an optimization we only increment the stack to returnStart, and
@@ -1765,6 +1794,7 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
       return "";
    }
    
+   U32 oldReturnReg = state->currentFrame.returnReg;
    state->currentFrame.returnReg = state->getFrameEnd();
    state->pushFunction(newFunc, nsEntry->mCode, nsEntry, argc);
    state->currentFrame.noCalls = noCalls;
@@ -1778,13 +1808,54 @@ ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thi
    
    execBlock(state);
    
+   state->currentFrame.returnReg = oldReturnReg;
+   
    // pop
    
    return state->yieldValue;
 }
 
-void CodeBlock::mergeLocalVars( CodeBlockFunction *src, CodeBlockFunction *dest, Dictionary *env, bool pruneEnv )
+bool CodeBlock::prepCoroutine(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName)
 {
+   // Push exec state
+   
+   // jamesu - new exec function
+   CodeBlockEvalState *state = CodeBlockEvalState::getCurrent();
+   CodeBlockFunction *newFunc = mFunctions[ip];
+   
+   // As an optimization we only increment the stack to returnStart, and
+   // blank out any unused vars. This means any register slots after will get
+   // trashed (though there shouldn't be any anyway!).
+   Namespace::Entry *nsEntry = thisNamespace->lookup(StringTable->insert(functionName));
+   
+   if (!nsEntry)
+   {
+      Con::errorf("Missing function %s", functionName);
+      return false;
+   }
+   
+   U32 usedVars = argc > nsEntry->mMaxArgs ? nsEntry->mMaxArgs : argc;
+   
+   if (usedVars < nsEntry->mMinArgs)
+   {
+      Con::errorf("Insufficient parameters passed to function");
+      return false;
+   }
+   
+   U32 oldReturnReg = state->currentFrame.returnReg;
+   state->currentFrame.returnReg = state->getFrameEnd();
+   state->pushFunction(newFunc, nsEntry->mCode, nsEntry, argc);
+   state->currentFrame.noCalls = noCalls;
+   
+   // Copy argv to stack
+   for (U32 i=1; i<argc; i++)
+   {
+      ConsoleValue *base = &state->stack[state->currentFrame.stackTop];
+      (((ConsoleValuePtr*)base)+i-1)->setValue(argv[i]);
+   }
+   
+   state->currentFrame.returnReg = oldReturnReg;
+   return true;
 }
 
 StringTableEntry CodeBlock::getDSOPath(const char *scriptPath)

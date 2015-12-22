@@ -32,6 +32,7 @@ class ConsoleValue;
 class ConsoleValuePtr;
 class CodeBlockEvalState;
 class CodeBlockFunction;
+class CodeBlockCoroutineState;
 
 
 /// Core TorqueScript code management class.
@@ -91,8 +92,6 @@ public:
    void clearAllBreaks();
    void setAllBreaks();
    static void dumpOpcodes( CodeBlockEvalState *state );
-
-   void mergeLocalVars( CodeBlockFunction *src, CodeBlockFunction *dest, Dictionary *env, bool pruneEnv );
 
    /// Returns the first breakable line or 0 if none was found.
    /// @param lineNumber The one based line number.
@@ -158,13 +157,62 @@ public:
    ConsoleValuePtr exec(U32 offset, const char *fnName, Namespace *ns, U32 argc,
                         ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName);
 
+   
+   bool prepCoroutine(U32 offset, const char *fnName, Namespace *ns, U32 argc,
+                      ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName);
 
    static void execBlock(CodeBlockEvalState *state);
+   
    void execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv);
 
    void execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName);
 
    static StringTableEntry getDSOPath(const char *scriptPath);
+};
+
+
+// Pointer to a console string type
+class CodeBlockPtr
+{
+public:
+   CodeBlock* value;
+   
+   CodeBlockPtr() : value(NULL) { ; }
+   CodeBlockPtr(CodeBlock *inValue) : value(inValue) { AddRef(); }
+   ~CodeBlockPtr() { DecRef(); }
+   
+   inline void AddRef()
+   {
+      if (value)
+      {
+         value->incRefCount();
+      }
+   }
+   
+   inline void DecRef()
+   {
+      if (value)
+      {
+         value->decRefCount();
+      }
+   }
+   
+   CodeBlockPtr& operator=( CodeBlock *other )
+   {
+      if (other)
+      {
+         other->incRefCount();
+      }
+      
+      DecRef();
+      value = other;
+      return *this;
+   }
+   
+   inline CodeBlock* getPtr() { return value; }
+   CodeBlock* operator->( void ) const { return value; }
+   CodeBlock& operator*( void ) const { return *value; }
+   operator CodeBlock*( void ) const { return value; }
 };
 
 #endif

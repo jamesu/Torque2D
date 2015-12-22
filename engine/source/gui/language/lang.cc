@@ -408,7 +408,7 @@ UTF8 *getCurrentModVarName(UTF8 *buffer, U32 bufsize)
 {
    char varName[256];
    StringTableEntry cbName = NULL;
-   CodeBlockEvalState *state = &gNewEvalState;
+   CodeBlockEvalState *state = CodeBlockEvalState::getCurrent();
    if (state->currentFrame.code)
    {
       cbName = state->currentFrame.code->name;

@@ -78,3 +78,34 @@ void ConsoleSerializationState::addSimObjects(SimGroup* group)
 }
 
 
+CodeBlock* ConsoleSerializationState::getSavedCodeblock(S32 objectId)
+{
+   if (loadedCodeblocks.size() <= objectId)
+   {
+      return loadedCodeblocks[objectId];
+   }
+
+   return NULL;
+}
+
+S32 ConsoleSerializationState::getSavedCodeblockIdx(CodeBlock* block)
+{
+   for (S32 i=0, sz=loadedCodeblocks.size(); i<sz; i++)
+   {
+      if (loadedCodeblocks[i] == block)
+         return i;
+   }
+   return -1;
+}
+
+S32 ConsoleSerializationState::addReferencedCodeblock(CodeBlock* block)
+{
+   S32 existingId = getSavedCodeblockIdx(block);
+   if (existingId == -1)
+   {
+      loadedCodeblocks.push_back(block);
+      return loadedCodeblocks.size()-1;
+   }
+   return existingId;
+}
+

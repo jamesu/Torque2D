@@ -35,6 +35,8 @@
 #endif
 #endif
 
+class CodeBlockCoroutineState;
+
 // Define Core Console Types
 DefineNativeConsoleType( TypeF32, F32 )
 DefineNativeConsoleType( TypeS8, S8 )
@@ -51,6 +53,7 @@ DefineNativeConsoleType( TypeFilename, const char*  )
 DefineConsoleType( TypeEnum )
 DefineConsoleType( TypeSimObjectPtr )
 DefineConsoleType( TypeSimObjectSafePtr )
+DefineNativeConsoleType( TypeCoroutineRef, CodeBlockCoroutineState* )
 DefineConsoleType( TypeSimObjectName )
 DefineConsoleType( TypeSimObjectId )
 DefineConsoleType( TypeBufferString )

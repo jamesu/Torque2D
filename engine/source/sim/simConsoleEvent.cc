@@ -25,8 +25,6 @@
 #include "platform/platform.h"
 #include "console/consoleInternal.h"
 
-extern CodeBlockEvalState gNewEvalState;
-
 //-----------------------------------------------------------------------------
 
 SimConsoleEvent::SimConsoleEvent(S32 argc, ConsoleValuePtr argv[], bool onObject)
@@ -78,7 +76,7 @@ void SimConsoleEvent::process(SimObject* object)
             Namespace::Entry* nse = ns->lookup( StringTable->insert( func ) );
             if( nse )
                // Execute.
-               nse->execute( mArgc, mArgv, &gNewEvalState );
+               nse->execute( mArgc, mArgv, CodeBlockEvalState::getCurrent() );
          }
       }
       else

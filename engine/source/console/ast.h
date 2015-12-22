@@ -591,6 +591,5 @@ extern ReferencedVariableNode *gLocalVariableStack[16];
 extern U32 gLocalVariableStackIdx;
 
 extern U32 gAnonFunctionID;
-extern CodeBlockEvalState gNewEvalState;
 
 #endif

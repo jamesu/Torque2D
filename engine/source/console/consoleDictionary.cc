@@ -389,6 +389,7 @@ bool Dictionary::removeVariable(StringTableEntry name)
 void Dictionary::setFrame(const CodeBlockFunction* function, ConsoleValuePtr *outStack) const
 {
    const Vector<CodeBlockFunction::Symbol> &vars = function->vars;
+   CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
    
    for(S32 i = 0; i < hashTable->size;i ++)
    {
@@ -399,7 +400,7 @@ void Dictionary::setFrame(const CodeBlockFunction* function, ConsoleValuePtr *ou
          {
             if (vars[j].varName == walk->name)
             {
-               //Con::printf("setFrame(%s) REG %i abs %i", walk->name, vars[j].registerIdx, vars[j].registerIdx + (outStack - gNewEvalState.stack.address()));
+               //Con::printf("setFrame(%s) REG %i abs %i", walk->name, vars[j].registerIdx, vars[j].registerIdx + (outStack - evalState->stack.address()));
                outStack[vars[j].registerIdx].setValue(walk->value);
                break;
             }
