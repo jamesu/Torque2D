@@ -84,13 +84,20 @@ class SimpleString;
 
 
 // Pointer to a console string type
+// Cant point either to a StringTableEntry OR a ConsoleStringValue via a tagged pointer
 class ConsoleStringValuePtr
 {
 public:
    ConsoleStringValue* value;
    
+   enum
+   {
+      TAGGED = 0x1
+   };
+   
    ConsoleStringValuePtr() : value(NULL) {;}
    ConsoleStringValuePtr(const char *str);
+   //ConsoleStringValuePtr(StringTableEntry str);
    ConsoleStringValuePtr(SimpleString* str);
    ConsoleStringValuePtr(ConsoleStringValuePtr* other);
    ConsoleStringValuePtr(ConsoleStringValue* other);
@@ -108,6 +115,8 @@ public:
    
    inline const char* c_str();
    inline ConsoleStringValue* getPtr();
+   
+   static ConsoleStringValuePtr fromSTE(StringTableEntry ste);
 };
 
 // Base value for a reference counted object
@@ -434,10 +443,10 @@ public:
    
    void setValue(ConsoleReferenceCountedType* other)
    {
-      other->addRef();
+      if (other) other->addRef();
       DecRef();
       
-      type = other->getInternalType();
+      type = other ? other->getInternalType() : ConsoleValue::TypeInternalNull;
       value.refValue = other;
    }
    
@@ -745,7 +754,7 @@ public:
 
 inline void ConsoleStringValuePtr::AddRef()
 {
-   if (value)
+   if (value && !((uintptr_t)value & ConsoleStringValuePtr::TAGGED))
    {
       value->addRef();
    }
@@ -753,7 +762,7 @@ inline void ConsoleStringValuePtr::AddRef()
 
 inline void ConsoleStringValuePtr::DecRef()
 {
-   if (value)
+   if (value && !((uintptr_t)value & ConsoleStringValuePtr::TAGGED))
    {
       value->decRef();
    }
@@ -783,7 +792,21 @@ inline ConsoleStringValuePtr& ConsoleStringValuePtr::operator=(const ConsoleStri
    return *this;
 }
 
-inline const char* ConsoleStringValuePtr::c_str() { return value ? value->getInternalString().getString() : ""; }
-inline ConsoleStringValue* ConsoleStringValuePtr::getPtr() { return value; }
+inline const char* ConsoleStringValuePtr::c_str() {
+   if (value)
+   {
+      if ((uintptr_t)value & ConsoleStringValuePtr::TAGGED)
+      {
+         return (StringTableEntry)((uintptr_t)value & ~ConsoleStringValuePtr::TAGGED);
+      }
+      else
+      {
+         return value->getInternalString().getString();
+      }
+   }
+   
+   
+   return value ? value->getInternalString().getString() : ""; }
+//inline ConsoleStringValue* ConsoleStringValuePtr::getPtr() { return value; }
 
 #endif

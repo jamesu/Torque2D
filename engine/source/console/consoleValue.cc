@@ -91,6 +91,9 @@ ConsoleStringValuePtr ConsoleValuePtr::getStringValue()  const
         case TypeInternalStringTableEntry:
         case TypeInternalNamespaceName:
             return value.string;
+        case TypeInternalNamespaceEntry:
+          return ((Namespace::Entry*)value.ptrValue)->mFunctionName;
+          break;
         default:
             return value.refValue->getString();
     }

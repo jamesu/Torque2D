@@ -570,6 +570,7 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
    Dictionary* newLocals = NULL;
    
    CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   U32 oldReturnReg = evalState->currentFrame.returnReg;
    evalState->currentFrame.returnReg = evalState->getFrameEnd();
    evalState->pushFunction(newFunction, this, NULL, 0);
    evalState->currentFrame.globalVars = evalState->globalVars;
@@ -611,6 +612,8 @@ ConsoleValuePtr CodeBlock::execRoot(bool noCalls, S32 setFrame)
    CodeBlock::smCurrentCodeBlock = NULL;
    
    CodeBlock::execBlock(CodeBlockEvalState::getCurrent());
+   
+   evalState->currentFrame.returnReg = oldReturnReg;
    
    return evalState->yieldValue;
 }

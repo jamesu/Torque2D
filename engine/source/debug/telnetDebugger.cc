@@ -831,8 +831,7 @@ void TelnetDebugger::evaluateExpression(const char *tag, S32 frame, const char *
    dSprintf( buffer, len, format, evalBuffer );
 
    // Execute the eval.
-   CodeBlock *newCodeBlock = new CodeBlock();
-   newCodeBlock->incRefCount();
+   CodeBlockPtr newCodeBlock = new CodeBlock();
    ConsoleValuePtr result = newCodeBlock->compileExec( NULL, buffer, false, frame );
    delete [] buffer;
    
@@ -844,7 +843,6 @@ void TelnetDebugger::evaluateExpression(const char *tag, S32 frame, const char *
 
    send( buffer );
    delete [] buffer;
-   newCodeBlock->decRefCount();
 }
 
 void TelnetDebugger::dumpFileList()

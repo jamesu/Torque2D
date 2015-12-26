@@ -535,7 +535,7 @@ ConsoleValuePtr Namespace::Entry::execute(S32 argc, ConsoleValuePtr argv[], Code
       case StringCallbackType:
       {
          ConsoleValuePtr strValue;
-         strValue.setValue(cb.mStringCallbackFunc(thisObject, argc, argv).getPtr());
+         strValue.setValue(cb.mStringCallbackFunc(thisObject, argc, argv));
          return strValue;
       }
       case IntCallbackType:

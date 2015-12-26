@@ -30,6 +30,7 @@
 class Stream;
 class ConsoleValue;
 class ConsoleValuePtr;
+class CodeBlockPtr;
 class CodeBlockEvalState;
 class CodeBlockFunction;
 class CodeBlockCoroutineState;
@@ -42,6 +43,7 @@ class CodeBlock
 {
 private:
     static CodeBlock *smCodeBlockList;
+    friend class CodeBlockPtr;
 public:
     static CodeBlock *smCurrentCodeBlock;
     
@@ -119,8 +121,11 @@ public:
    /// Performs actual compilation of a source script
    bool compile(const char *filename, const char *script);
 
+//private:
    void incRefCount();
    void decRefCount();
+
+public:
 
    /// Compiles and executes a block of script storing the compiled code in this
    /// CodeBlock. If there is no filename breakpoints will not be generated and
@@ -179,6 +184,7 @@ public:
    
    CodeBlockPtr() : value(NULL) { ; }
    CodeBlockPtr(CodeBlock *inValue) : value(inValue) { AddRef(); }
+   CodeBlockPtr(const CodeBlockPtr &inValue) : value(inValue.value) { AddRef(); }
    ~CodeBlockPtr() { DecRef(); }
    
    inline void AddRef()
@@ -206,6 +212,19 @@ public:
       
       DecRef();
       value = other;
+      return *this;
+   }
+   
+   CodeBlockPtr& operator=( const CodeBlockPtr &other )
+   {
+      CodeBlock* otherValue = other.value;
+      if (otherValue)
+      {
+         otherValue->incRefCount();
+      }
+      
+      DecRef();
+      value = otherValue;
       return *this;
    }
    

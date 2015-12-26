@@ -1013,10 +1013,8 @@ ConsoleValuePtr evaluate(const char *string, bool echo, const char *fileName)
    if(fileName)
       fileName = StringTable->insert(fileName);
 
-   CodeBlock *newCodeBlock = new CodeBlock();
-   newCodeBlock->incRefCount();
+   CodeBlockPtr newCodeBlock = new CodeBlock();
    ConsoleValuePtr ret = newCodeBlock->compileExec(fileName, string, false, fileName ? -1 : 0);
-   newCodeBlock->decRefCount();
    return ret;
 }
 
@@ -1032,13 +1030,11 @@ ConsoleValuePtr evaluatef(const char *string, ...)
       dVsprintf(buffer, 4096, string, args);
       va_end (args);
 
-      CodeBlock *newCodeBlock = new CodeBlock();
-      newCodeBlock->incRefCount();
+      CodeBlockPtr newCodeBlock = new CodeBlock();
       result = newCodeBlock->compileExec(NULL, buffer, false, 0);
 
       delete [] buffer;
       buffer = NULL;
-      newCodeBlock->decRefCount();
    }
 
    return result;
@@ -2138,9 +2134,20 @@ void ConsoleValuePtr::setString(const char* other)
 
 ConsoleStringValuePtr::ConsoleStringValuePtr(const char *str)
 {
+   if (!str || str[0] == '\0')
+   {
+      value = NULL;
+      return;
+   }
+   
    value = ConsoleStringValue::fromString(str);
    value->addRef();
 }
+/*
+ConsoleStringValuePtr::ConsoleStringValuePtr(StringTableEntry str)
+{
+   value = (ConsoleStringValue*)((uintptr_t)str & ConsoleStringValuePtr::TAGGED);
+}*/
 
 ConsoleStringValuePtr::ConsoleStringValuePtr(SimpleString* str)
 {
@@ -2154,11 +2161,17 @@ ConsoleStringValuePtr::ConsoleStringValuePtr(ConsoleStringValuePtr* other)
    value->addRef();
 }
 
-
 ConsoleStringValuePtr::ConsoleStringValuePtr(ConsoleStringValue* newValue)
 {
    value = newValue;
    value->addRef();
+}
+
+ConsoleStringValuePtr ConsoleStringValuePtr::fromSTE(StringTableEntry ste)
+{
+   ConsoleStringValuePtr value;
+   value = (ConsoleStringValue*)((uintptr_t)ste & ConsoleStringValuePtr::TAGGED);
+   return value;
 }
 
 

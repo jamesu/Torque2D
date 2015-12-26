@@ -205,7 +205,7 @@ namespace CodeblockUtil
          compiledStream = ResourceManager->openStream(nameBuffer);
       }
       
-      CodeBlock* runtimeBlock = NULL;
+      CodeBlockPtr runtimeBlock = NULL;
       
       if(rScr && !compiledStream)
       {
@@ -250,7 +250,6 @@ namespace CodeblockUtil
          
          // Compile script
          runtimeBlock = new CodeBlock();
-         runtimeBlock->incRefCount();
          runtimeBlock->compile(scriptFileName, script);
          
          if(doCompile)
@@ -303,7 +302,6 @@ namespace CodeblockUtil
          if (compiledStream)
          {
             runtimeBlock = new CodeBlock;
-            runtimeBlock->incRefCount();
             runtimeBlock->read(*compiledStream, scriptFileName);
             doCompile = false;
             ResourceManager->closeStream(compiledStream);
@@ -334,7 +332,6 @@ namespace CodeblockUtil
             Con::printf("Loaded compiled script %s. Took %.0f ms", scriptFileName, etf);
          
          ret = true;
-         runtimeBlock->decRefCount();
       }
       else
       {

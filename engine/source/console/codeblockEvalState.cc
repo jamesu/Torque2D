@@ -28,6 +28,7 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    {
       currentFrame.isRoot = true;
       currentFrame.localVars = NULL;
+      cStackFrame = 0;
    }
    else
    {
@@ -44,7 +45,7 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
    currentFrame.constants = code->mConstants.address();
    currentFrame.constantTop = 0; // resets to page 0 for new functions
    
-   //Con::printf("Pushing codeblock %s", currentFrame.code->fullPath);
+   //Con::printf("Pushing codeblock %s %x", currentFrame.code->fullPath, currentFrame.code.getPtr());
    
    if (entry)
    {
@@ -112,18 +113,18 @@ void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* co
       if(currentFrame.ns)
       {
          dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-                  "%s::%s(", currentFrame.ns, function->name);
+                  "%s::%s(", currentFrame.ns, currentFrame.function->name);
       }
       else
       {
          dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
-                  "%s(", function->name);
+                  "%s(", currentFrame.function->name);
       }
       for(U32 i = 0; i < numParams; i++)
       {
-         dStrcat(traceBuffer, base[currentFrame.returnReg+i].getTempStringValue());
-         if(i != numParams - 1)
-            dStrcat(traceBuffer, ", ");
+         //dStrcat(traceBuffer, base[currentFrame.returnReg+i].getTempStringValue());
+         //if(i != numParams - 1)
+         //   dStrcat(traceBuffer, ", ");
       }
       dStrcat(traceBuffer, ")");
       Con::printf("%s", traceBuffer);
@@ -134,7 +135,7 @@ void CodeBlockEvalState::popFunction()
 {
    AssertFatal(frames.size() > 0, "Stack misbalance");
    
-   //Con::printf("Popping codeblock %s", currentFrame.code->fullPath);
+   //Con::printf("Popping codeblock %s %x", currentFrame.code->fullPath, currentFrame.code.getPtr());
    
    // Copy locals to dictionary if applicable
    if (currentFrame.localVars)

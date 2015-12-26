@@ -508,6 +508,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
    iacc.type = ConsoleValue::TypeInternalInt;
    U32 end;
    U32 startFrameSize = state->frames.size();
+   CodeBlockEvalState *startState = state;
+   
    
 #ifdef DEBUG_COMPILER
    state->currentFrame.code->dumpOpcodes(state);
@@ -1374,8 +1376,17 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                      {
                         case Namespace::Entry::ScriptFunctionType:
                         {
+                           Con::printf("Call %s", nsEntry->mFunctionName);
                            CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
                            state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
+                           
+                           // Set appropriate state based on current frame
+                           state = CodeBlockEvalState::getCurrent(); // in case coroutine is set
+                           ip = state->currentFrame.savedIP;
+                           konstBase = state->currentFrame.constants;
+                           konst = konstBase + state->currentFrame.constantTop;
+                           code = state->currentFrame.code->code;
+                           base = state->stack.address() + state->currentFrame.stackTop;
                            
                            vmbreak;
                         }
@@ -1711,7 +1722,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  vmbreak;
               }
               
-              if (state->currentFrame.isRoot || code == NULL)
+              if (state->currentFrame.isRoot || code == NULL || (state->frames.size() < startFrameSize && startState == state))
               {
 #ifdef DEBUG_COMPILER
                  Con::printf("Return from execBlock");
