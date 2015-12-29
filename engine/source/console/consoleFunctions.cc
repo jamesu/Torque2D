@@ -217,7 +217,7 @@ ConsoleStaticMethod(Coroutine, setWaitTicks, void, 3, 3, "Sets next tick time if
    if (state)
    {
       state->waitTicks = (S32)argv[2].getFloatValue();
-      Con::printf("setWaitTicks[%x] ticks == %i", state, state->waitTicks);
+      //Con::printf("setWaitTicks[%x] ticks == %i", state, state->waitTicks);
    }
 }
 
