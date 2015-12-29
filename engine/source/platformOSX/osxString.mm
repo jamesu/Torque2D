@@ -397,9 +397,10 @@ bool dIsdigit(const char c)
 
 void dPrintf(const char *format, ...)
 {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
 }
 
 //-----------------------------------------------------------------------------
@@ -415,13 +416,11 @@ int dVprintf(const char *format, va_list arglist)
 
 int dSprintf(char *buffer, dsize_t bufferSize, const char *format, ...)
 {
-    va_list args;
-    va_start(args, format);
-    S32 len = vsprintf(buffer, format, args);
-    
-    // Sanity!
-    AssertFatal(len <= bufferSize, "dSprintf - String format exceeded buffer size.  This will cause corruption.");
-    
+	va_list args;
+	va_start(args, format);
+	S32 len = vsnprintf(buffer, bufferSize, format, args);
+	va_end(args);
+	
     return (len);
 }
 
@@ -429,12 +428,9 @@ int dSprintf(char *buffer, dsize_t bufferSize, const char *format, ...)
 
 int dVsprintf(char *buffer, dsize_t bufferSize, const char *format, va_list arglist)
 {
-	S32 len = vsprintf(buffer, format, arglist);
-
-    // Sanity!
-    AssertFatal(len <= bufferSize, "dSprintf - String format exceeded buffer size.  This will cause corruption.");
-    
-    return (len);
+	S32 len = vsnprintf(buffer, bufferSize, format, arglist);
+	
+	return (len);
 }
 
 //-----------------------------------------------------------------------------
@@ -497,9 +493,11 @@ int dItoa(int n, char s[])
 
 int dSscanf(const char *buffer, const char *format, ...)
 {
-    va_list args;
-    va_start(args, format);
-    return vsscanf(buffer, format, args);
+	va_list args;
+	va_start(args, format);
+	int ret = vsscanf(buffer, format, args);
+	va_end(args);
+	return ret;
 }
 
 //-----------------------------------------------------------------------------
