@@ -21,20 +21,20 @@
 //-----------------------------------------------------------------------------
 
 /*! @defgroup Callstack Call Stack
-	@ingroup TorqueScriptFunctions
-	@{
+   @ingroup TorqueScriptFunctions
+   @{
 */
 
 /*! Use the backtrace function to print the current callstack to the console.
 
-	This is used to trace functions called from withing functions and can help discover
-	what functions were called (and not yet exited) before the current point in your scripts.
+   This is used to trace functions called from withing functions and can help discover
+   what functions were called (and not yet exited) before the current point in your scripts.
     @return No return value
 */
 ConsoleFunctionWithDocs(backtrace, ConsoleVoid, 1, 1, ())
 {
    U32 totalSize = 1;
-	CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
 
    for(U32 i = 0; i < (U32)evalState->frames.size(); i++)
    {

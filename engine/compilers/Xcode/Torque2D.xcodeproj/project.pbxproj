@@ -66,9 +66,10 @@
 		2AF1C54016B439BB00C1CF3A /* declaredAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53C16B439BB00C1CF3A /* declaredAssets.cc */; };
 		2AF1C54116B439BB00C1CF3A /* referencedAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53E16B439BB00C1CF3A /* referencedAssets.cc */; };
 		2AF3633916A9BBE0004ED7AA /* ParticleSystem.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */; };
-		3266D2D01BFE613100446D93 /* codeblockEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */; };
 		3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */; };
 		3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CF1BFE613100446D93 /* consoleValue.cc */; };
+		329AE6861C2F3FA700298348 /* codeblockEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */; };
+		329AE6891C31457400298348 /* simScriptThreadManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 329AE6871C31457400298348 /* simScriptThreadManager.cpp */; };
 		32BE57A31C00965A0093E2A3 /* codeblockUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */; };
 		86063A251654180000362D83 /* platformOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 86063A241654180000362D83 /* platformOSX.mm */; };
 		8609FE2F16556DD2004662ED /* osxSemaphore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE2E16556DD2004662ED /* osxSemaphore.mm */; };
@@ -654,6 +655,8 @@
 		3266D2CD1BFE613100446D93 /* codeblockEvalState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockEvalState.h; sourceTree = "<group>"; };
 		3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleSerialization.cpp; sourceTree = "<group>"; };
 		3266D2CF1BFE613100446D93 /* consoleValue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleValue.cc; sourceTree = "<group>"; };
+		329AE6871C31457400298348 /* simScriptThreadManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = simScriptThreadManager.cpp; sourceTree = "<group>"; };
+		329AE6881C31457400298348 /* simScriptThreadManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = simScriptThreadManager.h; sourceTree = "<group>"; };
 		32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleCallbackHelper.h; sourceTree = "<group>"; };
 		32BA90FB1BE6DF7A0041D293 /* consoleValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleValue.h; sourceTree = "<group>"; };
 		32BA90FC1BEC20930041D293 /* consoleSerialization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleSerialization.h; sourceTree = "<group>"; };
@@ -3095,6 +3098,8 @@
 				86BC814516518D4600D96ADF /* simSerialize.cpp */,
 				86BC814616518D4600D96ADF /* simSet.cc */,
 				86BC814716518D4600D96ADF /* simSet.h */,
+				329AE6871C31457400298348 /* simScriptThreadManager.cpp */,
+				329AE6881C31457400298348 /* simScriptThreadManager.h */,
 			);
 			name = sim;
 			path = ../../../source/sim;
@@ -3275,6 +3280,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				329AE6861C2F3FA700298348 /* codeblockEvalState.cc in Sources */,
 				86D770C3165687450046D71F /* osxFileDialogs.mm in Sources */,
 				86D770571656873C0046D71F /* mathTypes.cc in Sources */,
 				86D770581656873C0046D71F /* mathUtils.cc in Sources */,
@@ -3354,6 +3360,7 @@
 				86D770B71656873C0046D71F /* findMatch.cc in Sources */,
 				86D770B81656873C0046D71F /* stringBuffer.cc in Sources */,
 				86D770B91656873C0046D71F /* stringStack.cc in Sources */,
+				329AE6891C31457400298348 /* simScriptThreadManager.cpp in Sources */,
 				86D770BA1656873C0046D71F /* stringTable.cc in Sources */,
 				3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */,
 				86D770BB1656873C0046D71F /* stringUnit.cpp in Sources */,
@@ -3666,7 +3673,6 @@
 				865A234E1651881300527C44 /* pngwrite.c in Sources */,
 				865A234F1651881300527C44 /* pngwtran.c in Sources */,
 				865A23501651881300527C44 /* pngwutil.c in Sources */,
-				3266D2D01BFE613100446D93 /* codeblockEvalState.cc in Sources */,
 				865A235A16518AD300527C44 /* AppDelegate.mm in Sources */,
 				865A235B16518AD300527C44 /* main.mm in Sources */,
 				86063A251654180000362D83 /* platformOSX.mm in Sources */,

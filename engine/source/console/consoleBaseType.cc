@@ -29,7 +29,7 @@
 
 // Init the globals.
 ConsoleBaseType *ConsoleBaseType::smListHead = NULL;
-S32              ConsoleBaseType::smConsoleTypeCount = 8; // This makes 0 an invalid console type.
+S32              ConsoleBaseType::smConsoleTypeCount = 9; // This makes 0 an invalid console type.
 
 // And, we also privately store the types lookup table.
 VectorPtr<ConsoleBaseType*> gConsoleTypeTable;

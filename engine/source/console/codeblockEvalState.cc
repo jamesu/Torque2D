@@ -11,6 +11,7 @@
 #include "string/findMatch.h"
 #include "io/fileStream.h"
 #include "console/compiler.h"
+#include "console/consoleSerialization.h"
 
 #include "codeblockEvalState_ScriptBinding.h"
 
@@ -225,7 +226,7 @@ bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 
    }
    else
    {
-      if (!inState.nsEntry->mCode)
+      if (inState.nsEntry && !inState.nsEntry->mCode)
       {
          Con::errorf("Coroutine: nsEntry is no longer valid");
          return false;
@@ -242,7 +243,7 @@ bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 
    
    // Now active, so we can evaluate the nsEntry
    
-   if (inState.currentState == CodeBlockCoroutineState::WAIT_INITIAL_CALL)
+   if (inState.currentState == CodeBlockCoroutineState::WAIT_INITIAL_CALL && inState.nsEntry)
    {
       gCurrentEvalState = &inState.evalState;
       gCoroutineStack.push_back(&inState);
@@ -318,6 +319,11 @@ CodeBlockEvalState* CodeBlockEvalState::getCurrent()
    return gCurrentEvalState;
 }
 
+void CodeBlockEvalState::initGlobal()
+{
+   gRootEvalState.resetGlobals(NULL);
+}
+
 //
 
 
@@ -374,6 +380,7 @@ void CodeBlockCoroutineState::reset()
    evalState.frames.clear();
    evalState.yieldValue.setValue(nullValue);
    evalState.coroutine = this;
+   evalState.resetGlobals(&gRootEvalState);
    currentState = CodeBlockCoroutineState::DEAD;
 }
 
@@ -406,14 +413,213 @@ Namespace *CodeBlockCoroutineState::getNamespace()
 void CodeBlockCoroutineState::read(Stream &s, ConsoleSerializationState &state)
 {
    ConsoleValuePtr::readStack(s, state, evalState.stack);
-   // TODO
+   
+   evalState.traceOn = false;
+   evalState.execDepth = 0;
+   evalState.journalDepth = 0;
+   //evalState.globalVars = currentState->globalVars;
+   evalState.yieldValue.setNull();
+   evalState.coroutine = this;
+   evalState.cStackFrame = 0;
+   evalState.resetGlobals(&gRootEvalState);
+   
+   U8 stateVar;
+   s.read(&stateVar);
+   this->currentState = (CodeBlockCoroutineState::State)(CodeBlockCoroutineState::WAIT_INITIAL_CALL + stateVar);
+   
+   s.read(&waitTicks);
+   
+   StringTableEntry nsName = s.readSTString();
+   StringTableEntry nsFunc = s.readSTString();
+   Namespace *ns = nsName == StringTable->EmptyString ? Namespace::global() : Namespace::find(nsName);
+   nsEntry = ns->lookup(nsFunc);
+   
+   CodeBlockEvalState::readFrame(s, state, evalState.currentFrame);
+   
+   U32 count = 0;
+   s.read(&count);
+   evalState.frames.setSize(count);
+   for (U32 i=0; i<count; i++)
+   {
+      CodeBlockEvalState::InternalState &frame = evalState.frames[i];
+      CodeBlockEvalState::readFrame(s, state, frame);
+   }
 }
 
 void CodeBlockCoroutineState::write(Stream &s, ConsoleSerializationState &state)
 {
+   CodeBlockEvalState *currentState = &this->evalState;
    ConsoleValuePtr::writeStack(s, state, evalState.stack);
-   // TODO
+   
+   U8 stateVar = (U8)this->currentState;
+   if (this->currentState == CodeBlockCoroutineState::RUNNING)
+   {
+      stateVar = (U8)CodeBlockCoroutineState::SUSPENDED;
+   }
+   s.write(stateVar);
+   s.write(waitTicks);
+   
+   if (nsEntry)
+   {
+      s.writeString(nsEntry->mNamespace ? nsEntry->mNamespace->mName : "");
+      s.writeString(nsEntry->mFunctionName);
+   }
+   else
+   {
+      s.writeString("");
+      s.writeString("");
+   }
+   
+   CodeBlockEvalState::writeFrame(s, state, evalState.currentFrame);
+   evalState.currentFrame.globalVars = currentState->globalVars;
+   
+   U32 count = evalState.frames.size();
+   s.write(count);
+   for (U32 i=0; i<count; i++)
+   {
+      CodeBlockEvalState::InternalState &frame = evalState.frames[i];
+      frame.globalVars = evalState.globalVars = currentState->globalVars;
+      CodeBlockEvalState::writeFrame(s, state, frame);
+   }
 }
 
+bool CodeBlockEvalState::readFrame(Stream &s, ConsoleSerializationState &state, CodeBlockEvalState::InternalState &frame)
+{
+   CodeBlockEvalState *currentState = CodeBlockEvalState::getCurrent();
+   S32 blockId = -1;
+   s.read(&blockId);
+   CodeBlock *code = state.getSavedCodeblock(blockId);
+   if (code)
+   {
+      frame.constants = code->mConstants.address();
+      frame.code = code;
+   }
+   else
+   {
+      frame.constants = NULL;
+      frame.code = NULL;
+   }
+   
+   s.read(&frame.stackTop);
+   s.read(&frame.constantTop);
+   frame.localVars = NULL;
+   s.read(&frame.savedIP);
+   s.read(&frame.returnReg);
+   s.read(&frame.isRoot);
+   s.read(&frame.noCalls);
+   
+   //frame.globalVars = evalState.globalVars;
+   frame.filename = s.readSTString();
+   frame.package = s.readSTString();
+   frame.ns = s.readSTString();
+   
+   return true;
+}
 
+bool CodeBlockEvalState::writeFrame(Stream &s, ConsoleSerializationState &state, CodeBlockEvalState::InternalState &frame)
+{
+   S32 blockId = state.addReferencedCodeblock(frame.code);
+   s.write(blockId);
+   
+   s.write(frame.stackTop);
+   s.write(frame.constantTop);
+   s.write(frame.savedIP);
+   s.write(frame.returnReg);
+   s.write(frame.isRoot);
+   s.write(frame.noCalls);
+   
+   s.writeString(frame.filename);
+   s.writeString(frame.package);
+   s.writeString(frame.ns);
+   
+   return true;
+}
+
+ConsoleStaticMethod(Coroutine, save, bool, 3, 3, "(coroutine, filename)")
+{
+   const char *filename = argv[2];
+   ConsoleValuePtr &cvalue = argv[1];
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   FileStream fs;
+   if (state && fs.open(filename, FileStream::Write))
+   {
+      Vector<ConsoleValuePtr> savedStateVars;
+      ConsoleSerializationState serializationState;
+      
+      fs.write((U32)0);
+      savedStateVars.push_back(cvalue);
+      ConsoleValuePtr::writeStack(fs, serializationState, savedStateVars);
+      
+      // Write codeblocks
+      U32 offsBlocks = fs.getStreamSize();
+      fs.write((U32)serializationState.loadedCodeblocks.size());
+      
+      for (U32 i=0, sz=serializationState.loadedCodeblocks.size(); i<sz; i++)
+      {
+         serializationState.loadedCodeblocks[i]->save(fs);
+      }
+      fs.setPosition(0);
+      fs.write(offsBlocks);
+      
+      return true;
+   }
+   
+   return false;
+}
+
+ConsoleStaticMethod(Coroutine, load, ConsoleValuePtr, 2, 2, "")
+{
+   const char *filename = argv[1];
+   
+   ConsoleSerializationState serializationState;
+   ConsoleValuePtr ret;
+   
+   FileStream fs;
+   if (fs.open(filename, FileStream::Read))
+   {
+      Vector<ConsoleValuePtr> savedStateVars;
+      ConsoleSerializationState serializationState;
+      
+      // Get loaded blocks
+      U32 offs = 0;
+      U32 sz = 0;
+      fs.read(&offs);
+      
+      fs.setPosition(offs);
+      fs.read(&sz);
+      
+      for (U32 i=0; i<sz; i++)
+      {
+         char buffer[1024];
+         CodeBlock *block = new CodeBlock();
+         dSprintf(buffer, 1024, "[[COROUTINE-%x]]", block);
+         block->read(fs, buffer);
+         
+         serializationState.loadedCodeblocks.push_back(block);
+      }
+      
+      fs.setPosition(4);
+      ConsoleValuePtr::readStack(fs, serializationState, savedStateVars);
+      
+      if (savedStateVars.size() > 0)
+      {
+         ret.setValue(savedStateVars[0]);
+      }
+      
+      sz = savedStateVars.size();
+      for (U32 i=0; i<sz; i++)
+      {
+         savedStateVars[i].setNull();
+      }
+   }
+   
+   return ret;
+}
+
+// Debug func
+ConsoleFunction(nativeDebugBreak, void, 1, 1, "")
+{
+   return;
+}
 

@@ -48,6 +48,7 @@
 
 
 #include "console/consoleSerialization.h"
+#include "console/codeblockEvalState.h"
 
 static Mutex* sLogMutex;
 
@@ -249,6 +250,7 @@ void init()
    // Initialize subsystems.
    Namespace::init();
    ConsoleConstructor::setup();
+   CodeBlockEvalState::initGlobal();
 
    // Variables
    setVariable("Con::prompt", "% ");
@@ -1817,10 +1819,14 @@ void ConsoleValuePtr::readStack(Stream &s, ConsoleSerializationState &serializat
         ptr.value.refValue = type->createReferenceCountedValue();
         if (ptr.value.refValue)
         {
+            serializationState.loadedValues.push_back(&ptr);
             ptr.value.refValue->read(s, serializationState);
             ptr.AddRef();
         }
-        serializationState.loadedValues.push_back(&ptr);
+        else
+        {
+            serializationState.loadedValues.push_back(&ptr);
+        }
     }
 }
 
@@ -1875,16 +1881,18 @@ void ConsoleValuePtr::writeStack(Stream &s, ConsoleSerializationState &serializa
         
         if (isRefType(ptr.type))
         {
-           Con::printf("Var[%i] is %s", i, ptr.value.refValue->getType()->getTypeName());
+            //Con::printf("Var[%i] is %s", i, ptr.value.refValue->getType()->getTypeName());
             S32 idx = serializationState.getSavedObjectIdx(ptr.value.refValue);
             if (idx == -1)
             {
+               //Con::printf(" ^^ New Copy");
                s.write(varTypeIds[i]);
-               ptr.value.refValue->write(s, serializationState);
                serializationState.addSavedObject(ptr.value.refValue);
+               ptr.value.refValue->write(s, serializationState);
             }
             else
             {
+               //Con::printf(" ^^ Referenced");
                s.write((U16)TypeSavedReference);
                s.write(idx);
             }

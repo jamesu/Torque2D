@@ -73,14 +73,19 @@ public:
    S32 cStackFrame; // execBlock nesting count
    /// }
     
-   CodeBlockEvalState() : execDepth(0), journalDepth(0), traceOn(false), coroutine(NULL)
+   CodeBlockEvalState() : execDepth(0), journalDepth(0), traceOn(false), coroutine(NULL), globalVars(NULL)
    {
-      globalVars = new Dictionary(this, NULL);
    }
    
    ~CodeBlockEvalState()
    {
       SAFE_DELETE(globalVars);
+   }
+   
+   void resetGlobals(CodeBlockEvalState *parentState)
+   {
+      SAFE_DELETE(globalVars);
+      globalVars = new Dictionary(this, parentState ? parentState->globalVars : NULL);
    }
    
    U32 getFrameEnd()
@@ -123,6 +128,10 @@ public:
    /// }
    
    static CodeBlockEvalState* getCurrent();
+   static void initGlobal();
+   
+   static bool readFrame(Stream &s, ConsoleSerializationState &state, CodeBlockEvalState::InternalState &frame);
+   static bool writeFrame(Stream &s, ConsoleSerializationState &state, CodeBlockEvalState::InternalState &frame);
 };
 
 class CodeBlockCoroutineState : public ConsoleReferenceCountedType
@@ -138,6 +147,7 @@ public:
    
    CodeBlockEvalState evalState; // current state of script stack
    State currentState; //
+   S32 waitTicks; // Ticks to wait till next yield (if thread)
    
    Namespace::Entry *nsEntry; // function to call
    

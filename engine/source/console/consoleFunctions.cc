@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "platform/platform.h"
+#include "platform/Tickable.h"
 #include "console/console.h"
 #include "io/resource/resourceManager.h"
 #include "platform/platformInput.h"
@@ -48,6 +49,8 @@ ConsoleFunction(isiPhoneBuild, bool, 1, 1, "Returns true if this is a iPhone bui
    return false;
 #endif   //TORQUE_OS_IOS
 }
+
+extern CodeBlockEvalState gRootEvalState;
 
 // Creates a coroutine, sets it in the initial state.
 ConsoleStaticMethod(Coroutine, create, ConsoleValuePtr, 2, 2, "Create a coroutine calling func")
@@ -205,3 +208,39 @@ ConsoleStaticMethod(Coroutine, status, ConsoleValuePtr, 2, 2, "Get status of a c
    }
 }
 
+ConsoleStaticMethod(Coroutine, setWaitTicks, void, 3, 3, "Sets next tick time if threaded")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = (S32)argv[2].getFloatValue();
+      Con::printf("setWaitTicks[%x] ticks == %i", state, state->waitTicks);
+   }
+}
+
+ConsoleStaticMethod(Coroutine, setWaitMS, void, 3, 3, "Sets next tick time if threaded")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = (S32)(argv[2].getFloatValue() / Tickable::smTickMs);
+   }
+}
+
+ConsoleStaticMethod(Coroutine, setNoTicks, void, 2, 2, "Disables ticking")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = S32_MIN;
+   }
+}

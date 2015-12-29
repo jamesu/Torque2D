@@ -6,6 +6,8 @@ This is a fork of Torque2D which replaces the scripting interpreter and associat
 * Reference counted values
 * Less emphasis on strings, more emphasis on data
 * Binding API still works mostly like the old system
+* Serializable execution state
+* Coroutines
 
 Please note that while currently the interpreter will work, there are still a few things which need to be completed so use with caution.
 
