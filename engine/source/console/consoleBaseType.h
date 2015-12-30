@@ -409,6 +409,7 @@ public:
    virtual bool getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
    virtual void setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace *getNamespace() { return value; }
+   virtual SimObject* getSimObject() { return NULL; }
    
    virtual void read(Stream &s, ConsoleSerializationState &state);
    virtual void write(Stream &s, ConsoleSerializationState &state);

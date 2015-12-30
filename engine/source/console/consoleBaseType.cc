@@ -273,6 +273,11 @@ Namespace* ConsoleReferenceCountedType::getNamespace()
    //return Namespace::find(StringTable->insert(getString().c_str()));
 }
 
+SimObject* ConsoleReferenceCountedType::getSimObject()
+{
+   return Sim::findObject(getString().c_str());
+}
+
 ConsoleStringValue* ConsoleStringValue::fromInt(S64 num)
 {
     char buffer[255];

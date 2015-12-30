@@ -1920,11 +1920,18 @@ SimObject* ConsoleValue::getSimObject()
       case TypeInternalNull:
          return NULL;
       case TypeInternalInt:
+      case TypeInternalSimObjectId:
          return Sim::findObject(value.ival);
       case TypeInternalFloat:
          return Sim::findObject((S32)value.fval);
+      case TypeInternalStringTableEntry:
+         return Sim::findObject(value.string);
+      case TypeInternalNamespaceName:
+         return Sim::findObject(value.stringStackPtr);
+      case TypeInternalNamespaceEntry:
+         return NULL;
       default:
-         return Sim::findObject(getTempStringValue());
+         return value.refValue->getSimObject();
    }
 }
 
@@ -2120,6 +2127,11 @@ void ConsoleStringValue::write(Stream &s, ConsoleSerializationState &state)
 {
    s.write(value.bufferLen);
    s.write(value.bufferLen, value.buffer);
+}
+
+SimObject* ConsoleStringValue::getSimObject()
+{
+   return Sim::findObject(value.getString());
 }
 
 void ConsoleValuePtr::setValue(const ConsoleStringValuePtr &other)

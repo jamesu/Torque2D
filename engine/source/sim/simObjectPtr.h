@@ -138,6 +138,7 @@ public:
    virtual bool getDataField(StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
    virtual void setDataField(StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
+   virtual SimObject* getSimObject() { return value; }
    
    
    virtual S32 getIteratorLength();

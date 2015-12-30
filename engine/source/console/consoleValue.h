@@ -150,6 +150,7 @@ public:
    virtual bool getDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
    virtual void setDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
+   virtual SimObject* getSimObject();
    
    virtual bool isEnumerable() { return false; }
    virtual S32 getIteratorLength() { return 0; }
@@ -601,6 +602,7 @@ public:
    virtual bool getDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, ConsoleValuePtr &outValue);
    virtual void setDataField(const StringTableEntry slotName, const ConsoleValuePtr &array, const ConsoleValuePtr &newValue);
    virtual Namespace* getNamespace();
+   virtual SimObject* getSimObject() { return NULL; }
    
    virtual S32 getIteratorLength();
    virtual bool advanceIterator(ConsoleValuePtr &iterator, ConsoleValuePtr &iteratorValue);
@@ -735,6 +737,8 @@ public:
    {
       return value;
    }
+   
+   virtual SimObject* getSimObject();
    
    virtual bool stringCompare(const char* other)
    {
