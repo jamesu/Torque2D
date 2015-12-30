@@ -1376,7 +1376,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                      {
                         case Namespace::Entry::ScriptFunctionType:
                         {
-                           Con::printf("Call %s", nsEntry->mFunctionName);
+                           //Con::printf("Call %s", nsEntry->mFunctionName);
                            CodeBlockFunction *newFunc = nsEntry->mCode->mFunctions[nsEntry->mFunctionOffset];
                            state->pushFunction(newFunc, nsEntry->mCode, nsEntry, numParams);
                            
