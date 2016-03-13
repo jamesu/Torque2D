@@ -191,7 +191,6 @@ void IfStmtNode::propagateSwitchExpr(ExprNode *left, bool string)
 
 void IfStmtNode::compileStmt(CodeStream &codeStream)
 {
-    U32 endifIp, elseIp;
     addBreakLine(codeStream);
     
     if(testExpr->getPreferredType() == TypeReqUInt)
@@ -242,7 +241,7 @@ void IfStmtNode::compileStmt(CodeStream &codeStream)
         }
        
         // Need to jump past else block at the end of if
-       U32 relOffs = TS2_OP_MAKE_sBX(endifOffset - elseOffset - 1);
+       //U32 relOffs = TS2_OP_MAKE_sBX(endifOffset - elseOffset - 1);
        codeStream.patch(elseOffset, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX(endifOffset - elseOffset - 1)));
        
         codeStream.patch(elseJmpIp, TS2_OP_ENC_A_Bx(Compiler::OP_JMP, 0, TS2_OP_MAKE_sBX((elseOffset) - elseJmpIp)));
@@ -2430,8 +2429,7 @@ void FunctionDeclStmtNode::compileFunction(CodeStream& codeStream)
 {
    // Begin code
    codeStream.pushFunctionState();
-   
-   U32 i=0;
+	
    CodeBlock::smCurrentFunction->numArgs = 0;
    
    // Count args

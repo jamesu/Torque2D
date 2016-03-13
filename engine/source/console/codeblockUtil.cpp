@@ -179,10 +179,8 @@ namespace CodeblockUtil
       
       char* script = NULL;
       U32 scriptSize = 0;
-      U32 version;
       
       Stream *compiledStream = NULL;
-      Stream *scriptStream = NULL;
       FileTime comModifyTime, scrModifyTime;
       
       // If we're supposed to be compiling this file, check to see if there's a DSO

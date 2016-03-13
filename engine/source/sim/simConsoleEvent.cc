@@ -31,7 +31,6 @@ SimConsoleEvent::SimConsoleEvent(S32 argc, ConsoleValuePtr argv[], bool onObject
 {
    mOnObject = onObject;
    mArgc = argc;
-   U32 totalSize = 0;
    mArgv = new ConsoleValuePtr[argc];
 
    for(U32 i = 0; i < argc; i++)

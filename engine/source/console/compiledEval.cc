@@ -236,7 +236,6 @@ void CodeBlock::dumpOpcodes(CodeBlockEvalState *state)
 {
    ConsoleValuePtr *konst = state->currentFrame.constants;
    ConsoleValuePtr *konstBase = konst;
-   U32 ip = state->currentFrame.savedIP;
    U32 targetRegTmp = 0;
    
    // Debug print instructions
@@ -624,9 +623,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
             vmcase(Compiler::OP_SETFIELD) {
               // a := object(b).slot(c)
-               const U32 tname = TS2_OP_DEC_A(i);
-               const U32 nvalue = TS2_OP_DEC_C(i);
-               
                ConsoleValuePtr& targetObject = base[TS2_OP_DEC_A(i)];
                ConsoleValuePtr& targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
                ConsoleValuePtr& newValue = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
@@ -653,10 +649,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
             }
             vmcase(Compiler::OP_SETFIELDA) {
               // a.b[c+1] := c
-               
-               U32 opA = TS2_OP_DEC_A(i);
-               U32 opB = TS2_OP_DEC_B(i);
-               U32 opC = TS2_OP_DEC_C(i);
+					
                ConsoleValuePtr& targetObject = base[TS2_OP_DEC_A(i)];
                ConsoleValuePtr& targetSlot = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
                ConsoleValuePtr& targetArray = base[TS2_OP_DEC_C(i)+1];
@@ -688,7 +681,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #ifdef TS2_VM_DEBUG
                Con::printf("[%i] OP_SETVAR %i %i %i", ip-1, ra,TS2_OP_DEC_B(i),TS2_OP_DEC_C(i));
 #endif
-                U32 bValue = TS2_OP_DEC_B(i);
                 ConsoleValuePtr &namePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
                 ConsoleValuePtr &valuePtr = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
                
@@ -698,7 +690,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_GETFUNC) {
               U32 setReg = TS2_OP_DEC_A(i);
-              U32 targetReg = TS2_OP_DEC_B(i);
               ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
@@ -787,7 +778,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            
            vmcase(Compiler::OP_GETFUNC_NS) {
               U32 setReg = TS2_OP_DEC_A(i);
-              U32 targetReg = TS2_OP_DEC_B(i);
               ConsoleValuePtr &targetObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValuePtr &nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
@@ -902,12 +892,10 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               bool isDataBlock = flags & Compiler::CREATEOBJECT_ISDATABLOCK;
               bool isInternal  = flags & Compiler::CREATEOBJECT_ISINTERNAL;
               bool isSingleton = flags & Compiler::CREATEOBJECT_ISSINGLETON;
-              U32  lineNumber  = 0;
               
               S32 failJump = TS2_OP_DEC_sBx(code[ip++]);
               failJump += ip;
-              
-              U32 targetObjectReg = TS2_OP_DEC_A(i);
+				  
               U32 classNameTargetReg = TS2_OP_DEC_B(i);
               
               StringTableEntry klassName = base[classNameTargetReg].getSTEStringValue();//callArgv[ 2 ];
@@ -1026,7 +1014,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               ConsoleValuePtr &parentObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               
               SimObject *currentNewObject;
-              SimGroup *parent;
               currentNewObject = Sim::findObject<SimObject>(targetObject);
                  
               if(currentNewObject->isProperlyAdded() == false)
@@ -1236,7 +1223,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_LT) {
               ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
-              U32 cmpValue = TS2_OP_DEC_A(i);
               
 #ifdef TS2_VM_DEBUG
               Con::printf("[%i] OP_LT %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
@@ -1258,7 +1244,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_LE) {
               ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
-              U32 cmpValue = TS2_OP_DEC_A(i);
               
 #ifdef TS2_VM_DEBUG
               Con::printf("[%i] OP_LE %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
@@ -1322,7 +1307,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                 // [abc] [a := a(a[...b params])[...c return params]]
                 U32 returnStart = TS2_OP_DEC_A(i);
                 U32 numParams = TS2_OP_DEC_B(i);
-                U32 numReturn = TS2_OP_DEC_C(i);
                
                
 #ifdef TS2_VM_DEBUG
@@ -1465,8 +1449,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            vmcase(Compiler::OP_BINDNSFUNC) {
               U32 defStart = TS2_OP_DEC_A(i);
               U32 funcIdx = TS2_OP_DEC_B(i);
-              U32 dummy = TS2_OP_DEC_C(i);
-              CodeBlockFunction *func = state->currentFrame.code->mFunctions[funcIdx];
+              //CodeBlockFunction *func = state->currentFrame.code->mFunctions[funcIdx];
            
               StringTableEntry fnPackage    = base[defStart].getSTEStringValue();
               StringTableEntry fnNamespace  = base[defStart+1].getSTEStringValue();
@@ -1479,7 +1462,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               
               Namespace::unlinkPackages();
               Namespace *ns = Namespace::find(fnNamespace, fnPackage);
-              Namespace* nsg = Namespace::global();
               ns->addFunction(fnName, state->currentFrame.code, funcIdx, NULL );// TODO: docblock
               Namespace::relinkPackages();
               
@@ -1511,7 +1493,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
            }
            
            vmcase(Compiler::OP_DOCNSFUNC) {
-              U32 flags = TS2_OP_DEC_A(i);
               ConsoleValuePtr docNS = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
               ConsoleValuePtr docSTR = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
               
@@ -1564,7 +1545,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  {
                     S32 itrIndex = 0;
                     S32 maxItr = itrObj->size();
-                    itrIndex = itrValue.getIntValue();
+                    itrIndex = (S32)itrValue.getSignedIntValue();
                     
                     // Start iterator
                     if (itrIndex <= 0)
@@ -1602,7 +1583,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
               U32 outItr = TS2_OP_DEC_C(i);
               
               ConsoleValue itrObject = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
-              ConsoleValue itrValue = base[outValue];
               ConsoleValue itrIteratorValue = base[outItr];
               
               {
@@ -1612,7 +1592,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  {
                     S32 itrIndex = 0;
                     S32 maxItr = dStrlen(str);
-                    itrIndex = itrIteratorValue.getIntValue();
+                    itrIndex = (S32)itrIteratorValue.getSignedIntValue();
                     
                     // Start iterator
                     if (itrIndex <= 0)

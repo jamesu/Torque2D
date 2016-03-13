@@ -70,7 +70,6 @@ void Dictionary::exportVariables(const char *varString, const char *fileName, bo
    dQsort((void *)sortList.address(), sortList.size(), sizeof(Entry *), varCompare);
 
    Vector<Entry *>::iterator s;
-   char expandBuffer[1024];
    FileStream strm;
 
    if(fileName)
@@ -389,7 +388,7 @@ bool Dictionary::removeVariable(StringTableEntry name)
 void Dictionary::setFrame(const CodeBlockFunction* function, ConsoleValuePtr *outStack) const
 {
    const Vector<CodeBlockFunction::Symbol> &vars = function->vars;
-   CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
+   //CodeBlockEvalState *evalState = CodeBlockEvalState::getCurrent();
    
    for(S32 i = 0; i < hashTable->size;i ++)
    {

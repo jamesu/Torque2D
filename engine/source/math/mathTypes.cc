@@ -90,7 +90,7 @@ ConsoleTypeFromConsoleValue( TypePoint2I )
             }
          }
          
-         *((Point2I *) dataPtr) = Point2I(xValue.getIntValue(), yValue.getIntValue());
+         *((Point2I *) dataPtr) = Point2I(xValue.getSignedIntValue(), yValue.getSignedIntValue());
          return;
       }
    }
@@ -458,7 +458,7 @@ ConsoleTypeFromConsoleValue( TypeRectI )
             }
          }
          
-         *((RectI *) dataPtr) = RectI(Point2I(xValue.getIntValue(), yValue.getIntValue()), Point2I(wValue.getIntValue(), hValue.getIntValue()));
+         *((RectI *) dataPtr) = RectI(Point2I(xValue.getSignedIntValue(), yValue.getSignedIntValue()), Point2I(wValue.getSignedIntValue(), hValue.getSignedIntValue()));
          return;
       }
    }

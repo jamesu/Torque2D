@@ -718,12 +718,15 @@ bool ConsoleSimObjectPtr::advanceIterator(ConsoleValuePtr &iterator, ConsoleValu
    if (iterValue < 0 || iterValue >= size)
    {
       ((ConsoleValuePtr&)iterator).setNull();
+		return false;
    }
    else
    {
       ((ConsoleValuePtr&)iteratorValue).setValue(ConsoleSimObjectPtr::fromObject(setObj->first() + iterValue));
       ((ConsoleValuePtr&)iterator).setValue(iterValue+1);
    }
+	
+	return true;
 }
 
 bool ConsoleSimObjectPtr::refCompare(ConsoleReferenceCountedType* other)

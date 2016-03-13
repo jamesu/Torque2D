@@ -839,7 +839,7 @@ ConsoleStringValuePtr getLocalVariable(const char *name)
    CodeBlockFunction* func = evalState->currentFrame.function;
    if (func)
    {
-      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr; itr++)
+      for (Vector<CodeBlockFunction::Symbol>::iterator itr = func->vars.begin(), itrEnd = func->vars.end(); itr != itrEnd; itr++)
       {
          if (itr->varName == name)
          {
@@ -877,7 +877,7 @@ S32 getIntVariable(const char *varName, S32 def)
    Dictionary::Entry* entry = CodeBlockEvalState::getCurrent()->globalVars->lookup(name);
    if (entry)
    {
-      return entry->getIntValue();
+      return (S32)(entry->getSignedIntValue());
    }
    else
    {
@@ -1921,7 +1921,7 @@ SimObject* ConsoleValue::getSimObject()
          return NULL;
       case TypeInternalInt:
       case TypeInternalSimObjectId:
-         return Sim::findObject(value.ival);
+         return Sim::findObject((SimObjectId)value.ival);
       case TypeInternalFloat:
          return Sim::findObject((S32)value.fval);
       case TypeInternalStringTableEntry:

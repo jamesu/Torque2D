@@ -458,12 +458,15 @@ bool ConsoleArrayValue::advanceIterator(ConsoleValuePtr &iterator, ConsoleValueP
    if (iterValue < 0 || iterValue >= size)
    {
       ((ConsoleValuePtr&)iterator).setNull();
+		return false;
    }
    else
    {
       ((ConsoleValuePtr&)iteratorValue).setValue(mValues[iterValue]);
       ((ConsoleValuePtr&)iterator).setValue(iterValue+1);
    }
+	
+	return true;
 }
 
 ConsoleStringValuePtr ConsoleArrayValue::getString()

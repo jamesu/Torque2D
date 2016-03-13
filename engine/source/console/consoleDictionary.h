@@ -73,6 +73,13 @@ public:
            else
               return Con::getDataValue(type, dataPtr, 0).getIntValue();
         }
+        inline S64 getSignedIntValue()
+        {
+           if (type < 0)
+              return value.getSignedIntValue();
+           else
+              return Con::getDataValue(type, dataPtr, 0).getSignedIntValue();
+        }
         inline F64 getFloatValue()
         {
            if (type < 0)
