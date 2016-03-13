@@ -1074,7 +1074,7 @@ bool Platform::dumpDirectories(const char *path, Vector<StringTableEntry> &direc
     char newpath[len+1];
     
     // Copy in the original path to the new path variable
-    dSprintf(newpath, len, "%s", path );
+    dSprintf(newpath, len+1, "%s", path );
     
     // cut off the trailing slash, if there is one
     if (newpath[len - 1] == '/')
@@ -1115,7 +1115,7 @@ bool Platform::dumpPath(const char *path, Vector<Platform::FileInfo>& fileVector
     char newpath[len+1];
     
     // Copy the source path into the new path
-    dSprintf(newpath, len, "%s", path);
+    dSprintf(newpath, len+1, "%s", path);
     
     // Cut off the trailing slash, if there is one
     if (newpath[len - 1] == '/')
