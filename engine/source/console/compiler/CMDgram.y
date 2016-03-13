@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "console/console.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/consoleInternal.h"
 #include "platform/platformString.h"
 

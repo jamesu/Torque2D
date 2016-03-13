@@ -27,8 +27,8 @@
 #include "platform/event.h"
 #include "string/stringTable.h"
 #include "console/consoleInternal.h"
-#include "console/ast.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleAST.h"
+#include "console/compiler/consoleCompiler.h"
 #include "game/gameInterface.h"
 
 #include "telnetDebugger_ScriptBinding.h"

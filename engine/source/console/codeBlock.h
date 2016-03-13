@@ -23,7 +23,7 @@
 #ifndef _CODEBLOCK_H_
 #define _CODEBLOCK_H_
 
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "collection/vector.h"
 #include "console/consoleDictionary.h"
 

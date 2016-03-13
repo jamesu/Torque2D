@@ -24,10 +24,10 @@
 #include "console/console.h"
 #include "console/consoleInternal.h"
 #include "console/consoleObject.h"
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "io/resource/resourceManager.h"
 #include "io/fileStream.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/codeblockUtil.h"
 
 #if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_OSX)

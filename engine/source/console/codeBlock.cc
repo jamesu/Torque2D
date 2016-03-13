@@ -21,7 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "console/console.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/codeBlock.h"
 #include "console/consoleSerialization.h"
 #include "io/resource/resourceManager.h"

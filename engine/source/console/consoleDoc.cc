@@ -23,7 +23,7 @@
 #include "platform/platform.h"
 #include "console/console.h"
 
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "collection/findIterator.h"
 #include "io/resource/resourceManager.h"
 
@@ -31,7 +31,7 @@
 #include "console/consoleInternal.h"
 #include "console/consoleObject.h"
 #include "io/fileStream.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "memory/frameAllocator.h"
 
 #include "consoleDoc_ScriptBinding.h"

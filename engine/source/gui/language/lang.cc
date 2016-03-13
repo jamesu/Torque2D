@@ -26,8 +26,8 @@
 #include "io/resource/resourceManager.h"
 #include "console/console.h"
 #include "console/consoleInternal.h"
-#include "console/ast.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleAST.h"
+#include "console/compiler/consoleCompiler.h"
 #include "memory/safeDelete.h"
 
 #include "gui/language/lang.h"

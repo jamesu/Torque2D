@@ -36,7 +36,7 @@ class DataChunker;
 struct CompilerConstantsTable;
 
 #include "platform/platform.h"
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "console/codeBlock.h"
 #include "collection/vector.h"
 #include "console/consoleDictionary.h"

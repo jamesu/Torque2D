@@ -22,7 +22,7 @@
 
 #include "platform/platform.h"
 #include "console/console.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/consoleInternal.h"
 
 using namespace Compiler;

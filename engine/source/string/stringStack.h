@@ -25,7 +25,7 @@
 
 #include "platform/platform.h"
 #include "console/console.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "string/stringTable.h"
 
 /// Core stack for interpreter operations.

@@ -25,7 +25,7 @@
 #endif
 
 #ifndef _COMPILER_H_
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #endif
 
 // Script bindings.

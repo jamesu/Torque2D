@@ -25,14 +25,14 @@
 
 #include "consoleNamespace.h"
 
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "collection/findIterator.h"
 #include "io/resource/resourceManager.h"
 
 #include "string/findMatch.h"
 #include "console/consoleInternal.h"
 #include "io/fileStream.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "sim/simBase.h"
 
 #include "consoleNamespace_ScriptBinding.h"

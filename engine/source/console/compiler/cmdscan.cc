@@ -645,7 +645,7 @@ char *CMDtext;
 #include "platform/platform.h"
 #include "string/stringTable.h"
 #include "console/console.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/consoleTypes.h"
 #include "platform/platformString.h"
 
@@ -666,7 +666,7 @@ inline Token< T > MakeToken( T value, U32 lineNumber )
    return result;
 }
 
-#include "console/cmdgram.h"
+#include "console/compiler/cmdgram.h"
 
 using namespace Compiler;
 

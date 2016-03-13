@@ -21,7 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "console/consoleInternal.h"
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 
 ConsoleFunctionGroupBegin( FieldManipulators, "Functions to manipulate data returned in the form of \"x y z\".");
 

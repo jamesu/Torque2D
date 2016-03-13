@@ -4,13 +4,13 @@
 #include "console/codeblockEvalState.h"
 #include "console/consoleNamespace.h"
 
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "collection/findIterator.h"
 #include "io/resource/resourceManager.h"
 
 #include "string/findMatch.h"
 #include "io/fileStream.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "console/consoleSerialization.h"
 
 #include "codeblockEvalState_ScriptBinding.h"

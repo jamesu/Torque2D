@@ -28,13 +28,13 @@
 #include "console/consoleNamespace.h"
 #include "console/codeblockEvalState.h"
 
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 #include "collection/findIterator.h"
 #include "io/resource/resourceManager.h"
 
 #include "string/findMatch.h"
 #include "io/fileStream.h"
-#include "console/compiler.h"
+#include "console/compiler/consoleCompiler.h"
 #include "string/stringStack.h"
 
 #include "sim/simBase.h"

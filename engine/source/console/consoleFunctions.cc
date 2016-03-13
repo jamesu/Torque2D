@@ -26,7 +26,7 @@
 #include "io/resource/resourceManager.h"
 #include "platform/platformInput.h"
 #include "console/codeblockEvalState.h"
-#include "console/ast.h"
+#include "console/compiler/consoleAST.h"
 
 #if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_OSX)
 #include <ifaddrs.h>
