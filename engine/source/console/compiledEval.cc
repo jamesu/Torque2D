@@ -928,6 +928,11 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                  if(db)
                     currentNewObject = db;
               }
+              else if (isSingleton)
+              {
+                 // For singletons the object may already be present
+                 currentNewObject = Sim::findObject(objectName);
+              }
               
               if(!currentNewObject)
               {
