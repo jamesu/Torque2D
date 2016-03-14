@@ -273,7 +273,6 @@
 		86D76FBF165687060046D71F /* consoleNamespace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B716518DF400D96ADF /* consoleNamespace.cc */; };
 		86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B916518DF400D96ADF /* consoleBaseType.cc */; };
 		86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */; };
-		86D76FC2165687060046D71F /* Package.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82BE16518DF400D96ADF /* Package.cc */; };
 		86D76FC3165687060046D71F /* astAlloc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C016518DF400D96ADF /* astAlloc.cc */; };
 		86D76FC4165687060046D71F /* astNodes.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C116518DF400D96ADF /* astNodes.cc */; };
 		86D76FC7165687060046D71F /* codeBlock.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C416518DF400D96ADF /* codeBlock.cc */; };
@@ -1395,8 +1394,6 @@
 		86BC82BA16518DF400D96ADF /* consoleBaseType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleBaseType.h; sourceTree = "<group>"; };
 		86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleTypeValidators.cc; sourceTree = "<group>"; };
 		86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleTypeValidators.h; sourceTree = "<group>"; };
-		86BC82BE16518DF400D96ADF /* Package.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Package.cc; sourceTree = "<group>"; };
-		86BC82BF16518DF400D96ADF /* Package.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Package.h; sourceTree = "<group>"; };
 		86BC82C016518DF400D96ADF /* astAlloc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = astAlloc.cc; sourceTree = "<group>"; };
 		86BC82C116518DF400D96ADF /* astNodes.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = astNodes.cc; sourceTree = "<group>"; };
 		86BC82C416518DF400D96ADF /* codeBlock.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codeBlock.cc; sourceTree = "<group>"; };
@@ -2492,8 +2489,6 @@
 				86BC82BA16518DF400D96ADF /* consoleBaseType.h */,
 				86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */,
 				86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */,
-				86BC82BE16518DF400D96ADF /* Package.cc */,
-				86BC82BF16518DF400D96ADF /* Package.h */,
 				86BC82C016518DF400D96ADF /* astAlloc.cc */,
 				86BC82C116518DF400D96ADF /* astNodes.cc */,
 				86BC82C416518DF400D96ADF /* codeBlock.cc */,
@@ -3412,7 +3407,6 @@
 				86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */,
 				86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */,
 				27908E0518A3F8CB002D41BD /* EventData.c in Sources */,
-				86D76FC2165687060046D71F /* Package.cc in Sources */,
 				86D76FC3165687060046D71F /* astAlloc.cc in Sources */,
 				86D76FC4165687060046D71F /* astNodes.cc in Sources */,
 				86D76FC7165687060046D71F /* codeBlock.cc in Sources */,
