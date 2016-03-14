@@ -167,10 +167,6 @@ public:
                       ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName);
 
    static void execBlock(CodeBlockEvalState *state);
-   
-   void execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv);
-
-   void execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName);
 
    static StringTableEntry getDSOPath(const char *scriptPath);
 };

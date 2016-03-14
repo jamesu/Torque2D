@@ -72,15 +72,14 @@ ConsoleFunctionWithDocs(removeTaggedString, ConsoleVoid, 2, 2, ( tag ))
     @return Returns a string (containing a numeric value) equivalent to the string ID for the newly tagged string
 */
 ConsoleFunctionWithDocs( addTaggedString, ConsoleString, 2, 2, ( string ))
-{/*
-   NetStringHandle s(argv[1]);
+{
+   NetStringHandle s(argv[1].getTempStringValue());
    gNetStringTable->incStringRefScript(s.getIndex());
 
    char *ret = Con::getReturnBuffer(10);
    ret[0] = StringTagPrefixByte;
    dSprintf(ret + 1, 9, "%d", s.getIndex());
-   return ret;*/ // TOFIX
-	return "";
+   return ret;
 }
 
 /*! Use the getTaggedString function to convert a tag to a string. This is not the same a detag() which can only be used within the context of a function that receives a tag. This function can be used any time and anywhere to convert a tag to a string.

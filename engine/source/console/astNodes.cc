@@ -1356,7 +1356,7 @@ void StrConstNode::compile(CodeStream &codeStream, TypeReq type)
       return;
    }
    
-   CompilerConstantRef ref = codeStream.getConstantsTable()->addString(str);
+   CompilerConstantRef ref = codeStream.getConstantsTable()->addString(str, true, tag);
    
    U32 cmpValue = 1;
    if (type == TypeReqFalseConditional)

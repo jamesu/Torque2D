@@ -151,6 +151,11 @@ public:
    bool isNull() { return index == 0; }
    bool isValidString() { return index != 0; }
    U32 getIndex() { return index; }
+   
+   static ConsoleReferenceCountedType* asReferenceCountedType(const char* string);
 };
+
+
+DefineConsoleType( TypeNetString );
 
 #endif

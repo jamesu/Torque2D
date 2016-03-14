@@ -1752,17 +1752,6 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
    AssertFatal(state->frames.size() == startFrameSize-1, "Frame size mismatch");
 }
 
-void CodeBlock::execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv)
-{
-    // Copies references to variables in srcEnv's scope into their corresponding position in destEnv
-}
-
-void CodeBlock::execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, ConsoleValuePtr argv[], StringTableEntry packageName)
-{
-    // Prepares an executes a function, copying argv into the stack according to env
-    
-}
-
 ConsoleValuePtr CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, ConsoleValuePtr argv[], bool noCalls, StringTableEntry packageName)
 {
    // Push exec state

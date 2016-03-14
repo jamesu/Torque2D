@@ -36,6 +36,8 @@
 
 #include "sim/simBase.h"
 
+#include "network/netStringTable.h"
+
 namespace Compiler
 {
 
@@ -128,6 +130,8 @@ void Compiler::CompilerConstantsTable::debugPrintPage(U32 pageId)
    
 }
 
+extern S32 TypeNetString;
+
 Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::addString(const char *str, bool caseSens, bool tag)
 {
     // Is it already in?
@@ -139,9 +143,11 @@ Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::addString(const 
        U32 i = 0;
        for(walk = &list[pageI]; *walk; walk = &((*walk)->next), i++)
        {
-           if((*walk)->value.type != ConsoleValue::TypeInternalStringTableEntry)
+           if(!tag && (*walk)->value.type != ConsoleValue::TypeInternalStringTableEntry)
                continue;
-           
+           else if (tag && (*walk)->value.type != TypeNetString)
+               continue;
+
            if(caseSens)
            {
                if(!dStrcmp((*walk)->value.value.string, str))
@@ -181,13 +187,20 @@ Compiler::CompilerConstantRef Compiler::CompilerConstantsTable::addString(const 
     if(tag && len < 7) // alloc space for the numeric tag 1 for tag, 5 for # and 1 for nul
         len = 7;
     totalLen += len;
-    
+
     char* allocStr = (char *) consoleAlloc(len);
-    //newStr->len = len;
-    //newStr->tag = tag;
     dStrcpy(allocStr, str);
-    newStr->value.type = ConsoleValue::TypeInternalStringTableEntry;
     newStr->value.value.string = allocStr;
+
+    if (!tag)
+    {
+       newStr->value.type = ConsoleValue::TypeInternalStringTableEntry;
+    }
+    else
+    {
+       newStr->value.type = TypeNetString;
+    }
+
     currentPageCount++;
     count++;
    
@@ -548,6 +561,10 @@ void Compiler::CompilerConstantsTable::build(Vector<ConsoleValuePtr> &outConstan
          if (value->type == ConsoleValue::TypeInternalStringTableEntry)
          {
             value->value.string = StringTable->insert(value->value.string);
+         }
+         else if (value->type == TypeNetString)
+         {
+            value->value.refValue = NetStringHandle::asReferenceCountedType(value->value.string);
          }
          
          outConstants[ocount].type = ConsoleValue::TypeInternalNull;

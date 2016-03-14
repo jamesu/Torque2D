@@ -200,47 +200,10 @@ void NetStringTable::destroy()
 
 void NetStringTable::expandString(NetStringHandle &inString, char *buf, U32 bufSize, U32 argc, const char **argv)
 {
+   // NOTE: previously this appended the original string on the end, but to simplify things we're just
+   // going to use the <tag>value form now.
    buf[0] = StringTagPrefixByte;
-   dSprintf(buf + 1, bufSize - 1, "%d ", inString.getIndex());
-
-   const char *string = inString.getString();
-   if (string != NULL) {
-      U32 index = dStrlen(buf);
-      while(index < bufSize)
-      {
-         char c = *string++;
-         if(c == '%')
-         {
-            c = *string++;
-            if(c >= '1' && c <= '9')
-            {
-               U32 strIndex = c - '1';
-               if(strIndex >= argc)
-                  continue;
-               // start copying out of arg index
-               const char *copy = argv[strIndex];
-               // skip past any tags:
-               if(*copy == StringTagPrefixByte)
-               {
-                  while(*copy && *copy != ' ')
-                     copy++;
-                  if(*copy)
-                     copy++;
-               }
-
-               while(*copy && index < bufSize)
-                  buf[index++] = *copy++;
-               continue;
-            }
-         }
-         buf[index++] = c;
-         if(!c)
-            break;
-      }
-      buf[bufSize - 1] = 0;
-   } else {
-      dStrcat(buf, "<NULL>");
-   }
+   dSprintf(buf + 1, bufSize - 1, "%d", inString.getIndex());
 }
 
 #if defined(TORQUE_DEBUG)
@@ -265,5 +228,51 @@ void NetStringTable::dumpToConsole()
          ( maxIndex == -1 ) ? "" : table[maxIndex].string,
          0x11 );
 }
-
 #endif // DEBUG
+
+ConsoleType( NetString, TypeNetString, sizeof(NetStringHandle), "" )
+ConsoleUseDefaultReferenceType( TypeNetString, NetStringHandle )
+
+ConsoleTypeToString( TypeNetString )
+{
+   NetStringHandle *ns = (NetStringHandle *) dataPtr;
+   static char buf[64];
+   buf[0] = StringTagPrefixByte;
+   dSprintf(buf+1, sizeof(buf)-1, "%d", ns->getIndex());
+   return buf;
+}
+
+ConsoleTypeFromConsoleValue( TypeNetString )
+{
+   NetStringHandle *ns = (NetStringHandle *) dataPtr;
+   
+   if (ConsoleValue::isRefType(value.type))
+   {
+      if (value.type == TypeNetString)
+      {
+         DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >* instance = (DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >*) value.value.refValue;
+         *ns = instance->data;
+         return;
+      }
+   }
+   
+   // Either a tagged string or normal string
+   const char* strValue = value.getTempStringValue();
+   if (strValue[0] == StringTagPrefixByte)
+   {
+      *ns = NetStringHandle(dAtoi(strValue+1));
+   }
+   else
+   {
+      *ns = NetStringHandle(value.getTempStringValue());
+   }
+}
+
+ConsoleReferenceCountedType* NetStringHandle::asReferenceCountedType(const char* string)
+{
+   DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >* nsValue = new DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >();
+   nsValue->data = NetStringHandle(string);
+   return nsValue;
+}
+
+#include "console/taggedStrings_ScriptBinding.h"

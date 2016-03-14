@@ -33,7 +33,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include "taggedStrings_ScriptBinding.h"
 #include "inputManagement_ScriptBinding.h"
 
 #ifdef TORQUE_ALLOW_JOURNALING

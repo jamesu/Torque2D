@@ -25,8 +25,8 @@
 ConsoleFunctionGroupBegin( TaggedStrings, "Functions dealing with tagging/detagging strings.");
 
 /*! @defgroup TaggedStrings Tagged Strings
-	@ingroup TorqueScriptFunctions
-	@{
+   @ingroup TorqueScriptFunctions
+   @{
 */
 
 /*! Use the detag function to convert a tag to a string. This can only be used in the proper context, i.e. to parse values passed to a client command or to a server command. See 'Remote Procedure Call Samples' below.
@@ -36,48 +36,54 @@ ConsoleFunctionGroupBegin( TaggedStrings, "Functions dealing with tagging/detagg
 */
 ConsoleFunctionWithDocs(detag, ConsoleString, 2, 2, ( tagID ))
 {
-   TORQUE_UNUSED( argc );/* TOFIX
-   if(argv[1][0] == StringTagPrefixByte)
+   TORQUE_UNUSED( argc );
+   if (argv[1].type == TypeNetString)
    {
-      const char *word = dStrchr(argv[1], ' ');
-      if(word == NULL)
-         return "";
-      char *ret = Con::getReturnBuffer(dStrlen(word + 1) + 1);
-      dStrcpy(ret, word + 1);
-      return ret;
+      DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >* instance = (DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >*)argv[1].value.refValue;
+      
+      return instance->data.getString();
    }
    else
-      return argv[1].getTempStringValue();*/
-	return "";
+   {
+      const char *value = argv[1];
+      if (value[0] == StringTagPrefixByte)
+      {
+         return NetStringHandle(dAtoi(value+1)).getString();
+      }
+      else
+      {
+         return argv[1].getTempStringValue();
+      }
+   }
 }
 
 /*! Use the getTag function to retrieve the tag ID associated with a previously tagged string.
     @param taggedString A previously tagged string.
     @return Returns the tag ID of the string. If the string was not previously tagged, it gets tagged and the new tag ID is returned
 */
-ConsoleFunctionWithDocs(getTag, ConsoleString, 2, 2, ( taggedString ))
+ConsoleFunctionWithDocs(getTag, S32, 2, 2, ( taggedString ))
 {
-   TORQUE_UNUSED( argc );/* TOFIX
-   if(argv[1][0] == StringTagPrefixByte)
+   TORQUE_UNUSED( argc );
+   
+   if (argv[1].type == TypeNetString)
    {
-      const char * space = dStrchr(argv[1], ' ');
-
-      U32 len;
-      if(space)
-         len = (U32)(space - argv[1]);
-      else
-         len = dStrlen(argv[1]) + 1;
-
-      char * ret = Con::getReturnBuffer(len);
-      dStrncpy(ret, argv[1] + 1, len - 1);
-      ret[len - 1] = 0;
-
-      return(ret);
+      DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >* instance = (DefaultConsoleReferenceCountedType< ConsoleTypeTypeNetString, NetStringHandle >*)argv[1].value.refValue;
+      
+      return instance->data.getIndex();
    }
    else
-      return(argv[1]);*/
-	
-	return "";
+   {
+      const char *value = argv[1].getTempStringValue();
+      if (value[0] == StringTagPrefixByte)
+      {
+         return dAtoi(value+1);
+      }
+      else
+      {
+         NetStringHandle str(value);
+         return str.getIndex();
+      }
+   }
 }
 
 ConsoleFunctionGroupEnd( TaggedStrings );
