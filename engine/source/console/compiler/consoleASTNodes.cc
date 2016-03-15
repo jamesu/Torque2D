@@ -46,7 +46,8 @@ struct Token
 ReferencedVariableNode *gCurrentLocalVariables = NULL;
 ReferencedVariableNode *gLocalVariableStack[16];
 U32 gLocalVariableStackIdx = 0;
-
+U32 gAnonFunctionID = 0;
+DocBlockNode *gCurrentDocBlock = NULL;
 
 namespace Compiler
 {

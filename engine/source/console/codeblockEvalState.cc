@@ -13,15 +13,16 @@
 #include "console/compiler/consoleCompiler.h"
 #include "console/consoleSerialization.h"
 
-#include "codeblockEvalState_ScriptBinding.h"
-
 #include "debug/telnetDebugger.h"
 #include "debug/remote/RemoteDebuggerBase.h"
 
+namespace Con
+{
 CodeBlockEvalState gRootEvalState;
 CodeBlockEvalState* gCurrentEvalState = NULL;
 
 Vector<CodeBlockCoroutineState*> gCoroutineStack;
+}
 
 void CodeBlockEvalState::pushFunction(CodeBlockFunction* function, CodeBlock* code, Namespace::Entry* entry, U32 numParams)
 {
@@ -184,9 +185,9 @@ bool CodeBlockEvalState::saveCoroutine(CodeBlockCoroutineState &outState)
    outState.currentState = CodeBlockCoroutineState::SUSPENDED;
    
    bool inStack = false;
-   for (S32 i=gCoroutineStack.size()-1; i>=0; i--)
+   for (S32 i=Con::gCoroutineStack.size()-1; i>=0; i--)
    {
-      if (gCoroutineStack[i] == &outState)
+      if (Con::gCoroutineStack[i] == &outState)
       {
          inStack = true;
       }
@@ -199,28 +200,28 @@ bool CodeBlockEvalState::saveCoroutine(CodeBlockCoroutineState &outState)
    }
    
    // Pop until we've got to the correct level
-   for (S32 i=gCoroutineStack.size()-1; i>=0; i--)
+   for (S32 i=Con::gCoroutineStack.size()-1; i>=0; i--)
    {
-      if (gCoroutineStack[i] == &outState)
+      if (Con::gCoroutineStack[i] == &outState)
       {
-         gCoroutineStack.pop_back();
+         Con::gCoroutineStack.pop_back();
          break;
       }
       else
       {
-         gCoroutineStack[gCoroutineStack.size()-1]->currentState = CodeBlockCoroutineState::SUSPENDED;
-         gCoroutineStack.pop_back();
+         Con::gCoroutineStack[Con::gCoroutineStack.size()-1]->currentState = CodeBlockCoroutineState::SUSPENDED;
+         Con::gCoroutineStack.pop_back();
       }
    }
    
-   gCurrentEvalState = gCoroutineStack.size() > 0 ? &gCoroutineStack[gCoroutineStack.size()-1]->evalState : &gRootEvalState;
+   Con::gCurrentEvalState = Con::gCoroutineStack.size() > 0 ? &Con::gCoroutineStack[Con::gCoroutineStack.size()-1]->evalState : &Con::gRootEvalState;
    return true;
 }
 
 bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 argc, ConsoleValuePtr *argv)
 {
    // Check we're not already active
-   if (gCurrentEvalState == &inState.evalState)
+   if (Con::gCurrentEvalState == &inState.evalState)
    {
       return false;
    }
@@ -232,9 +233,9 @@ bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 
          return false;
       }
       
-      for (U32 i=0, sz=gCoroutineStack.size(); i<sz; i++)
+      for (U32 i=0, sz=Con::gCoroutineStack.size(); i<sz; i++)
       {
-         if (gCoroutineStack[i] == &inState)
+         if (Con::gCoroutineStack[i] == &inState)
          {
             return false;
          }
@@ -245,8 +246,8 @@ bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 
    
    if (inState.currentState == CodeBlockCoroutineState::WAIT_INITIAL_CALL && inState.nsEntry)
    {
-      gCurrentEvalState = &inState.evalState;
-      gCoroutineStack.push_back(&inState);
+      Con::gCurrentEvalState = &inState.evalState;
+      Con::gCoroutineStack.push_back(&inState);
       if (inState.nsEntry->mType != Namespace::Entry::ScriptFunctionType)
       {
          Con::errorf("Cant restore coroutine, must point to a script function.");
@@ -259,8 +260,8 @@ bool CodeBlockEvalState::restoreCoroutine(CodeBlockCoroutineState &inState, S32 
    else if (inState.currentState == CodeBlockCoroutineState::SUSPENDED)
    {
       inState.currentState = CodeBlockCoroutineState::RUNNING;
-      gCurrentEvalState = &inState.evalState;
-      gCoroutineStack.push_back(&inState);
+      Con::gCurrentEvalState = &inState.evalState;
+      Con::gCoroutineStack.push_back(&inState);
       
       // 
    }
@@ -312,19 +313,62 @@ void CodeBlockEvalState::disposeLocals(Dictionary* locals)
 
 CodeBlockEvalState* CodeBlockEvalState::getCurrent()
 {
-   if (gCurrentEvalState == NULL)
+   if (Con::gCurrentEvalState == NULL)
    {
-      gCurrentEvalState = &gRootEvalState;
+      Con::gCurrentEvalState = &Con::gRootEvalState;
    }
-   return gCurrentEvalState;
+   return Con::gCurrentEvalState;
 }
 
 void CodeBlockEvalState::initGlobal()
 {
-   gRootEvalState.resetGlobals(NULL);
+   Con::gRootEvalState.resetGlobals(NULL);
 }
 
-//
+/*! @defgroup Callstack Call Stack
+ @ingroup TorqueScriptFunctions
+ @{
+ */
+
+/*! Use the backtrace function to print the current callstack to the console.
+ 
+ This is used to trace functions called from withing functions and can help discover
+ what functions were called (and not yet exited) before the current point in your scripts.
+ @return No return value
+ */
+ConsoleFunctionWithDocs(backtrace, ConsoleVoid, 1, 1, ())
+{
+   U32 totalSize = 1;
+   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   
+   for(U32 i = 0; i < (U32)evalState->frames.size(); i++)
+   {
+      totalSize += dStrlen(evalState->frames[i].function->name) + 3;
+      if(evalState->frames[i].ns)
+         totalSize += dStrlen(evalState->frames[i].ns) + 2;
+   }
+   
+   char *buf = Con::getReturnBuffer(totalSize);
+   buf[0] = 0;
+   for(U32 i = 0; i < (U32)evalState->frames.size(); i++)
+   {
+      dStrcat(buf, "->");
+      if(evalState->frames[i].ns && evalState->frames[i].function->name)
+      {
+         dStrcat(buf, evalState->frames[i].ns);
+         dStrcat(buf, "::");
+      }
+      dStrcat(buf, evalState->frames[i].function->name);
+   }
+   Con::printf("BackTrace: %s", buf);
+}
+
+ConsoleFunction(nativeDebugBreak, void, 1, 1, "")
+{
+   return;
+}
+
+/*! @} */ // group Callstack
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -380,7 +424,7 @@ void CodeBlockCoroutineState::reset()
    evalState.frames.clear();
    evalState.yieldValue.setValue(nullValue);
    evalState.coroutine = this;
-   evalState.resetGlobals(&gRootEvalState);
+   evalState.resetGlobals(&Con::gRootEvalState);
    currentState = CodeBlockCoroutineState::DEAD;
 }
 
@@ -421,7 +465,7 @@ void CodeBlockCoroutineState::read(Stream &s, ConsoleSerializationState &state)
    evalState.yieldValue.setNull();
    evalState.coroutine = this;
    evalState.cStackFrame = 0;
-   evalState.resetGlobals(&gRootEvalState);
+   evalState.resetGlobals(&Con::gRootEvalState);
    
    U8 stateVar;
    s.read(&stateVar);
@@ -617,9 +661,199 @@ ConsoleStaticMethod(Coroutine, load, ConsoleValuePtr, 2, 2, "")
    return ret;
 }
 
-// Debug func
-ConsoleFunction(nativeDebugBreak, void, 1, 1, "")
+
+extern CodeBlockEvalState gRootEvalState;
+
+// Creates a coroutine, sets it in the initial state.
+ConsoleStaticMethod(Coroutine, create, ConsoleValuePtr, 2, 2, "Create a coroutine calling func")
 {
-   return;
+   ConsoleValuePtr &nse = argv[1];
+   Namespace::Entry *callEntry = NULL;
+   if (nse.type == ConsoleValue::TypeInternalNamespaceEntry)
+   {
+      callEntry = (Namespace::Entry*)nse.value.ptrValue;
+   }
+   else
+   {
+      callEntry = Namespace::global()->lookup(nse.getSTEStringValue());
+   }
+   
+   if (!callEntry)
+   {
+      Con::errorf("Could not find coroutine function %s", nse.getSTEStringValue());
+      return ConsoleValuePtr();
+   }
+   
+   ConsoleValuePtr ret;
+   CodeBlockCoroutineState* state = new CodeBlockCoroutineState();
+   state->nsEntry = callEntry;
+   state->currentState = CodeBlockCoroutineState::WAIT_INITIAL_CALL;
+   ret.setValue(state);
+   return ret;
+}
+
+// Creates a coroutine, sets it in the initial state.
+ConsoleMethod(SimObject, createCoroutine, ConsoleValuePtr, 2, 2, "Create a coroutine calling func")
+{
+   ConsoleValuePtr &nse = argv[2];
+   Namespace::Entry *callEntry = NULL;
+   if (nse.type == ConsoleValue::TypeInternalNamespaceEntry)
+   {
+      callEntry = (Namespace::Entry*)nse.value.ptrValue;
+   }
+   else
+   {
+      callEntry = object->getNamespace()->lookup(nse.getSTEStringValue());
+   }
+   
+   if (!callEntry)
+   {
+      Con::errorf("Could not find coroutine function %s in object %s", nse.getSTEStringValue(), object->getIdString());
+      return ConsoleValuePtr();
+   }
+   
+   ConsoleValuePtr ret;
+   CodeBlockCoroutineState* state = new CodeBlockCoroutineState();
+   state->nsEntry = callEntry;
+   ret.setValue(state);
+   return ret;
+}
+
+// Resumes a coroutine, passing in argv to the restoreCoroutine func.
+// @note this function will return the value intended to be yielded to the coroutine
+ConsoleStaticMethod(Coroutine, resume, ConsoleValuePtr, 2, 0, "Resume a coroutine")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   // Rewrite args so we get nsEntry a b c instead of resume coroutine a b c
+   ConsoleValuePtr realArgs[32];
+   realArgs[0].type = ConsoleValue::TypeInternalNamespaceEntry;
+   realArgs[0].value.ptrValue = state->nsEntry;
+   
+   for (U32 i=2; i<argc; i++)
+   {
+      realArgs[i-1].setValue(argv[i]);
+   }
+   
+   if (argc > 2)
+   {
+      returnValue.setValue(argv[2]);
+   }
+   
+   // we'll essentially switch to this when exiting
+   if (!CodeBlockEvalState::getCurrent()->restoreCoroutine(*state, argc-1, realArgs))
+   {
+      Con::errorf("Couldn't resume coroutine");
+      return ConsoleValuePtr();
+   }
+   
+   return returnValue;
+}
+
+ConsoleStaticMethod(Coroutine, getCurrent, ConsoleValuePtr, 1, 1, "Gets current active coroutine")
+{
+   ConsoleValuePtr returnValue;
+   returnValue.setValue(CodeBlockEvalState::getCurrent()->coroutine);
+   return returnValue;
+}
+
+// Resumes a coroutine, passing in argv to the restoreCoroutine func.
+// @note this function will return the value intended to be yielded to the
+// function which calls resume
+ConsoleStaticMethod(Coroutine, yield, ConsoleValuePtr, 1, 3, "Yield current coroutine")
+{
+   ConsoleValuePtr returnValue;
+   if (argc > 2)
+   {
+      returnValue.setValue(argv[2]);
+   }
+   
+   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
+   if (evalState->coroutine)
+   {
+      if (!CodeBlockEvalState::getCurrent()->saveCoroutine(*evalState->coroutine))
+      {
+         Con::errorf("Coroutine::yield: yield failed.");
+      }
+   }
+   else
+   {
+      Con::errorf("Coroutine::yield: no coroutine is active.");
+   }
+   return returnValue;
+}
+
+ConsoleStaticMethod(Coroutine, status, ConsoleValuePtr, 2, 2, "Get status of a coroutine")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      ConsoleValuePtr retValue;
+      static StringTableEntry steDEAD = StringTable->insert("DEAD");
+      static StringTableEntry steRUNNING = StringTable->insert("RUNNING");
+      static StringTableEntry steSUSPENDED = StringTable->insert("SUSPENDED");
+      
+      switch(state->currentState)
+      {
+         case CodeBlockCoroutineState::WAIT_INITIAL_CALL:
+         case CodeBlockCoroutineState::SUSPENDED:
+            retValue.setSTE(steSUSPENDED);
+            break;
+         case CodeBlockCoroutineState::RUNNING:
+            retValue.setSTE(steRUNNING);
+            break;
+         case CodeBlockCoroutineState::DEAD:
+            retValue.setSTE(steDEAD);
+            break;
+      }
+      
+      return retValue;
+   }
+   else
+   {
+      return ConsoleValuePtr();
+   }
+}
+
+ConsoleStaticMethod(Coroutine, setWaitTicks, void, 3, 3, "Sets next tick time if threaded")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = (S32)argv[2].getFloatValue();
+      //Con::printf("setWaitTicks[%x] ticks == %i", state, state->waitTicks);
+   }
+}
+
+ConsoleStaticMethod(Coroutine, setWaitMS, void, 3, 3, "Sets next tick time if threaded")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = (S32)(argv[2].getFloatValue() / Tickable::smTickMs);
+   }
+}
+
+ConsoleStaticMethod(Coroutine, setNoTicks, void, 2, 2, "Disables ticking")
+{
+   ConsoleValuePtr &cvalue = argv[1];
+   ConsoleValuePtr returnValue;
+   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
+   
+   if (state)
+   {
+      state->waitTicks = S32_MIN;
+   }
 }
 

@@ -38,6 +38,8 @@
 
 #include "network/netStringTable.h"
 
+StmtNode *gStatementList;
+
 namespace Compiler
 {
 

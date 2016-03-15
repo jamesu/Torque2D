@@ -39,7 +39,6 @@
 
 #include "sim/simBase.h"
 
-static char scratchBuffer[1024];
 #define ST_INIT_SIZE 15
 
 static S32 QSORT_CALLBACK varCompare(const void* a,const void* b)
@@ -324,7 +323,7 @@ ConsoleStringValuePtr Dictionary::getVariable(StringTableEntry name, bool *entVa
       *entValid = false;
 
    // Warn users when they access a variable that isn't defined.
-   if(gWarnUndefinedScriptVariables)
+	if(Con::gWarnUndefinedScriptVariables)
       Con::warnf(" *** Accessed undefined variable '%s'", name);
 
    return "";
@@ -343,7 +342,7 @@ ConsoleValuePtr Dictionary::getValueVariable(StringTableEntry name, bool *entVal
       *entValid = false;
    
    // Warn users when they access a variable that isn't defined.
-   if(gWarnUndefinedScriptVariables)
+	if(Con::gWarnUndefinedScriptVariables)
       Con::warnf(" *** Accessed undefined variable '%s'", name);
    
    return ConsoleValuePtr();
@@ -365,6 +364,7 @@ void Dictionary::setValueVariable(StringTableEntry name, const ConsoleValuePtr& 
 
 void Dictionary::addVariable(const char *name, S32 type, void *dataPtr)
 {
+	char scratchBuffer[1024];
    if(name[0] != '$')
    {
       scratchBuffer[0] = '$';

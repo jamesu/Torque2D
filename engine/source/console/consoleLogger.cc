@@ -22,8 +22,6 @@
 #include "console/consoleLogger.h"
 #include "console/consoleTypes.h"
 
-#include "consoleLogger_ScriptBinding.h"
-
 Vector<ConsoleLogger *> ConsoleLogger::mActiveLoggers;
 bool ConsoleLogger::smInitialized = false;
 
@@ -57,9 +55,9 @@ ConsoleLogger::ConsoleLogger( const char *fileName, bool append )
 
 static EnumTable::Enums logLevelEnums[] =
 {
-	{ ConsoleLogEntry::Normal,     "normal"  },
+   { ConsoleLogEntry::Normal,     "normal"  },
    { ConsoleLogEntry::Warning,    "warning" },
-	{ ConsoleLogEntry::Error,      "error"   },
+   { ConsoleLogEntry::Error,      "error"   },
 };
 
 static EnumTable gLogLevelTable( 3, &logLevelEnums[0] );
@@ -220,3 +218,27 @@ void ConsoleLogger::log( const char *consoleLine )
 }
 
 //-----------------------------------------------------------------------------
+
+ConsoleMethodGroupBeginWithDocs(ConsoleLogger, SimObject)
+
+/*! Attaches this object to the console and begins logging
+ @return Returns true on success, and false on failure.
+ */
+ConsoleMethodWithDocs( ConsoleLogger, attach, ConsoleBool, 2, 2, ())
+{
+   ConsoleLogger *logger = static_cast<ConsoleLogger *>( object );
+   return logger->attach();
+}
+
+//-----------------------------------------------------------------------------
+
+/*! Detaches this object from the console and stops logging
+ @return Returns true on success, and false on failure.
+ */
+ConsoleMethodWithDocs( ConsoleLogger, detach, ConsoleBool, 2, 2, ())
+{
+   ConsoleLogger *logger = static_cast<ConsoleLogger *>( object );
+   return logger->detach();
+}
+
+ConsoleMethodGroupEndWithDocs(ConsoleLogger)

@@ -68,6 +68,14 @@
 		2AF3633916A9BBE0004ED7AA /* ParticleSystem.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */; };
 		3266D2D11BFE613100446D93 /* consoleSerialization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */; };
 		3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CF1BFE613100446D93 /* consoleValue.cc */; };
+		3292BCFB1C96C8C400AEB836 /* consoleASTNodes.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BCF91C96C8C400AEB836 /* consoleASTNodes.cc */; };
+		3292BCFC1C96C8C400AEB836 /* consoleASTAlloc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BCFA1C96C8C400AEB836 /* consoleASTAlloc.cc */; };
+		3292BCFF1C96CD6A00AEB836 /* consoleTest.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BCFE1C96CD6A00AEB836 /* consoleTest.cc */; };
+		3292BD011C96CE1800AEB836 /* consoleConstructor.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BD001C96CE1800AEB836 /* consoleConstructor.cc */; };
+		3292BD041C9788A400AEB836 /* consolePaths.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BD021C9788A400AEB836 /* consolePaths.cc */; };
+		3292BD051C9788A400AEB836 /* consoleOutput.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BD031C9788A400AEB836 /* consoleOutput.cc */; };
+		3292BD0B1C9866A800AEB836 /* consoleExec.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BD0A1C9866A800AEB836 /* consoleExec.cc */; };
+		3292BD0E1C98699900AEB836 /* consoleTypeValidators.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3292BD0C1C98699900AEB836 /* consoleTypeValidators.cc */; };
 		329AE6861C2F3FA700298348 /* codeblockEvalState.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */; };
 		329AE6891C31457400298348 /* simScriptThreadManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 329AE6871C31457400298348 /* simScriptThreadManager.cpp */; };
 		32BC66FD1C95BB2F00FDBC34 /* cmdgram.cc in Sources */ = {isa = PBXBuildFile; fileRef = 32BC66F51C95BB2F00FDBC34 /* cmdgram.cc */; };
@@ -272,11 +280,7 @@
 		86D76FBD165687060046D71F /* consoleDictionary.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B316518DF400D96ADF /* consoleDictionary.cc */; };
 		86D76FBF165687060046D71F /* consoleNamespace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B716518DF400D96ADF /* consoleNamespace.cc */; };
 		86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82B916518DF400D96ADF /* consoleBaseType.cc */; };
-		86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */; };
-		86D76FC3165687060046D71F /* astAlloc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C016518DF400D96ADF /* astAlloc.cc */; };
-		86D76FC4165687060046D71F /* astNodes.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C116518DF400D96ADF /* astNodes.cc */; };
 		86D76FC7165687060046D71F /* codeBlock.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C416518DF400D96ADF /* codeBlock.cc */; };
-		86D76FC8165687060046D71F /* compiledEval.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C516518DF400D96ADF /* compiledEval.cc */; };
 		86D76FCA165687060046D71F /* console.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C716518DF400D96ADF /* console.cc */; };
 		86D76FCB165687060046D71F /* consoleDoc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C816518DF400D96ADF /* consoleDoc.cc */; };
 		86D76FCC165687060046D71F /* consoleFunctions.cc in Sources */ = {isa = PBXBuildFile; fileRef = 86BC82C916518DF400D96ADF /* consoleFunctions.cc */; };
@@ -480,7 +484,6 @@
 		B350D131174ED23E00033EBB /* frameAllocator_ScriptBinding.cc in Sources */ = {isa = PBXBuildFile; fileRef = B350D130174ED23E00033EBB /* frameAllocator_ScriptBinding.cc */; };
 		B350D147174ED56500033EBB /* platformNetwork_ScriptBinding.cc in Sources */ = {isa = PBXBuildFile; fileRef = B350D144174ED56500033EBB /* platformNetwork_ScriptBinding.cc */; };
 		B350D158174EF62400033EBB /* fileSystem_ScriptBinding.cc in Sources */ = {isa = PBXBuildFile; fileRef = B350D156174EF62400033EBB /* fileSystem_ScriptBinding.cc */; };
-		B350D164174EF71B00033EBB /* metaScripting_ScriptBinding.cc in Sources */ = {isa = PBXBuildFile; fileRef = B350D161174EF71B00033EBB /* metaScripting_ScriptBinding.cc */; };
 		B350D172174EF91900033EBB /* audio_ScriptBinding.cc in Sources */ = {isa = PBXBuildFile; fileRef = B350D171174EF91900033EBB /* audio_ScriptBinding.cc */; };
 /* End PBXBuildFile section */
 
@@ -649,11 +652,23 @@
 		2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ParticleSystem.cc; sourceTree = "<group>"; };
 		2AF3633816A9BBE0004ED7AA /* ParticleSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleSystem.h; sourceTree = "<group>"; };
 		2AF80CFF16A80CB400CE13F1 /* ParticleAssetEmitter_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleAssetEmitter_ScriptBinding.h; sourceTree = "<group>"; };
-		3266D2CB1BFE613100446D93 /* codeblockEvalState_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockEvalState_ScriptBinding.h; sourceTree = "<group>"; };
 		3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codeblockEvalState.cc; sourceTree = "<group>"; };
 		3266D2CD1BFE613100446D93 /* codeblockEvalState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codeblockEvalState.h; sourceTree = "<group>"; };
 		3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleSerialization.cpp; sourceTree = "<group>"; };
 		3266D2CF1BFE613100446D93 /* consoleValue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleValue.cc; sourceTree = "<group>"; };
+		3292BCF91C96C8C400AEB836 /* consoleASTNodes.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleASTNodes.cc; sourceTree = "<group>"; };
+		3292BCFA1C96C8C400AEB836 /* consoleASTAlloc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleASTAlloc.cc; sourceTree = "<group>"; };
+		3292BCFE1C96CD6A00AEB836 /* consoleTest.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleTest.cc; sourceTree = "<group>"; };
+		3292BD001C96CE1800AEB836 /* consoleConstructor.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleConstructor.cc; sourceTree = "<group>"; };
+		3292BD021C9788A400AEB836 /* consolePaths.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consolePaths.cc; sourceTree = "<group>"; };
+		3292BD031C9788A400AEB836 /* consoleOutput.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleOutput.cc; sourceTree = "<group>"; };
+		3292BD061C9788BD00AEB836 /* consoleOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleOutput.h; sourceTree = "<group>"; };
+		3292BD071C9788BD00AEB836 /* consolePaths.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consolePaths.h; sourceTree = "<group>"; };
+		3292BD081C9788F900AEB836 /* consoleExec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleExec.h; sourceTree = "<group>"; };
+		3292BD091C97941700AEB836 /* consoleConstructor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleConstructor.h; sourceTree = "<group>"; };
+		3292BD0A1C9866A800AEB836 /* consoleExec.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleExec.cc; sourceTree = "<group>"; };
+		3292BD0C1C98699900AEB836 /* consoleTypeValidators.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleTypeValidators.cc; sourceTree = "<group>"; };
+		3292BD0D1C98699900AEB836 /* consoleTypeValidators.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleTypeValidators.h; sourceTree = "<group>"; };
 		329AE6871C31457400298348 /* simScriptThreadManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = simScriptThreadManager.cpp; sourceTree = "<group>"; };
 		329AE6881C31457400298348 /* simScriptThreadManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = simScriptThreadManager.h; sourceTree = "<group>"; };
 		32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleCallbackHelper.h; sourceTree = "<group>"; };
@@ -1392,12 +1407,7 @@
 		86BC82B816518DF400D96ADF /* consoleNamespace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleNamespace.h; sourceTree = "<group>"; };
 		86BC82B916518DF400D96ADF /* consoleBaseType.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleBaseType.cc; sourceTree = "<group>"; };
 		86BC82BA16518DF400D96ADF /* consoleBaseType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleBaseType.h; sourceTree = "<group>"; };
-		86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleTypeValidators.cc; sourceTree = "<group>"; };
-		86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleTypeValidators.h; sourceTree = "<group>"; };
-		86BC82C016518DF400D96ADF /* astAlloc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = astAlloc.cc; sourceTree = "<group>"; };
-		86BC82C116518DF400D96ADF /* astNodes.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = astNodes.cc; sourceTree = "<group>"; };
 		86BC82C416518DF400D96ADF /* codeBlock.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codeBlock.cc; sourceTree = "<group>"; };
-		86BC82C516518DF400D96ADF /* compiledEval.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compiledEval.cc; sourceTree = "<group>"; };
 		86BC82C716518DF400D96ADF /* console.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = console.cc; sourceTree = "<group>"; };
 		86BC82C816518DF400D96ADF /* consoleDoc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleDoc.cc; sourceTree = "<group>"; };
 		86BC82C916518DF400D96ADF /* consoleFunctions.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = consoleFunctions.cc; sourceTree = "<group>"; };
@@ -1513,14 +1523,6 @@
 		B350D157174EF62400033EBB /* streamObject_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = streamObject_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D159174EF65E00033EBB /* resourceManager_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resourceManager_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D15A174EF67100033EBB /* zipObject_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zipObject_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D15B174EF71B00033EBB /* consoleDoc_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleDoc_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D15D174EF71B00033EBB /* consoleLogger_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleLogger_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D15E174EF71B00033EBB /* consoleNamespace_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = consoleNamespace_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D15F174EF71B00033EBB /* expando_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expando_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D160174EF71B00033EBB /* inputManagement_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = inputManagement_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D161174EF71B00033EBB /* metaScripting_ScriptBinding.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = metaScripting_ScriptBinding.cc; sourceTree = "<group>"; };
-		B350D162174EF71B00033EBB /* output_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = output_ScriptBinding.h; sourceTree = "<group>"; };
-		B350D163174EF71B00033EBB /* taggedStrings_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = taggedStrings_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D165174EF78100033EBB /* profiler_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = profiler_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D166174EF78100033EBB /* telnetDebugger_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = telnetDebugger_ScriptBinding.h; sourceTree = "<group>"; };
 		B350D167174EF80400033EBB /* gameConnection_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gameConnection_ScriptBinding.h; sourceTree = "<group>"; };
@@ -1745,9 +1747,19 @@
 			name = composites;
 			sourceTree = "<group>";
 		};
+		3292BCFD1C96CD6A00AEB836 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				3292BCFE1C96CD6A00AEB836 /* consoleTest.cc */,
+			);
+			path = test;
+			sourceTree = "<group>";
+		};
 		32BC66F31C95BB2F00FDBC34 /* compiler */ = {
 			isa = PBXGroup;
 			children = (
+				3292BCF91C96C8C400AEB836 /* consoleASTNodes.cc */,
+				3292BCFA1C96C8C400AEB836 /* consoleASTAlloc.cc */,
 				32BC66F51C95BB2F00FDBC34 /* cmdgram.cc */,
 				32BC66F61C95BB2F00FDBC34 /* cmdgram.h */,
 				32BC66F71C95BB2F00FDBC34 /* cmdscan.cc */,
@@ -2465,49 +2477,46 @@
 			isa = PBXGroup;
 			children = (
 				32BC66F31C95BB2F00FDBC34 /* compiler */,
-				3266D2CB1BFE613100446D93 /* codeblockEvalState_ScriptBinding.h */,
+				3292BCFD1C96CD6A00AEB836 /* test */,
+				86BC82C416518DF400D96ADF /* codeBlock.cc */,
+				86BC82D016518DF400D96ADF /* codeBlock.h */,
 				3266D2CC1BFE613100446D93 /* codeblockEvalState.cc */,
 				3266D2CD1BFE613100446D93 /* codeblockEvalState.h */,
-				3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */,
-				3266D2CF1BFE613100446D93 /* consoleValue.cc */,
-				32BA90FC1BEC20930041D293 /* consoleSerialization.h */,
-				32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */,
-				32BA90FB1BE6DF7A0041D293 /* consoleValue.h */,
-				B350D15B174EF71B00033EBB /* consoleDoc_ScriptBinding.h */,
-				B350D15D174EF71B00033EBB /* consoleLogger_ScriptBinding.h */,
-				B350D15E174EF71B00033EBB /* consoleNamespace_ScriptBinding.h */,
-				B350D15F174EF71B00033EBB /* expando_ScriptBinding.h */,
-				B350D160174EF71B00033EBB /* inputManagement_ScriptBinding.h */,
-				B350D161174EF71B00033EBB /* metaScripting_ScriptBinding.cc */,
-				B350D162174EF71B00033EBB /* output_ScriptBinding.h */,
-				B350D163174EF71B00033EBB /* taggedStrings_ScriptBinding.h */,
-				86BC82B316518DF400D96ADF /* consoleDictionary.cc */,
-				86BC82B416518DF400D96ADF /* consoleDictionary.h */,
-				86BC82B716518DF400D96ADF /* consoleNamespace.cc */,
-				86BC82B816518DF400D96ADF /* consoleNamespace.h */,
+				32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */,
+				32BE57A11C00960B0093E2A3 /* codeblockUtil.h */,
+				86BC82C716518DF400D96ADF /* console.cc */,
+				86BC82D216518DF400D96ADF /* console.h */,
 				86BC82B916518DF400D96ADF /* consoleBaseType.cc */,
 				86BC82BA16518DF400D96ADF /* consoleBaseType.h */,
-				86BC82BB16518DF400D96ADF /* ConsoleTypeValidators.cc */,
-				86BC82BC16518DF400D96ADF /* ConsoleTypeValidators.h */,
-				86BC82C016518DF400D96ADF /* astAlloc.cc */,
-				86BC82C116518DF400D96ADF /* astNodes.cc */,
-				86BC82C416518DF400D96ADF /* codeBlock.cc */,
-				86BC82C516518DF400D96ADF /* compiledEval.cc */,
-				86BC82C716518DF400D96ADF /* console.cc */,
+				32BA90FA1BDD86C20041D293 /* consoleCallbackHelper.h */,
+				3292BD001C96CE1800AEB836 /* consoleConstructor.cc */,
+				3292BD091C97941700AEB836 /* consoleConstructor.h */,
+				86BC82B316518DF400D96ADF /* consoleDictionary.cc */,
+				86BC82B416518DF400D96ADF /* consoleDictionary.h */,
 				86BC82C816518DF400D96ADF /* consoleDoc.cc */,
-				86BC82C916518DF400D96ADF /* consoleFunctions.cc */,
-				86BC82CA16518DF400D96ADF /* consoleLogger.cc */,
-				86BC82CB16518DF400D96ADF /* consoleObject.cc */,
-				86BC82CD16518DF400D96ADF /* consoleTypes.cc */,
-				86BC82D016518DF400D96ADF /* codeBlock.h */,
-				86BC82D216518DF400D96ADF /* console.h */,
 				86BC82D316518DF400D96ADF /* consoleDoc.h */,
+				3292BD0A1C9866A800AEB836 /* consoleExec.cc */,
+				3292BD081C9788F900AEB836 /* consoleExec.h */,
+				86BC82C916518DF400D96ADF /* consoleFunctions.cc */,
 				86BC82D416518DF400D96ADF /* consoleInternal.h */,
+				86BC82CA16518DF400D96ADF /* consoleLogger.cc */,
 				86BC82D516518DF400D96ADF /* consoleLogger.h */,
+				86BC82B716518DF400D96ADF /* consoleNamespace.cc */,
+				86BC82B816518DF400D96ADF /* consoleNamespace.h */,
+				86BC82CB16518DF400D96ADF /* consoleObject.cc */,
 				86BC82D616518DF400D96ADF /* consoleObject.h */,
+				3292BD031C9788A400AEB836 /* consoleOutput.cc */,
+				3292BD061C9788BD00AEB836 /* consoleOutput.h */,
+				3292BD021C9788A400AEB836 /* consolePaths.cc */,
+				3292BD071C9788BD00AEB836 /* consolePaths.h */,
+				3266D2CE1BFE613100446D93 /* consoleSerialization.cpp */,
+				32BA90FC1BEC20930041D293 /* consoleSerialization.h */,
+				86BC82CD16518DF400D96ADF /* consoleTypes.cc */,
 				86BC82D816518DF400D96ADF /* consoleTypes.h */,
-				32BE57A11C00960B0093E2A3 /* codeblockUtil.h */,
-				32BE57A21C00965A0093E2A3 /* codeblockUtil.cpp */,
+				3292BD0C1C98699900AEB836 /* consoleTypeValidators.cc */,
+				3292BD0D1C98699900AEB836 /* consoleTypeValidators.h */,
+				3266D2CF1BFE613100446D93 /* consoleValue.cc */,
+				32BA90FB1BE6DF7A0041D293 /* consoleValue.h */,
 			);
 			name = console;
 			path = ../../../source/console;
@@ -3331,6 +3340,7 @@
 				86D770891656873C0046D71F /* tinyxml.cpp in Sources */,
 				86D7708A1656873C0046D71F /* tinyxmlerror.cpp in Sources */,
 				86D7708B1656873C0046D71F /* tinyxmlparser.cpp in Sources */,
+				3292BCFF1C96CD6A00AEB836 /* consoleTest.cc in Sources */,
 				86D7708D1656873C0046D71F /* CursorManager.cc in Sources */,
 				86D7708E1656873C0046D71F /* platform.cc in Sources */,
 				86D7708F1656873C0046D71F /* platformAssert.cc in Sources */,
@@ -3392,6 +3402,7 @@
 				86D77052165687220046D71F /* zipArchive.cc in Sources */,
 				86D77053165687220046D71F /* zipCryptStream.cc in Sources */,
 				86D77054165687220046D71F /* zipObject.cc in Sources */,
+				3292BD011C96CE1800AEB836 /* consoleConstructor.cc in Sources */,
 				8645C97418872339004ED987 /* leapMotionManager.cc in Sources */,
 				86D77055165687220046D71F /* zipSubStream.cc in Sources */,
 				86D77056165687220046D71F /* zipTempStream.cc in Sources */,
@@ -3405,12 +3416,8 @@
 				86D76FBD165687060046D71F /* consoleDictionary.cc in Sources */,
 				86D76FBF165687060046D71F /* consoleNamespace.cc in Sources */,
 				86D76FC0165687060046D71F /* consoleBaseType.cc in Sources */,
-				86D76FC1165687060046D71F /* ConsoleTypeValidators.cc in Sources */,
 				27908E0518A3F8CB002D41BD /* EventData.c in Sources */,
-				86D76FC3165687060046D71F /* astAlloc.cc in Sources */,
-				86D76FC4165687060046D71F /* astNodes.cc in Sources */,
 				86D76FC7165687060046D71F /* codeBlock.cc in Sources */,
-				86D76FC8165687060046D71F /* compiledEval.cc in Sources */,
 				86D76FCA165687060046D71F /* console.cc in Sources */,
 				86D76FCB165687060046D71F /* consoleDoc.cc in Sources */,
 				86D76FCC165687060046D71F /* consoleFunctions.cc in Sources */,
@@ -3462,6 +3469,7 @@
 				86D7700D165687060046D71F /* guiRolloutCtrl.cc in Sources */,
 				86D7700E165687060046D71F /* guiScrollCtrl.cc in Sources */,
 				86D7700F165687060046D71F /* guiStackCtrl.cc in Sources */,
+				3292BD041C9788A400AEB836 /* consolePaths.cc in Sources */,
 				86D77010165687060046D71F /* guiTabBookCtrl.cc in Sources */,
 				86D77011165687060046D71F /* guiWindowCtrl.cc in Sources */,
 				86D77012165687060046D71F /* guiControlListPopup.cc in Sources */,
@@ -3488,6 +3496,7 @@
 				86D77024165687060046D71F /* guiConsoleEditCtrl.cc in Sources */,
 				8645C97518872339004ED987 /* leapMotionUtil.cpp in Sources */,
 				86D77025165687060046D71F /* guiConsoleTextCtrl.cc in Sources */,
+				3292BD0B1C9866A800AEB836 /* consoleExec.cc in Sources */,
 				86D77026165687060046D71F /* guiControl.cc in Sources */,
 				86D77027165687060046D71F /* guiDefaultControlRender.cc in Sources */,
 				86D77028165687060046D71F /* guiFadeinBitmapCtrl.cc in Sources */,
@@ -3505,6 +3514,7 @@
 				86D77034165687060046D71F /* guiTabPageCtrl.cc in Sources */,
 				86D77035165687060046D71F /* guiTextCtrl.cc in Sources */,
 				3266D2D21BFE613100446D93 /* consoleValue.cc in Sources */,
+				3292BCFC1C96C8C400AEB836 /* consoleASTAlloc.cc in Sources */,
 				86D77036165687060046D71F /* guiTextEditCtrl.cc in Sources */,
 				86D77037165687060046D71F /* guiTextEditSliderCtrl.cc in Sources */,
 				86D77038165687060046D71F /* guiTextListCtrl.cc in Sources */,
@@ -3569,6 +3579,7 @@
 				865A2283165187B600527C44 /* b2ChainShape.cpp in Sources */,
 				865A2284165187B600527C44 /* b2CircleShape.cpp in Sources */,
 				865A2285165187B600527C44 /* b2EdgeShape.cpp in Sources */,
+				3292BD051C9788A400AEB836 /* consoleOutput.cc in Sources */,
 				865A2286165187B600527C44 /* b2PolygonShape.cpp in Sources */,
 				865A2287165187B600527C44 /* b2BlockAllocator.cpp in Sources */,
 				865A2288165187B600527C44 /* b2Draw.cpp in Sources */,
@@ -3581,6 +3592,7 @@
 				865A228F165187B600527C44 /* b2Fixture.cpp in Sources */,
 				865A2290165187B600527C44 /* b2Island.cpp in Sources */,
 				32BC66FD1C95BB2F00FDBC34 /* cmdgram.cc in Sources */,
+				3292BCFB1C96C8C400AEB836 /* consoleASTNodes.cc in Sources */,
 				8645C96C1887231C004ED987 /* mPoint.cpp in Sources */,
 				865A2291165187B600527C44 /* b2World.cpp in Sources */,
 				865A2292165187B600527C44 /* b2WorldCallbacks.cpp in Sources */,
@@ -3620,6 +3632,7 @@
 				865A230D165187FF00527C44 /* jcmarker.c in Sources */,
 				865A230E165187FF00527C44 /* jcmaster.c in Sources */,
 				865A230F165187FF00527C44 /* jcomapi.c in Sources */,
+				3292BD0E1C98699900AEB836 /* consoleTypeValidators.cc in Sources */,
 				865A2310165187FF00527C44 /* jcparam.c in Sources */,
 				865A2311165187FF00527C44 /* jcphuff.c in Sources */,
 				865A2312165187FF00527C44 /* jcprepct.c in Sources */,
@@ -3745,7 +3758,6 @@
 				B350D131174ED23E00033EBB /* frameAllocator_ScriptBinding.cc in Sources */,
 				B350D147174ED56500033EBB /* platformNetwork_ScriptBinding.cc in Sources */,
 				B350D158174EF62400033EBB /* fileSystem_ScriptBinding.cc in Sources */,
-				B350D164174EF71B00033EBB /* metaScripting_ScriptBinding.cc in Sources */,
 				B350D172174EF91900033EBB /* audio_ScriptBinding.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

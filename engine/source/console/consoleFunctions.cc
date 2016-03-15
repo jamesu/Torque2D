@@ -28,18 +28,10 @@
 #include "console/codeblockEvalState.h"
 #include "console/compiler/consoleAST.h"
 
-#if defined(TORQUE_OS_IOS) || defined(TORQUE_OS_OSX)
-#include <ifaddrs.h>
-#include <arpa/inet.h>
-#endif
-
-#include "inputManagement_ScriptBinding.h"
-
 #ifdef TORQUE_ALLOW_JOURNALING
    static U32 journalDepth = 1;
 #endif
 
-//Luma:   Console function to tell if this is a TORQUE_OS_IOS build
 ConsoleFunction(isiPhoneBuild, bool, 1, 1, "Returns true if this is a iPhone build, false otherwise")
 {
 #ifdef   TORQUE_OS_IOS
@@ -49,197 +41,147 @@ ConsoleFunction(isiPhoneBuild, bool, 1, 1, "Returns true if this is a iPhone bui
 #endif   //TORQUE_OS_IOS
 }
 
-extern CodeBlockEvalState gRootEvalState;
+ConsoleFunctionGroupBegin( Output, "Functions to output to the console." );
 
-// Creates a coroutine, sets it in the initial state.
-ConsoleStaticMethod(Coroutine, create, ConsoleValuePtr, 2, 2, "Create a coroutine calling func")
+/*! @addtogroup ConsoleOutput Console Output
+   @ingroup TorqueScriptFunctions
+   @{
+ */
+
+/*! Use the echo function to print messages to the console.
+ @param text Any valid text string.
+ @param ... Any additional valid text string(s).
+ @return No return value.
+ @sa error, warn
+ */
+ConsoleFunctionWithDocs(echo, ConsoleVoid, 2, 0, ( text, [...]* ))
 {
-   ConsoleValuePtr &nse = argv[1];
-   Namespace::Entry *callEntry = NULL;
-   if (nse.type == ConsoleValue::TypeInternalNamespaceEntry)
-   {
-      callEntry = (Namespace::Entry*)nse.value.ptrValue;
-   }
-   else
-   {
-      callEntry = Namespace::global()->lookup(nse.getSTEStringValue());
-   }
+   U32 len = 0;
+   S32 i;
+   for(i = 1; i < argc; i++)
+      len += dStrlen(argv[i]);
    
-   if (!callEntry)
-   {
-      Con::errorf("Could not find coroutine function %s", nse.getSTEStringValue());
-      return ConsoleValuePtr();
-   }
+   char *ret = Con::getReturnBuffer(len + 1);
+   ret[0] = 0;
+   for(i = 1; i < argc; i++)
+      dStrcat(ret, argv[i]);
    
-   ConsoleValuePtr ret;
-   CodeBlockCoroutineState* state = new CodeBlockCoroutineState();
-   state->nsEntry = callEntry;
-   state->currentState = CodeBlockCoroutineState::WAIT_INITIAL_CALL;
-   ret.setValue(state);
+   Con::printf("%s", ret);
+}
+
+/*! Prints a separator to the console.
+ */
+ConsoleFunctionWithDocs(echoSeparator, ConsoleVoid, 0, 0, ())
+{
+   Con::printSeparator();
+}
+
+/*! Use the warn function to print warning messages to the console. These messages usually yellow or orange.
+ @param text Any valid text string.
+ @param ... Any additional valid text string(s).
+ @return No return value.
+ @sa warn, error
+ */
+ConsoleFunctionWithDocs(warn, ConsoleVoid, 2, 0, ( text, [...]* ))
+{
+   U32 len = 0;
+   S32 i;
+   for(i = 1; i < argc; i++)
+      len += dStrlen(argv[i]);
+   
+   char *ret = Con::getReturnBuffer(len + 1);
+   ret[0] = 0;
+   for(i = 1; i < argc; i++)
+      dStrcat(ret, argv[i]);
+   
+   Con::warnf(ConsoleLogEntry::General, "%s", ret);
+   ret[0] = 0;
+}
+
+/*! Use the error function to print error messages to the console. These messages usually print in red.
+ @param text Any valid text string.
+ @param ... Any additional valid text string(s).
+ @return No return value.
+ @sa echo, warn
+ */
+ConsoleFunctionWithDocs(error, ConsoleVoid, 2, 0, ( text, [...]* ))
+{
+   U32 len = 0;
+   S32 i;
+   for(i = 1; i < argc; i++)
+      len += dStrlen(argv[i]);
+   
+   char *ret = Con::getReturnBuffer(len + 1);
+   ret[0] = 0;
+   for(i = 1; i < argc; i++)
+      dStrcat(ret, argv[i]);
+   
+   Con::errorf(ConsoleLogEntry::General, "%s", ret);
+   ret[0] = 0;
+}
+
+/*! Use the collapseEscape function to replace all escape sequences ('xx') with an expanded version ('xx').
+ @param text A string, possibly containing escape sequences.
+ @return Returns a copy of text with all escape sequences expanded.
+ @sa collapseEscape
+ */
+ConsoleFunctionWithDocs(expandEscape, ConsoleString, 2, 2, ( text ))
+{
+   TORQUE_UNUSED( argc );
+   char *ret = Con::getReturnBuffer(dStrlen(argv[1])*2 + 1);  // worst case situation
+   expandEscape(ret, argv[1]);
    return ret;
 }
 
-// Creates a coroutine, sets it in the initial state.
-ConsoleMethod(SimObject, createCoroutine, ConsoleValuePtr, 2, 2, "Create a coroutine calling func")
+/*! Use the collapseEscape function to replace all escape sequences ('xx') with a collapsed version ('xx').
+ @param text A string, possibly containing escape sequences.
+ @return Returns a copy of text with all escape sequences converted to an encoding.
+ @sa expandEscape
+ */
+ConsoleFunctionWithDocs(collapseEscape, ConsoleString, 2, 2, ( text ))
 {
-   ConsoleValuePtr &nse = argv[2];
-   Namespace::Entry *callEntry = NULL;
-   if (nse.type == ConsoleValue::TypeInternalNamespaceEntry)
-   {
-      callEntry = (Namespace::Entry*)nse.value.ptrValue;
-   }
-   else
-   {
-      callEntry = object->getNamespace()->lookup(nse.getSTEStringValue());
-   }
-   
-   if (!callEntry)
-   {
-      Con::errorf("Could not find coroutine function %s in object %s", nse.getSTEStringValue(), object->getIdString());
-      return ConsoleValuePtr();
-   }
-   
-   ConsoleValuePtr ret;
-   CodeBlockCoroutineState* state = new CodeBlockCoroutineState();
-   state->nsEntry = callEntry;
-   ret.setValue(state);
+   TORQUE_UNUSED( argc );
+   char *ret = Con::getReturnBuffer(dStrlen(argv[1]) + 1);  // worst case situation
+   dStrcpy( ret, argv[1] );
+   collapseEscape( ret );
    return ret;
 }
 
-// Resumes a coroutine, passing in argv to the restoreCoroutine func.
-// @note this function will return the value intended to be yielded to the coroutine
-ConsoleStaticMethod(Coroutine, resume, ConsoleValuePtr, 2, 0, "Resume a coroutine")
+/*! Use the setLogMode function to set the logging level based on bits that are set in the mode argument.
+ This is a general debug method and should be used in all but release cases and perhaps even then.
+ @param mode A bitmask enabling various types of logging. See 'Logging Modes' table below.
+ @return No return value.
+ @sa intputLog
+ */
+ConsoleFunctionWithDocs(setLogMode, ConsoleVoid, 2, 2, ( mode ))
 {
-   ConsoleValuePtr &cvalue = argv[1];
-   ConsoleValuePtr returnValue;
-   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
-   
-   // Rewrite args so we get nsEntry a b c instead of resume coroutine a b c
-   ConsoleValuePtr realArgs[32];
-   realArgs[0].type = ConsoleValue::TypeInternalNamespaceEntry;
-   realArgs[0].value.ptrValue = state->nsEntry;
-   
-   for (U32 i=2; i<argc; i++)
-   {
-      realArgs[i-1].setValue(argv[i]);
-   }
-   
-   if (argc > 2)
-   {
-      returnValue.setValue(argv[2]);
-   }
-   
-   // we'll essentially switch to this when exiting
-   if (!CodeBlockEvalState::getCurrent()->restoreCoroutine(*state, argc-1, realArgs))
-   {
-      Con::errorf("Couldn't resume coroutine");
-      return ConsoleValuePtr();
-   }
-   
-   return returnValue;
+   TORQUE_UNUSED( argc );
+   Con::setLogMode(dAtoi(argv[1]));
 }
 
-ConsoleStaticMethod(Coroutine, getCurrent, ConsoleValuePtr, 1, 1, "Gets current active coroutine")
+/*! Use the setEchoFileLoads function to enable/disable echoing of file loads (to console).
+ This does not completely disable message, but rather adds additional methods when echoing is set to true. File loads will always echo a compile statement if compiling is required, and an exec statement at all times
+ @param enable A boolean value. If this value is true, extra information will be dumped to the console when files are loaded.
+ @return No return value.
+ */
+ConsoleFunctionWithDocs(setEchoFileLoads, ConsoleVoid, 2, 2, ( enable ))
 {
-   ConsoleValuePtr returnValue;
-   returnValue.setValue(CodeBlockEvalState::getCurrent()->coroutine);
-   return returnValue;
+   TORQUE_UNUSED( argc );
+   ResourceManager->setFileNameEcho(dAtob(argv[1]));
 }
 
-// Resumes a coroutine, passing in argv to the restoreCoroutine func.
-// @note this function will return the value intended to be yielded to the
-// function which calls resume
-ConsoleStaticMethod(Coroutine, yield, ConsoleValuePtr, 1, 3, "Yield current coroutine")
-{
-   ConsoleValuePtr returnValue;
-   if (argc > 2)
-   {
-      returnValue.setValue(argv[2]);
-   }
-   
-   CodeBlockEvalState* evalState = CodeBlockEvalState::getCurrent();
-   if (evalState->coroutine)
-   {
-      if (!CodeBlockEvalState::getCurrent()->saveCoroutine(*evalState->coroutine))
-      {
-         Con::errorf("Coroutine::yield: yield failed.");
-      }
-   }
-   else
-   {
-      Con::errorf("Coroutine::yield: no coroutine is active.");
-   }
-   return returnValue;
-}
+//----------------------------------------------------------------
 
-ConsoleStaticMethod(Coroutine, status, ConsoleValuePtr, 2, 2, "Get status of a coroutine")
+/*! Use the cls function to clear the console output.
+ @return No return value
+ */
+ConsoleFunctionWithDocs( cls, ConsoleVoid, 1, 1, ())
 {
-   ConsoleValuePtr &cvalue = argv[1];
-   ConsoleValuePtr returnValue;
-   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
-   
-   if (state)
-   {
-      ConsoleValuePtr retValue;
-      static StringTableEntry steDEAD = StringTable->insert("DEAD");
-      static StringTableEntry steRUNNING = StringTable->insert("RUNNING");
-      static StringTableEntry steSUSPENDED = StringTable->insert("SUSPENDED");
-      
-      switch(state->currentState)
-      {
-         case CodeBlockCoroutineState::WAIT_INITIAL_CALL:
-         case CodeBlockCoroutineState::SUSPENDED:
-            retValue.setSTE(steSUSPENDED);
-            break;
-         case CodeBlockCoroutineState::RUNNING:
-            retValue.setSTE(steRUNNING);
-            break;
-         case CodeBlockCoroutineState::DEAD:
-            retValue.setSTE(steDEAD);
-            break;
-      }
-      
-      return retValue;
-   }
-   else
-   {
-      return ConsoleValuePtr();
-   }
-}
+   Con::cls();
+};
 
-ConsoleStaticMethod(Coroutine, setWaitTicks, void, 3, 3, "Sets next tick time if threaded")
-{
-   ConsoleValuePtr &cvalue = argv[1];
-   ConsoleValuePtr returnValue;
-   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
-   
-   if (state)
-   {
-      state->waitTicks = (S32)argv[2].getFloatValue();
-      //Con::printf("setWaitTicks[%x] ticks == %i", state, state->waitTicks);
-   }
-}
+//----------------------------------------------------------------
 
-ConsoleStaticMethod(Coroutine, setWaitMS, void, 3, 3, "Sets next tick time if threaded")
-{
-   ConsoleValuePtr &cvalue = argv[1];
-   ConsoleValuePtr returnValue;
-   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
-   
-   if (state)
-   {
-      state->waitTicks = (S32)(argv[2].getFloatValue() / Tickable::smTickMs);
-   }
-}
+ConsoleFunctionGroupEnd(Output)
 
-ConsoleStaticMethod(Coroutine, setNoTicks, void, 2, 2, "Disables ticking")
-{
-   ConsoleValuePtr &cvalue = argv[1];
-   ConsoleValuePtr returnValue;
-   CodeBlockCoroutineState* state = ConsoleValue::isRefType(cvalue.type) ? dynamic_cast<CodeBlockCoroutineState*>(cvalue.value.refValue) : NULL;
-   
-   if (state)
-   {
-      state->waitTicks = S32_MIN;
-   }
-}
+/*! @} */ // group ConsoleOutput

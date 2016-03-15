@@ -94,4 +94,60 @@ ConsoleFunctionWithDocs( createUUID, ConsoleString, 1, 1, () )
     return Platform::createUUID();
 }
 
+
+//----------------------------------------------------------------
+
+/*! Open a URL in the user's favorite web browser.
+ */
+ConsoleFunctionWithDocs( gotoWebPage, ConsoleVoid, 2, 2, ( address ))
+{
+	TORQUE_UNUSED( argc );
+	char* protocolSep = dStrstr(argv[1],"://");
+	
+	if( protocolSep != NULL )
+	{
+		Platform::openWebBrowser(argv[1]);
+		return;
+	}
+	
+	// if we don't see a protocol seperator, then we know that some bullethead
+	// sent us a bad url. We'll first check to see if a file inside the sandbox
+	// with that name exists, then we'll just glom "http://" onto the front of
+	// the bogus url, and hope for the best.
+	
+	char urlBuf[2048];
+	if(Platform::isFile(argv[1]) || Platform::isDirectory(argv[1]))
+	{
+		dSprintf(urlBuf, sizeof(urlBuf), "file://%s",argv[1].getTempStringValue());
+	}
+	else
+		dSprintf(urlBuf, sizeof(urlBuf), "http://%s",argv[1].getTempStringValue());
+	
+	Platform::openWebBrowser(urlBuf);
+	return;
+}
+
+//----------------------------------------------------------------
+
+/*! Use the quit function to stop the engine and quit to the command line.
+ @return No return value
+ */
+ConsoleFunctionWithDocs(quit, ConsoleVoid, 1, 1, ())
+{
+	TORQUE_UNUSED( argc );
+	TORQUE_UNUSED( argv );
+	Platform::postQuitMessage(0);
+}
+
+/*! quitWithErrorMessage(msg)
+ - Quit, showing the provided error message. This is equivalent
+ to an AssertISV.
+ @param Error Message
+ @return No return value
+ */
+ConsoleFunctionWithDocs(quitWithErrorMessage, ConsoleVoid, 2, 2, (msg string))
+{
+	AssertISV(false, argv[1]);
+}
+
 /*! @} */ // group PlatformFunctions

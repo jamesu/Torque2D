@@ -35,8 +35,6 @@
 #include "console/compiler/consoleCompiler.h"
 #include "sim/simBase.h"
 
-#include "consoleNamespace_ScriptBinding.h"
-
 U32 Namespace::mCacheSequence = 0;
 DataChunker Namespace::mCacheAllocator;
 DataChunker Namespace::mAllocator;
@@ -669,3 +667,51 @@ void Namespace::relinkPackages()
    for(U32 i = 0; i < mOldNumActivePackages; i++)
       activatePackage(mActivePackages[i]);
 }
+
+
+ConsoleFunctionGroupBegin( Packages, "Functions relating to the control of packages.");
+
+/*! @defgroup PackageFunctions Packages
+   @ingroup TorqueScriptFunctions
+   @{
+ */
+
+/*! Use the isPackage function to check if the name or ID specified in packageName is a valid package.
+ @param packagename The name or ID of an existing package.
+ @return Returns true if packageName is a valid package, false otherwise.
+ @sa activatePackage, deactivatePackage
+ */
+ConsoleFunctionWithDocs(isPackage, ConsoleBool,2,2, ( packageName ))
+{
+   StringTableEntry packageName = StringTable->insert(argv[1]);
+   return Namespace::isPackage(packageName);
+}
+
+/*! Use the activatePackage function to activate a package definition and to re-define all functions named within this package with the definitions provided in the package body.
+ This pushes the newly activated package onto the top of the package stack.
+ @param packagename The name or ID of an existing package.
+ @return No return value.
+ @sa deactivatePackage, isPackage
+ */
+ConsoleFunctionWithDocs(activatePackage, ConsoleVoid,2,2, ( packageName ))
+{
+   StringTableEntry packageName = StringTable->insert(argv[1]);
+   Namespace::activatePackage(packageName);
+}
+
+/*! Use the deactivatePackage function to deactivate a package definition and to pop any definitions from this package off the package stack.
+ This also causes any subsequently stacked packages to be popped. i.e. If any packages were activated after the one specified in packageName, they too will be deactivated and popped.
+ @param packagename The name or ID of an existing package.
+ @return No return value.
+ @sa activatePackage, isPackage
+ */
+ConsoleFunctionWithDocs(deactivatePackage, ConsoleVoid,2,2, ( packageName ))
+{
+   StringTableEntry packageName = StringTable->insert(argv[1]);
+   Namespace::deactivatePackage(packageName);
+}
+
+ConsoleFunctionGroupEnd(Packages);
+
+/*! @} */ // group PackageFunctions
+

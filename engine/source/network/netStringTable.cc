@@ -275,4 +275,4 @@ ConsoleReferenceCountedType* NetStringHandle::asReferenceCountedType(const char*
    return nsValue;
 }
 
-#include "console/taggedStrings_ScriptBinding.h"
+#include "network/taggedStrings_ScriptBinding.h"

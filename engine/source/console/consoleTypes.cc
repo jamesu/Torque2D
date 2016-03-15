@@ -36,6 +36,43 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////
+// Con methods
+//////////////////////////////////////////////////////////////////////////
+
+namespace Con
+{
+
+void setData(S32 type, void *dataPtr, S32 index, const char* value, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::setData - could not resolve type ID!");
+   cbt->setData((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), value, tbl);
+}
+
+ConsoleStringValuePtr getData(S32 type, void *dataPtr, S32 index, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::getData - could not resolve type ID!");
+   return cbt->getData((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), tbl);
+}
+
+void setDataFromValue(S32 type, void *dataPtr, S32 index, const ConsoleValuePtr &value, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::setData - could not resolve type ID!");
+   cbt->setDataFromValue((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), value, tbl);
+}
+
+ConsoleValuePtr getDataValue(S32 type, void *dataPtr, S32 index, EnumTable *tbl)
+{
+   ConsoleBaseType *cbt = ConsoleBaseType::getType(type);
+   AssertFatal(cbt, "Con::getData - could not resolve type ID!");
+   return cbt->getDataValue((void *) (((const char *)dataPtr) + index * cbt->getTypeSize()), tbl);
+}
+
+}
+
+//////////////////////////////////////////////////////////////////////////
 // TypeString
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( string, TypeString, sizeof(const char*), "" )
@@ -718,15 +755,15 @@ bool ConsoleSimObjectPtr::advanceIterator(ConsoleValuePtr &iterator, ConsoleValu
    if (iterValue < 0 || iterValue >= size)
    {
       ((ConsoleValuePtr&)iterator).setNull();
-		return false;
+      return false;
    }
    else
    {
       ((ConsoleValuePtr&)iteratorValue).setValue(ConsoleSimObjectPtr::fromObject(setObj->first() + iterValue));
       ((ConsoleValuePtr&)iterator).setValue(iterValue+1);
    }
-	
-	return true;
+   
+   return true;
 }
 
 bool ConsoleSimObjectPtr::refCompare(ConsoleReferenceCountedType* other)
@@ -983,6 +1020,10 @@ ConsoleBaseType* ConsoleArrayValue::getType()
    return ConsoleTypeTypeConsoleArray::getInstance();
 }
 
+ConsoleFunction(createArray, ConsoleValuePtr, 1, 1, "create an array")
+{
+   return ConsoleValuePtr(ConsoleArrayValue::fromValues(0, NULL));
+}
 
 
 

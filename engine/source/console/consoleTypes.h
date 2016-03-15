@@ -37,6 +37,18 @@
 
 class CodeBlockCoroutineState;
 
+namespace Con
+{
+   /// @name Dynamic Type System
+   /// @{
+   void setData(S32 type, void *dataPtr, S32 index, const char *value, EnumTable *tbl = NULL);
+   ConsoleStringValuePtr getData(S32 type, void *dataPtr, S32 index, EnumTable *tbl = NULL);
+   
+   void setDataFromValue(S32 type, void *dataPtr, S32 index, const ConsoleValuePtr &value, EnumTable *tbl = NULL);
+   ConsoleValuePtr getDataValue(S32 type, void *dataPtr, S32 index, EnumTable *tbl = NULL);
+   /// @}
+};
+
 // Define Core Console Types
 DefineNativeConsoleType( TypeF32, F32 )
 DefineNativeConsoleType( TypeS8, S8 )

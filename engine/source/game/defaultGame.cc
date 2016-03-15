@@ -87,6 +87,7 @@
 
 // Script binding.
 #include "platform/platform_ScriptBinding.h"
+#include "platform/inputManagement_ScriptBinding.h"
 
 //-----------------------------------------------------------------------------
 
