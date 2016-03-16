@@ -647,7 +647,7 @@ function TruckToy::createBonfire(%this, %x, %y, %scale, %layer)
 function TruckToy::createProjectile(%this)
 {
     // Fetch the truck position.
-    %truckPositionX = TruckToy.TruckBody.Position.x;
+    %truckPositionX = TruckToy.TruckBody.Position[0];
     
     %projectile = new Sprite() { class = "TruckProjectile"; };
     %projectile.Animation = "ToyAssets:Projectile_FireballAnim";
