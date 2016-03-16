@@ -2054,6 +2054,7 @@ void SceneObject::deleteCollisionShape( const U32 shapeIndex )
         return;
     }
 
+    delete mCollisionFixtureDefs[shapeIndex];
     mCollisionFixtureDefs.erase_fast( shapeIndex );
 }
 
