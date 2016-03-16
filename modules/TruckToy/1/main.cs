@@ -936,7 +936,7 @@ function TruckToy::onTouchDown(%this, %touchID, %worldPosition)
         return;
 
     // If we touch in-front of the truck then move forward else reverse.
-    if ( %worldPosition.x >= TruckToy.TruckBody.Position.x )
+    if ( %worldPosition[0] >= TruckToy.TruckBody.Position[0] )
     {
         truckForward( true );
     }
