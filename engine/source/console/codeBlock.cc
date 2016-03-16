@@ -53,6 +53,9 @@ extern S32 CMDparse();
 namespace Con
 {
 extern StringStack STR; // for concat
+
+extern StringTableEntry gCurrentRoot;
+extern StringTableEntry gCurrentFile;
 }
 
 //-------------------------------------------------------------------------
@@ -738,6 +741,19 @@ inline U32 ts2_eq_str(ConsoleValue *a, ConsoleValue *b)
    }
 }
 
+inline static void updateCodeblockVars(CodeBlock* code)
+{
+   if (code)
+   {
+      Con::gCurrentFile = code->name;
+      Con::gCurrentRoot = code->mRoot;
+   }
+   else
+   {
+      Con::gCurrentFile = Con::gCurrentRoot = NULL;
+   }
+}
+
 static char printBuf[128];
 static char printBuf2[128];
 static char *printBufPtr = NULL;
@@ -1048,6 +1064,7 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
 #endif
    
    U32 *code = state->currentFrame.code->code;
+   updateCodeblockVars(state->currentFrame.code);
    
    for (;;)
    {
@@ -1910,6 +1927,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                         code = state->currentFrame.code->code;
                         base = state->stack.address() + state->currentFrame.stackTop;
                         
+                        updateCodeblockVars(state->currentFrame.code);
+                        
                         vmbreak;
                      }
                      case Namespace::Entry::StringCallbackType:
@@ -1957,6 +1976,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                         code = state->currentFrame.code->code;
                         base = state->stack.address() + state->currentFrame.stackTop;
                         
+                        updateCodeblockVars(state->currentFrame.code);
+                        
                         base[state->currentFrame.returnReg].setValue(result);
                         break;
                      }
@@ -1978,6 +1999,8 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                   konst = konstBase + state->currentFrame.constantTop;
                   code = state->currentFrame.code->code;
                   base = state->stack.address() + state->currentFrame.stackTop;
+                  
+                  updateCodeblockVars(state->currentFrame.code);
                }
             }
             
@@ -2237,8 +2260,11 @@ void CodeBlock::execBlock(CodeBlockEvalState *state)
                base = state->stack.address() + state->currentFrame.stackTop;
                base[state->currentFrame.returnReg].setValue(state->yieldValue);
                code = state->currentFrame.code ? state->currentFrame.code->code : NULL;
+               updateCodeblockVars(state->currentFrame.code);
                vmbreak;
             }
+            
+            updateCodeblockVars(state->currentFrame.code);
             
             if (state->currentFrame.isRoot || code == NULL || (state->frames.size() < startFrameSize && startState == state))
             {
