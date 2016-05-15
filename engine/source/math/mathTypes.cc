@@ -38,6 +38,7 @@
 // TypePoint2I
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( Point2I, TypePoint2I, sizeof(Point2I), "" )
+ConsoleUseDefaultReferenceType( TypePoint2I, Point2I )
 
 ConsoleGetType( TypePoint2I )
 {
@@ -61,6 +62,7 @@ ConsoleSetType( TypePoint2I )
 // TypePoint2F
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( Point2F, TypePoint2F, sizeof(Point2F), "" )
+ConsoleUseDefaultReferenceType( TypePoint2F, Point2F )
 
 ConsoleGetType( TypePoint2F )
 {
@@ -84,6 +86,7 @@ ConsoleSetType( TypePoint2F )
 // TypePoint2FVector
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( point2FList, TypePoint2FVector, sizeof(Vector<Point2F>), "" )
+ConsoleUseDefaultReferenceType( TypePoint2FVector, Vector<Point2F> )
 
 ConsoleGetType( TypePoint2FVector )
 {
@@ -142,6 +145,7 @@ ConsoleSetType( TypePoint2FVector )
 // TypePoint3F
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( Point3F, TypePoint3F, sizeof(Point3F), "" )
+ConsoleUseDefaultReferenceType( TypePoint3F, Point3F )
 
 ConsoleGetType( TypePoint3F )
 {
@@ -165,6 +169,7 @@ ConsoleSetType( TypePoint3F )
 // TypePoint4F
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( Point4F, TypePoint4F, sizeof(Point4F), "" )
+ConsoleUseDefaultReferenceType( TypePoint4F, Point4F )
 
 ConsoleGetType( TypePoint4F )
 {
@@ -188,6 +193,7 @@ ConsoleSetType( TypePoint4F )
 // TypeRectI
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( RectI, TypeRectI, sizeof(RectI), "" )
+ConsoleUseDefaultReferenceType( TypeRectI, RectI )
 
 ConsoleGetType( TypeRectI )
 {
@@ -213,6 +219,7 @@ ConsoleSetType( TypeRectI )
 // TypeRectF
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( RectF, TypeRectF, sizeof(RectF), "" )
+ConsoleUseDefaultReferenceType( TypeRectF, RectF )
 
 ConsoleGetType( TypeRectF )
 {
@@ -238,6 +245,7 @@ ConsoleSetType( TypeRectF )
 // TypeMatrixPosition
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( MatrixPosition, TypeMatrixPosition, sizeof(4*sizeof(F32)), "" )
+ConsoleUseDefaultReferenceType( TypeMatrixPosition, MatrixF )
 
 ConsoleGetType( TypeMatrixPosition )
 {
@@ -272,6 +280,7 @@ ConsoleSetType( TypeMatrixPosition )
 // TypeMatrixRotation
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( MatrixRotation, TypeMatrixRotation, sizeof(MatrixF), "" )
+ConsoleUseDefaultReferenceType( TypeMatrixRotation, MatrixF )
 
 ConsoleGetType( TypeMatrixRotation )
 {
@@ -318,6 +327,7 @@ ConsoleSetType( TypeMatrixRotation )
 // TypeBox3F
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( Box3F, TypeBox3F, sizeof(Box3F), "" )
+ConsoleUseDefaultReferenceType( TypeBox3F, Box3F )
 
 ConsoleGetType( TypeBox3F )
 {

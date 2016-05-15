@@ -31,9 +31,13 @@
 #endif
 #include <stdarg.h>
 
+#include "memory/safeDelete.h"
+
 class SimObject;
 struct EnumTable;
 class Namespace;
+
+typedef U32 StringStackPtr;
 
 /// Indicates that warnings about undefined script variables should be displayed.
 ///
@@ -910,5 +914,6 @@ public:
 #endif
 
 /// @}
+
 
 #endif

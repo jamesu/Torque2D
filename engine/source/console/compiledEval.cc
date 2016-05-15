@@ -22,6 +22,7 @@
 
 #include "platform/platform.h"
 #include "console/console.h"
+#include "console/consoleBaseType.h"
 
 #include "console/ast.h"
 #include "collection/findIterator.h"
@@ -447,6 +448,741 @@ static void setFieldComponent( SimObject* object, StringTableEntry field, const 
     }
 }
 
+#define vmdispatch(o)	switch(o)
+#define vmcase(l)	case l:
+#define vmbreak		break
+
+inline U32 ts2_equal(ConsoleValue* a, ConsoleValue* b)
+{
+	// TODO: handle same reference types
+	return a->getFloatValue() == b->getFloatValue() ? 1 : 0;
+}
+
+inline U32 ts2_lt(ConsoleValue* a, ConsoleValue* b)
+{
+	return a->getFloatValue() < b->getFloatValue() ? 1 : 0;
+}
+
+inline U32 ts2_le(ConsoleValue* a, ConsoleValue* b)
+{
+	return a->getFloatValue() <= b->getFloatValue() ? 1 : 0;
+}
+
+// jamesu - string equals will compare values as if they were case insensitive strings
+inline U32 ts2_eq_str(ConsoleValue* a, ConsoleValue* b)
+{
+	if (a->type == b->type)
+	{
+		if (a->type == ConsoleValue::TypeInternalStringTableEntry)
+		{
+			return a->value.string == b->value.string;
+		}
+		else if (a->type == ConsoleValue::TypeInternalStringStackPtr)
+		{
+			return a->value.stringStackPtr == b->value.stringStackPtr; // TOFIX
+		}
+		else if (a->type == ConsoleValue::TypeReferenceCounted)
+		{
+			return a->value.refValue->stringCompare(b->value.refValue->getString());
+		}
+		else
+		{
+			return a->getFloatValue() == b->getFloatValue();
+		}
+	}
+	else if (a->type > ConsoleValue::TypeReferenceCounted && b->type >= ConsoleValue::TypeReferenceCounted)
+	{
+		// Both values are custom, easy!
+		return a->value.refValue->refCompare(b->value.refValue);
+	}
+	else if (a->type > ConsoleValue::TypeReferenceCounted)
+	{
+		return a->value.refValue->stringCompare(b->getTempStringValue());
+	}
+	else if (b->type > ConsoleValue::TypeReferenceCounted)
+	{
+		return b->value.refValue->stringCompare(a->getTempStringValue());
+	}
+	else
+	{
+		// Must be some sort of numeric comparison
+		return a->getFloatValue() == b->getFloatValue();
+	}
+}
+
+void CodeBlock::execBlock(CodeBlockEvalState *state)
+{
+    // Executes code block as normal
+    U32 ip = state->savedIP;
+    ConsoleValue *konst = state->constants;
+    ConsoleValue *konstBase = konst;
+    ConsoleValuePtr* const base = state->stack.address() + state->stackTop;
+    const char *sval;
+    
+    char temp1[256];
+    char temp2[256];
+    StringTableEntry fnName;
+	U32 targetRegTmp = 0;
+    
+    // TODO: remove these
+    U32 callArgc;
+    const char **callArgv;
+    
+    ConsoleValue acc;
+    acc.type = ConsoleValue::TypeInternalFloat;
+    U32 end;
+	
+	// Debug print instructions
+	for (int j=0; j<codeSize; j++)
+	{
+		
+		Compiler2::Instruction i = (code[j]);
+		switch (TS2_OP_DEC(i))
+		{
+				vmcase(Compiler2::OP_MOVE) {
+					
+					Con::printf("[%i] OP_MOV %i %i", j, TS2_OP_DEC_A(i),TS2_OP_DEC_B(i));
+					vmbreak;
+				}
+				vmcase(Compiler2::OP_LOADK) {
+					
+					Con::printf("[%i] OP_LOADK %i %i", j, TS2_OP_DEC_A(i),TS2_OP_DEC_Bx(i));
+					vmbreak;
+				}
+				vmcase(Compiler2::OP_PAGEK) {
+					Con::printf("[%i] OP_PAGEK %i %i", j, TS2_OP_DEC_A(i));
+					konst = konstBase + (256 * TS2_OP_DEC_A(i));
+					vmbreak;
+				}
+				vmcase(Compiler2::OP_LOADVAR) {
+					// A := B
+					Con::printf("[%i] OP_LOADVAR %i %i", j, TS2_OP_DEC_A(i),TS2_OP_DEC_B(i));
+					vmbreak;
+				}
+				vmcase(Compiler2::OP_SETVAR) {
+					// B := C
+					Con::printf("[%i] OP_SETVAR %i %i %i", j, TS2_OP_DEC_A(i),TS2_OP_DEC_B(i),TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_GETFUNC) {
+					Con::printf("[%i] OP_GETFUNC -> %i", j, TS2_OP_DEC_A(i));
+					vmbreak;
+				}
+				
+#define _TS2_INT_OP(_op, _operand) \
+				vmcase(_op) { \
+					targetRegTmp = TS2_OP_DEC_A(i);\
+					Con::printf(#_op "[%i] -> %i", j,  targetRegTmp);\
+					vmbreak; \
+				}
+				
+#define _TS2_FLOAT_OP(_op, _operand) \
+				vmcase(_op) { \
+					targetRegTmp = TS2_OP_DEC_A(i); \
+					Con::printf(#_op "[%i] -> (%i & %i) (%f & %f) -> %i", j, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);\
+					vmbreak; \
+				}
+				
+				//TS2_FLOAT_OP(Compiler2::OP_ADD, +)
+				vmcase(Compiler2::OP_ADD) {
+					targetRegTmp = TS2_OP_DEC_A(i);
+					Con::printf("Compiler2::OP_ADD" "[%i] -> (%i & %i) (%f & %f) -> %i", j, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+					vmbreak;
+				}
+				
+				//TS2_FLOAT_OP(Compiler2::OP_SUB, -)
+				vmcase(Compiler2::OP_SUB) {
+					targetRegTmp = TS2_OP_DEC_A(i);
+					Con::printf("Compiler2::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", j, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+					vmbreak;
+				}
+				
+				
+				_TS2_FLOAT_OP(Compiler2::OP_MUL, *)
+				_TS2_FLOAT_OP(Compiler2::OP_DIV, /)
+				_TS2_INT_OP(Compiler2::OP_MOD, %)
+				//_TS2_FLOAT_OP(Compiler2::OP_POW, +)
+				//_TS2_FLOAT_OP(Compiler2::OP_UMN, -)
+				//_TS2_MATH_OP(Compiler2::OP_NOT, !)
+				_TS2_INT_OP(Compiler2::OP_XOR, ^)
+				_TS2_INT_OP(Compiler2::OP_SHL, <<)
+				_TS2_INT_OP(Compiler2::OP_SHR, >>)
+				_TS2_INT_OP(Compiler2::OP_BITAND, &)
+				_TS2_INT_OP(Compiler2::OP_BITOR, |)
+				//_TS2_INT_OP(Compiler2::OP_ONESCOMPLEMENT, ~)
+				
+				
+				vmcase(Compiler2::OP_CONCAT) {
+					Con::printf("[%i] OP_CONCAT %i..%i", j, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_JMP) {
+					Con::printf("[%i] OP_JMP %i", j, TS2_OP_DEC_sBx(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_LT) {
+					Con::printf("[%i] OP_LT %i %i %i", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_LE) {
+					Con::printf("[%i] OP_LE %i %i %i", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_EQ) {
+					Con::printf("[%i] OP_EQ %i %i %i", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_EQ_STR) {
+					Con::printf("[%i] OP_EQ_STR %i %i %i", j, TS2_OP_DEC_A(i), TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_CALL) {
+					// [abc] [a := a(a[...b params])[...c return params]]
+					U32 returnStart = TS2_OP_DEC_A(i);
+					U32 numParams = TS2_OP_DEC_B(i);
+					U32 numReturn = TS2_OP_DEC_C(i);
+					
+					Con::printf("[%i] OP_CALL %i %i %i", j, returnStart, numParams, numReturn);
+					vmbreak;
+				}
+				
+				vmcase(Compiler2::OP_RETURN) {
+					Con::printf("[%i] OP_RETURN %i", j, TS2_OP_DEC_A(i));
+					vmbreak;
+				}
+		}
+	}
+
+    for (;;)
+    {
+        const Compiler2::Instruction i = (code[ip++]);
+		 
+		  ConsoleValue* const ra = base+TS2_OP_DEC_A(i);
+        vmdispatch (TS2_OP_DEC(i)) {
+            vmcase(Compiler2::OP_MOVE) {
+					
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_MOV %i %i", ip-1, ra,TS2_OP_DEC_B(i));
+#endif
+					 //ConsoleValue* v1 = base+ra;
+					 //ConsoleValue* v2 = base+TS2_OP_DEC_B(i);
+					//*v1 = *v2;
+					
+					//*ra = *(base+TS2_OP_DEC_B(i));
+					
+					*ra = *(base+(((i) >> 14) & 0x1FF));
+					
+                //base[ra] = base[TS2_OP_DEC_B(i)];
+                vmbreak;
+            }
+            vmcase(Compiler2::OP_LOADK) {
+					
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_LOADK %i %i", ip-1, ra,TS2_OP_DEC_Bx(i));
+#endif
+                *ra = konst[TS2_OP_DEC_Bx(i)];
+                vmbreak;
+            }
+            vmcase(Compiler2::OP_PAGEK) {
+                konst = konstBase + (256 * TS2_OP_DEC_A(i));
+                vmbreak;
+            }
+            vmcase(Compiler2::OP_LOADVAR) {
+					// A := B
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_LOADVAR %i %i", ip-1, ra,TS2_OP_DEC_B(i));
+#endif
+                *((ConsoleValuePtr*)(ra)) = ConsoleStringValue::fromString(Con::getVariable(TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getTempStringValue()));
+                vmbreak;
+            }
+            vmcase(Compiler2::OP_SETVAR) {
+                // B := C
+					
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_SETVAR %i %i %i", ip-1, ra,TS2_OP_DEC_B(i),TS2_OP_DEC_C(i));
+#endif
+					U32 bValue = TS2_OP_DEC_B(i);
+                TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getInternalStringValue(temp1, 256);
+                Con::setVariable(temp1, TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getTempStringValue());
+                vmbreak;
+            }
+			  
+			  vmcase(Compiler2::OP_GETFUNC) {
+				  U32 setReg = TS2_OP_DEC_A(i);
+				  ConsoleValuePtr objId = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+				  ConsoleValuePtr nameId = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+				  
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("[%i] OP_GETFUNC -> %i", ip-1, ra);
+#endif
+				  
+				  if (objId.type == ConsoleValue::TypeInternalNull)
+				  {
+					  Namespace* ns = Namespace::global();
+					  
+					  Namespace::Entry* entry = ns->lookup(nameId.getSTEStringValue());
+					  if (!entry)
+					  {
+						  base[setReg].setNull();
+					  }
+					  else
+					  {
+						  base[setReg].setNull();
+						  base[setReg].type = ConsoleValue::TypeInternalNamespaceEntry;
+						  base[setReg].value.ptrValue = entry;
+					  }
+				  }
+				  
+				  vmbreak;
+			  }
+			  
+            /*
+				 
+				 
+				 
+            OP_GETFIELD,     //  a b c [a := b[c]]      ; gets an object property or table field
+            OP_GETFUNC,      //  a b c [a := b.func ns] ; gets bound ns function for object
+				 
+            OP_SETVAR,       // [ab]    [name(a) := b]     ; assigns a global variable
+            OP_SETFIELD,     // [abc] [a[b] := c]        ; sets an object property or table field
+            OP_SETLIST,      // [ab...c]                  ; sets a list of items (similar to lua)
+            OP_COPYFIELDS,   // [abc] [a.fields := b.fields] ; copy object data or hash fields to object
+				 
+            */
+			  
+			  
+			  //Con::printf(#_op "[%i] -> %i", ip-1,  targetRegTmp);
+#define TS2_INT_OP(_op, _operand) \
+			  vmcase(_op) { \
+				  acc.value.ival = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getIntValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getIntValue()); \
+				  *ra = acc; \
+				  vmbreak; \
+			  }
+			  
+					//Con::printf(#_op "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+#define TS2_FLOAT_OP(_op, _operand) \
+            vmcase(_op) { \
+                acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() _operand TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue()); \
+                *ra = acc; \
+                vmbreak; \
+            }
+            
+			  //TS2_FLOAT_OP(Compiler2::OP_ADD, +)
+			  vmcase(Compiler2::OP_ADD) {
+				  //Con::printf("Compiler2::OP_ADD" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+				  acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() + TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
+				  *ra = acc;
+				  vmbreak;
+			  }
+			  
+			  //TS2_FLOAT_OP(Compiler2::OP_SUB, -)
+			  vmcase(Compiler2::OP_SUB) {
+				  //Con::printf("Compiler2::OP_SUB" "[%i] -> (%i & %i) (%f & %f) -> %i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i), TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() , TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue(), targetRegTmp);
+				  acc.value.fval = (TS2_BASE_OR_KONST(TS2_OP_DEC_B(i)).getFloatValue() - TS2_BASE_OR_KONST(TS2_OP_DEC_C(i)).getFloatValue());
+				  *ra = acc;
+				  vmbreak;
+			  }
+			  
+			  
+            TS2_FLOAT_OP(Compiler2::OP_MUL, *)
+            TS2_FLOAT_OP(Compiler2::OP_DIV, /)
+            TS2_INT_OP(Compiler2::OP_MOD, %)
+            //TS2_FLOAT_OP(Compiler2::OP_POW, +)
+            //TS2_FLOAT_OP(Compiler2::OP_UMN, -)
+            //TS2_MATH_OP(Compiler2::OP_NOT, !)
+            TS2_INT_OP(Compiler2::OP_XOR, ^)
+            TS2_INT_OP(Compiler2::OP_SHL, <<)
+            TS2_INT_OP(Compiler2::OP_SHR, >>)
+            TS2_INT_OP(Compiler2::OP_BITAND, &)
+            TS2_INT_OP(Compiler2::OP_BITOR, |)
+            //TS2_INT_OP(Compiler2::OP_ONESCOMPLEMENT, ~)
+            
+            
+            vmcase(Compiler2::OP_CONCAT) {
+					
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_CONCAT %i..%i", ip-1, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+					
+                // A := B...C
+                end = TS2_OP_DEC_C(i);
+                for (U32 j=TS2_OP_DEC_B(i); j<=end; j++)
+                {
+						 STR.setStringValue(base[j].getTempStringValue());
+						 STR.advance();
+					 }
+					 STR.rewindTerminate();
+					 for (U32 j=TS2_OP_DEC_B(i)+1; j<=end; j++)
+					 {
+						 STR.rewind();
+					 }
+                *((ConsoleValuePtr*)ra) = ConsoleStringValue::fromString(STR.getStringValue());
+                vmbreak;
+            }
+            
+            vmcase(Compiler2::OP_JMP) {
+					//U32 rawIp = TS2_OP_DEC_Bx(i);
+					//S32 ipAddr = TS2_OP_DEC_sBx(i);
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_JMP %i", ip-1, ipAddr);
+#endif
+                ip += TS2_OP_DEC_sBx(i);
+                vmbreak;
+				}
+			  
+			  vmcase(Compiler2::OP_LT) {
+				  ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+				  ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("[%i] OP_LT %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+				  if ((v1.getFloatValue() < v2.getFloatValue()) != TS2_OP_DEC_A(i))
+				  {
+					  // skip JMP (i.e. follow true branch)
+					  ip++;
+				  }
+				  else
+				  {
+					  // Perform next JMP
+					  S32 relJmp = TS2_OP_DEC_sBx(code[ip])+1;
+					  ip += relJmp;
+				  }
+				  vmbreak;
+			  }
+			  
+			  vmcase(Compiler2::OP_LE) {
+				  ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+				  ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("[%i] OP_LE %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+				  
+				  if ((v1.getFloatValue() <= v2.getFloatValue()) != TS2_OP_DEC_A(i))
+				  {
+					  // skip JMP (i.e. follow true branch)
+					  ip++;
+				  }
+				  else
+				  {
+					  // Perform next JMP
+					  ip += TS2_OP_DEC_sBx(code[ip])+1;
+				  }
+				  vmbreak;
+			  }
+			  
+			  vmcase(Compiler2::OP_EQ) {
+				  ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+				  ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("[%i] OP_EQ %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+				  
+				  if ((v1.getFloatValue() == v2.getFloatValue()) != TS2_OP_DEC_A(i))
+				  {
+					  // skip JMP (i.e. follow true branch)
+					  ip++;
+				  }
+				  else
+				  {
+					  // Perform next JMP
+					  ip += TS2_OP_DEC_sBx(code[ip])+1;
+				  }
+				  vmbreak;
+			  }
+			  
+			  vmcase(Compiler2::OP_EQ_STR) {
+				  ConsoleValue v1 = TS2_BASE_OR_KONST(TS2_OP_DEC_B(i));
+				  ConsoleValue v2 = TS2_BASE_OR_KONST(TS2_OP_DEC_C(i));
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("[%i] OP_EQ_STR %i %i %i", ip-1, ra, TS2_OP_DEC_B(i), TS2_OP_DEC_C(i));
+#endif
+				  
+				  if (ts2_eq_str(&v1, &v2) != TS2_OP_DEC_A(i))
+				  {
+					  // skip JMP (i.e. follow true branch)
+					  ip++;
+				  }
+				  else
+				  {
+					  // Perform next JMP
+					  ip += TS2_OP_DEC_sBx(code[ip])+1;
+				  }
+				  vmbreak;
+			  }
+			  
+            vmcase(Compiler2::OP_CALL) {
+                // [abc] [a := a(a[...b params])[...c return params]]
+                U32 returnStart = TS2_OP_DEC_A(i);
+                U32 numParams = TS2_OP_DEC_B(i);
+                U32 numReturn = TS2_OP_DEC_C(i);
+					
+					
+#ifdef TS2_VM_DEBUG
+					Con::printf("[%i] OP_CALL %i %i %i", ip-1, returnStart, numParams, numReturn);
+#endif
+					
+                if (base[returnStart].type != ConsoleValue::TypeInternalNamespaceEntry)
+                {
+                    Con::errorf("Invalid namespace entry!");
+                    continue;
+                }
+                
+                Namespace::Entry* nsEntry = static_cast<Namespace::Entry*>(base[returnStart].value.ptrValue);
+                
+                STR.pushFrame();
+                for (U32 j=1; j<numParams+1; j++)
+                {
+						 STR.setStringValue(base[returnStart+j].getTempStringValue());
+						 STR.push();
+                }
+                STR.getArgcArgv(nsEntry->mFunctionName, &callArgc, &callArgv);
+                
+                // Now we have to call it!
+                S32 nsType = -1;
+                S32 nsMinArgs = 0;
+                S32 nsMaxArgs = 0;
+                Namespace::Entry::CallbackUnion * nsCb = NULL;
+                const char * nsUsage = NULL;
+                if (nsEntry)
+                {
+                    nsType = nsEntry->mType;
+                    nsMinArgs = nsEntry->mMinArgs;
+                    nsMaxArgs = nsEntry->mMaxArgs;
+                    nsCb = &nsEntry->cb;
+                    nsUsage = nsEntry->mUsage;
+                }
+                if(nsEntry->mType == Namespace::Entry::ScriptFunctionType)
+                {
+                    const char *ret = "";
+                    if(nsEntry->mFunctionOffset)
+                        ret = nsEntry->mCode->exec(nsEntry->mFunctionOffset, nsEntry->mFunctionName, nsEntry->mNamespace, callArgc, callArgv, false, nsEntry->mPackage);
+                    
+                    base[returnStart] = ConsoleStringValue::fromString(ret);
+                }
+                else
+                {
+                    const char* nsName = "";
+                    if((nsEntry->mMinArgs && S32(callArgc) < nsEntry->mMinArgs) || (nsEntry->mMaxArgs && S32(callArgc) > nsEntry->mMaxArgs))
+                    {
+                        Con::warnf(ConsoleLogEntry::Script, "%s: %s::%s - wrong number of arguments.", getFileLine(ip), nsName, fnName);
+                        Con::warnf(ConsoleLogEntry::Script, "%s: usage: %s", getFileLine(ip), nsEntry->mUsage);
+                    }
+                    else
+                    {
+                        SimObject* thisObject = numParams > 0 ? base[returnStart+1].getSimObject() : NULL;
+                        
+                        switch(nsEntry->mType)
+                        {
+                            case Namespace::Entry::StringCallbackType:
+                            {
+                                const char *ret = nsEntry->cb.mStringCallbackFunc(thisObject, callArgc, callArgv);
+                                
+                                base[returnStart] = ConsoleStringValue::fromString(ret);
+                                break;
+                            }
+                            case Namespace::Entry::IntCallbackType:
+                            {
+                                S32 result = nsEntry->cb.mIntCallbackFunc(thisObject, callArgc, callArgv);
+                                base[returnStart].setValue(result);
+                                break;
+                            }
+                            case Namespace::Entry::FloatCallbackType:
+                            {
+                                F64 result = nsEntry->cb.mFloatCallbackFunc(thisObject, callArgc, callArgv);
+                                base[returnStart].setValue((F32)result);
+                                break;
+                            }
+                            case Namespace::Entry::VoidCallbackType:
+                            {
+                                nsEntry->cb.mVoidCallbackFunc(thisObject, callArgc, callArgv);
+                                
+                                base[returnStart].setNull();
+                                break;
+                            }
+                            case Namespace::Entry::BoolCallbackType:
+                            {
+                                bool result = nsEntry->cb.mBoolCallbackFunc(thisObject, callArgc, callArgv);
+                                
+                                base[returnStart].setValue(result ? 1 : 0);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                STR.popFrame();
+                vmbreak;
+				}
+			  
+			  vmcase(Compiler2::OP_RETURN) {
+				  
+#ifdef TS2_VM_DEBUG
+				  Con::printf("OP_RETURN %i", ra);
+#endif
+				  state->yieldValue = *ra;
+				  return;
+				  vmbreak;
+			  }
+			  
+            /*
+             OP_ADD,            // [abc] [a := b + c]
+             OP_SUB,            // [abc] [a := b - c]
+             OP_MUL,            // [abc] [a := b * c]
+             OP_DIV,            // [abc] [a := b / c]
+             OP_MOD,            // [abc] [a := b % c]
+             OP_POW,            // [abc] [a := b ** c]
+             OP_UMN,            // [ab]  [a := -c]
+             OP_NOT,            // [ab]  [a := !b]
+             OP_XOR,            // [abc] [a := b ^ c]
+             OP_SHL,            // [abc] [a := b << c]
+             OP_SHR,            // [abc] [a := b >> c]
+             OP_BITAND,         // [abc] [a := b & c]
+             OP_BITOR,          // [abc] [a := b | c]
+             OP_ONESCOMPLEMENT, // [abc] [a := b ~ c]
+             OP_CONCAT,         // [abc] [a := b...c]
+             
+             OP_LT,     // [abc] <  (inverse == >=)
+             OP_LE,     // [abc] <= (inverse == >)
+             OP_EQ,     // [abc] == (inverse == !=)
+             OP_EQ_STR, // [abc] $= (specific string comparison)
+             
+             OP_JMP,    // [iAsBx pc] jump to pc
+             OP_CALL,   // [abc] [a(b...c)]
+             
+             OP_RETURN,  // [abc] return from function, returning a
+             */
+        }
+    }
+    
+    state->savedIP = ip;
+}
+
+void CodeBlock::execWithEnv(CodeBlockEvalState *state, CodeBlockFunction *srcEnv, CodeBlockFunction *destEnv)
+{
+    // Copies references to variables in srcEnv's scope into their corresponding position in destEnv
+}
+
+void CodeBlock::execFunction(CodeBlockEvalState *state, CodeBlockFunction *env, U32 argc, const char **argv, StringTableEntry packageName)
+{
+    // Prepares an executes a function, copying argv into the stack according to env
+    
+}
+
+const char *CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, const char **argv, bool noCalls, StringTableEntry packageName, S32 setFrame)
+{
+#ifdef TORQUE_DEBUG
+    U32 stackStart = STR.mStartStackSize;
+#endif
+    
+#if 0
+    
+    static char traceBuffer[1024];
+    U32 i;
+    
+    incRefCount();
+    STR.clearFunctionOffset();
+    
+    /* 
+     
+     We will now execute code. However before we do this we need to ensure the following:
+     
+     - If we are calling exec, we need to assign references to values in the parent stack, which is achieved by enumerating the local value indexes and pushing refs to them. i.e.
+            [function stack (a,b,c)] [exec stack](aref, bref, cref).
+       Since in TS2 all variables are inserted into the start of the function, references will be copied HOWEVER if for instance we have two exec calls which both use a private value they will not 
+           see it. i.e. the value needs to be present in the parent scope for it to work.
+     - If we are entering a function, we push our function then parameters. Then we just move the base stack pointer and we're done.
+     
+     */
+    StringTableEntry thisFunctionName = NULL;
+    bool popFrame = false;
+    
+    // NOTE
+    if(argv)
+    {
+        
+        
+        
+        if(gEvalState.traceOn)
+        {
+            traceBuffer[0] = 0;
+            dStrcat(traceBuffer, "Entering ");
+            if(packageName)
+            {
+                dStrcat(traceBuffer, "[");
+                dStrcat(traceBuffer, packageName);
+                dStrcat(traceBuffer, "]");
+            }
+            if(thisNamespace && thisNamespace->mName)
+            {
+                dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
+                         "%s::%s(", thisNamespace->mName, thisFunctionName);
+            }
+            else
+            {
+                dSprintf(traceBuffer + dStrlen(traceBuffer), sizeof(traceBuffer) - dStrlen(traceBuffer),
+                         "%s(", thisFunctionName);
+            }
+            for(i = 0; i < argc; i++)
+            {
+                dStrcat(traceBuffer, argv[i+1]);
+                if(i != argc - 1)
+                    dStrcat(traceBuffer, ", ");
+            }
+            dStrcat(traceBuffer, ")");
+            Con::printf("%s", traceBuffer);
+        }
+        gEvalState.pushFrame(thisFunctionName, thisNamespace);
+        popFrame = true;
+        for(i = 0; i < argc; i++)
+        {
+            StringTableEntry var = CodeToSTE(code, ip + (2 + 6 + 1) + (i * 2));
+            gEvalState.setCurVarNameCreate(var);
+            gEvalState.setStringVariable(argv[i+1]);
+        }
+        ip = ip + (fnArgc * 2) + (2 + 6 + 1);
+        curFloatTable = functionFloats;
+        curStringTable = functionStrings;
+    }
+    else
+    {
+        curFloatTable = globalFloats;
+        curStringTable = globalStrings;
+        
+        // Do we want this code to execute using a new stack frame?
+        if (setFrame < 0)
+        {
+            gEvalState.pushFrame(NULL, NULL);
+            popFrame = true;
+        }
+        else if (!gEvalState.stack.empty())
+        {
+            // We want to copy a reference to an existing stack frame
+            // on to the top of the stack.  Any change that occurs to
+            // the locals during this new frame will also occur in the
+            // original frame.
+            S32 stackIndex = gEvalState.stack.size() - setFrame - 1;
+            gEvalState.pushFrameRef( stackIndex );
+            popFrame = true;
+        }
+    }
+    
+#endif
+}
+
+#if 0
+
 const char *CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNamespace, U32 argc, const char **argv, bool noCalls, StringTableEntry packageName, S32 setFrame)
 {
 #ifdef TORQUE_DEBUG
@@ -546,7 +1282,14 @@ const char *CodeBlock::exec(U32 ip, const char *functionName, Namespace *thisNam
    StringTableEntry var, objParent;
    U32 failJump;
    StringTableEntry fnName;
-   StringTableEntry fnNamespace, fnPackage;
+    StringTableEntry fnNamespace, fnPackage;
+    // Add local object creation stack [7/9/2007 Black]
+    static const U32 objectCreationStackSize = 32;
+    U32 objectCreationStackIndex = 0;
+    struct {
+        SimObject *newObject;
+        U32 failJump;
+    } objectCreationStack[ objectCreationStackSize ];
    SimObject *currentNewObject = 0;
    StringTableEntry prevField = NULL;
    StringTableEntry curField = NULL;
@@ -624,8 +1367,9 @@ breakContinue:
             objParent        = CodeToSTE(code, ip);
             bool isDataBlock =          code[ip + 2];
             bool isInternal  =          code[ip + 3];
-            bool isMessage   =          code[ip + 4];
-            failJump         =          code[ip + 5];
+            bool isSingleton =          code[ip + 4];
+            U32  lineNumber  =          code[ip + 5];
+            failJump         =          code[ip + 6];
             
             // If we don't allow calls, we certainly don't allow creating objects!
             // Moved this to after failJump is set. Engine was crashing when
@@ -639,6 +1383,7 @@ breakContinue:
 
             // Get the constructor information off the stack.
             STR.getArgcArgv(NULL, &callArgc, &callArgv, true);
+            const char *objectName = callArgv[ 2 ];
 
             // Con::printf("Creating object...");
 
@@ -714,7 +1459,7 @@ breakContinue:
 
                // Does it have a parent object? (ie, the copy constructor : syntax, not inheriance)
                // [tom, 9/8/2006] it is inheritance if it's a message ... muwahahah!
-               if(!isMessage && *objParent)
+               if(*objParent)
                {
                   // Find it!
                   SimObject *parent;
@@ -732,33 +1477,17 @@ breakContinue:
                }
 
                // If a name was passed, assign it.
-               if(callArgv[2][0])
-               {
-                  if(! isMessage)
-                  {
-                     if(! isInternal)
-                        currentNewObject->assignName(callArgv[2]);
-                     else
-                        currentNewObject->setInternalName(callArgv[2]);
-                  }
-                  else
-                  {
-                     Message *msg = dynamic_cast<Message *>(currentNewObject);
-                     if(msg)
-                     {
-                        msg->setClassNamespace(callArgv[2]);
-                        msg->setSuperClassNamespace(objParent);
-                     }
-                     else
-                     {
-                        Con::errorf(ConsoleLogEntry::General, "%s: Attempting to use newmsg on non-message type %s", getFileLine(ip-1), callArgv[1]);
-                        delete currentNewObject;
-                        currentNewObject = NULL;
-                        ip = failJump;
-                        break;
-                     }
-                  }
-               }
+                if( objectName[ 0 ] )
+                {
+                    if( !isInternal )
+                        currentNewObject->assignName( objectName );
+                    else
+                        currentNewObject->setInternalName( objectName );
+                    
+                    // Set the original name
+                    //currentNewObject->setOriginalName( objectName );
+                }
+
 
                // Do the constructor parameters.
                if(!currentNewObject->processArguments(callArgc-3, callArgv+3))
@@ -778,7 +1507,7 @@ breakContinue:
             }
 
             // Advance the IP past the create info...
-            ip += 6;
+            ip += 7;
             break;
          }
 
@@ -909,6 +1638,15 @@ breakContinue:
                UINT--;
             break;
          }
+              
+          case OP_FINISH_OBJECT:
+          {
+              //Assert( objectCreationStackIndex >= 0 );
+              // Restore the object info from the stack [7/9/2007 Black]
+              currentNewObject = objectCreationStack[ --objectCreationStackIndex ].newObject;
+              failJump = objectCreationStack[ objectCreationStackIndex ].failJump;
+              break;
+          }
 
          case OP_JMPIFFNOT:
             if(floatStack[FLT--])
@@ -963,6 +1701,10 @@ breakContinue:
          case OP_JMP:
             ip = code[ip];
             break;
+         // This fixes a bug when not explicitly returning a value.
+         case OP_RETURN_VOID:
+            STR.setStringValue("");
+            // We're falling thru here on purpose.
          case OP_RETURN:
             goto execFinished;
          case OP_CMPEQ:
@@ -1781,5 +2523,7 @@ execFinished:
 #endif
    return STR.getStringValue();
 }
+
+#endif
 
 //------------------------------------------------------------

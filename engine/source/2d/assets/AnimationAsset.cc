@@ -34,6 +34,8 @@
 
 ConsoleType( animationAssetPtr, TypeAnimationAssetPtr, sizeof(AssetPtr<AnimationAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeAnimationAssetPtr, AssetPtr<AnimationAsset> )
+
 //-----------------------------------------------------------------------------
 
 ConsoleGetType( TypeAnimationAssetPtr )

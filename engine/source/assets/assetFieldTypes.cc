@@ -56,7 +56,11 @@ StringTableEntry assetLooseFileSignature = StringTable->insert( ASSET_LOOSEFILE_
 //-----------------------------------------------------------------------------
 
 ConsoleType( assetLooseFilePath, TypeAssetLooseFilePath, sizeof(StringTableEntry), ASSET_LOOSE_FILE_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAssetLooseFilePath, StringTableEntry )
+
 ConsoleType( assetIdString, TypeAssetId, sizeof(StringTableEntry), ASSET_ID_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAssetId, StringTableEntry )
+
 
 //-----------------------------------------------------------------------------
 

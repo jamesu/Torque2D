@@ -389,6 +389,7 @@ void GuiControlProfile::decRefCount()
 }
 
 ConsoleType( GuiProfile, TypeGuiProfile, sizeof(GuiControlProfile*), "" )
+ConsoleUseDefaultReferenceType( TypeGuiProfile, GuiControlProfile* )
 
 ConsoleSetType( TypeGuiProfile )
 {

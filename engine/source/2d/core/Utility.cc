@@ -33,6 +33,7 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( b2AABB, Typeb2AABB, sizeof(b2AABB), "" )
+ConsoleUseDefaultReferenceType( Typeb2AABB, b2AABB )
 
 ConsoleGetType( Typeb2AABB )
 {

@@ -80,6 +80,8 @@ const char* ParticleAsset::getParticleAssetLifeModeDescription( const ParticleAs
 
 ConsoleType( particleAssetPtr, TypeParticleAssetPtr, sizeof(AssetPtr<ParticleAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeParticleAssetPtr, AssetPtr<ParticleAsset> )
+
 //-----------------------------------------------------------------------------
 
 ConsoleGetType( TypeParticleAssetPtr )

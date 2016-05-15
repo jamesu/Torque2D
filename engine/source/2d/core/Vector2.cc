@@ -28,6 +28,7 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( Vector2, TypeVector2, sizeof(Vector2), "" )
+ConsoleUseDefaultReferenceType( TypeVector2, Vector2 )
 
 ConsoleGetType( TypeVector2 )
 {

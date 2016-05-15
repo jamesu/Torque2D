@@ -22,6 +22,7 @@
 
 #include "console/console.h"
 #include "console/consoleTypes.h"
+#include "console/consoleDictionary.h"
 #include "string/stringTable.h"
 #include "sim/simBase.h"
 
@@ -37,6 +38,7 @@
 // TypeString
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( string, TypeString, sizeof(const char*), "" )
+ConsoleUseDefaultReferenceType( TypeString, const char* )
 
 ConsoleGetType( TypeString )
 {
@@ -55,6 +57,7 @@ ConsoleSetType( TypeString )
 // TypeStringEntryVector
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( string, TypeStringTableEntryVector, sizeof(Vector<StringTableEntry>), "" )
+ConsoleUseDefaultReferenceType( TypeStringTableEntryVector, Vector<StringTableEntry> )
 
 ConsoleGetType( TypeStringTableEntryVector )
 {
@@ -109,6 +112,7 @@ ConsoleSetType( TypeStringTableEntryVector )
 // TypeCaseString
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( caseString, TypeCaseString, sizeof(const char*), "" )
+ConsoleUseDefaultReferenceType( TypeCaseString, const char* )
 
 ConsoleSetType( TypeCaseString )
 {
@@ -127,6 +131,7 @@ ConsoleGetType( TypeCaseString )
 // TypeFileName
 //////////////////////////////////////////////////////////////////////////
 ConsolePrepType( filename, TypeFilename, sizeof( const char* ), "" )
+ConsoleUseDefaultReferenceType( TypeFilename, const char* )
 
 ConsoleSetType( TypeFilename )
 {
@@ -162,6 +167,7 @@ ConsolePrepData( TypeFilename )
 // TypeS8
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( char, TypeS8, sizeof(U8), "" )
+ConsoleUseDefaultReferenceType( TypeS8, S8 )
 
 ConsoleGetType( TypeS8 )
 {
@@ -182,6 +188,7 @@ ConsoleSetType( TypeS8 )
 // TypeS32
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( int, TypeS32, sizeof(S32), "" )
+ConsoleUseDefaultReferenceType( TypeS32, S32 )
 
 ConsoleGetType( TypeS32 )
 {
@@ -202,6 +209,7 @@ ConsoleSetType( TypeS32 )
 // TypeS32Vector
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( intList, TypeS32Vector, sizeof(Vector<S32>), "" )
+ConsoleUseDefaultReferenceType( TypeS32Vector, Vector<S32> )
 
 ConsoleGetType( TypeS32Vector )
 {
@@ -258,6 +266,7 @@ ConsoleSetType( TypeS32Vector )
 // TypeF32
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( float, TypeF32, sizeof(F32), "" )
+ConsoleUseDefaultReferenceType( TypeF32, Vector<F32> )
 
 ConsoleGetType( TypeF32 )
 {
@@ -277,6 +286,7 @@ ConsoleSetType( TypeF32 )
 // TypeF32Vector
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( floatList, TypeF32Vector, sizeof(Vector<F32>), "" )
+ConsoleUseDefaultReferenceType( TypeF32Vector, Vector<F32> )
 
 ConsoleGetType( TypeF32Vector )
 {
@@ -333,6 +343,7 @@ ConsoleSetType( TypeF32Vector )
 // TypeBool
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( bool, TypeBool, sizeof(bool), "" )
+ConsoleUseDefaultReferenceType( TypeBool, bool )
 
 ConsoleGetType( TypeBool )
 {
@@ -352,6 +363,7 @@ ConsoleSetType( TypeBool )
 // TypeBoolVector
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( boolList, TypeBoolVector, sizeof(Vector<bool>), "" )
+ConsoleUseDefaultReferenceType( TypeBoolVector, Vector<bool> )
 
 ConsoleGetType( TypeBoolVector )
 {
@@ -406,6 +418,7 @@ ConsoleSetType( TypeBoolVector )
 // TypeEnum
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( enumval, TypeEnum, sizeof(S32), "" )
+ConsoleUseDefaultReferenceType( TypeEnum, S32 )
 
 ConsoleGetType( TypeEnum )
 {
@@ -444,6 +457,7 @@ ConsoleSetType( TypeEnum )
 // TypeFlag
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( flag, TypeFlag, sizeof(S32), "" )
+ConsoleUseDefaultReferenceType( TypeFlag, S32 )
 
 ConsoleGetType( TypeFlag )
 {
@@ -471,6 +485,7 @@ ConsoleSetType( TypeFlag )
 // TypeSimObjectPtr
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( SimObjectPtr, TypeSimObjectPtr, sizeof(SimObject*), "" )
+ConsoleUseDefaultReferenceType( TypeSimObjectPtr, SimObject* )
 
 ConsoleSetType( TypeSimObjectPtr )
 {
@@ -496,6 +511,7 @@ ConsoleGetType( TypeSimObjectPtr )
 // TypeSimObjectName
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( SimObjectName, TypeSimObjectName, sizeof(SimObject*), "" )
+ConsoleUseDefaultReferenceType( TypeSimObjectName, SimObject* )
 
 ConsoleSetType( TypeSimObjectName )
 {
@@ -521,6 +537,7 @@ ConsoleGetType( TypeSimObjectName )
 // TypeSimObjectId
 //////////////////////////////////////////////////////////////////////////
 ConsoleType( SimObjectId, TypeSimObjectId, sizeof(SimObject*), "" )
+ConsoleUseDefaultReferenceType( TypeSimObjectId, SimObject* )
 
 ConsoleSetType( TypeSimObjectId )
 {
@@ -539,6 +556,31 @@ ConsoleGetType( TypeSimObjectId )
    char* returnBuffer = Con::getReturnBuffer(128);
    dSprintf(returnBuffer, 128, "%s", *obj ? (*obj)->getIdString() : StringTable->EmptyString );
    return returnBuffer;
+}
+
+ConsoleType( SimpleString, TypeBufferString, sizeof(SimpleString), "" )
+ConsoleSetReferenceType( TypeBufferString, ConsoleStringValue )
+
+ConsoleSetType( TypeBufferString )
+{
+    if(argc == 1)
+    {
+        SimpleString *obj = (SimpleString *)dptr;
+        obj->setString(argv[0]);
+    }
+    else
+        Con::printf("(TypeBufferString) Cannot set multiple args to a single string.");
+}
+
+ConsoleGetType( TypeBufferString )
+{
+    SimpleString *obj = (SimpleString *)dptr;
+    return obj->getString();
+}
+
+ConsoleBaseType* ConsoleStringValue::getType()
+{
+    return ConsoleTypeTypeBufferString::getInstance();
 }
 
 

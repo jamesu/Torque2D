@@ -189,12 +189,12 @@ ConsoleFunctionWithDocs(compilePath, ConsoleString, 2, 2, ( path ))
    return result;
 }
 
-static bool scriptExecutionEcho = false;
+static bool scriptExecutionEcho = true;
 /*! Whether to echo script file execution or not.
 */
 ConsoleFunctionWithDocs(setScriptExecEcho, ConsoleVoid, 2, 2, (echo?))
 {
-    scriptExecutionEcho = dAtob(argv[1]);
+    //scriptExecutionEcho = dAtob(argv[1]);
 }
 
 /*! Use the exec function to compile and execute a normal script, or a special journal script.
@@ -586,6 +586,11 @@ ConsoleFunctionWithDocs(exec, ConsoleBool, 2, 4, ( fileName, [nocalls]?, [journa
       
       //Luma: Profile script executions 
          F32 st1 = (F32)Platform::getRealMilliseconds();
+       
+         if (dStrstr(scriptFileName, "guiProfiles.cs") != 0)
+         {
+             int fucked = 1;
+         }
          
          newCodeBlock->compileExec(name, script, noCalls, 0);
 

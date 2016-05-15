@@ -21,10 +21,13 @@
 //-----------------------------------------------------------------------------
 
 #include "console/consoleBaseType.h"
+#include "console/consoleDictionary.h"
+#include "console/consoleNamespace.h"
+#include "console/consoleTypes.h"
 
 // Init the globals.
 ConsoleBaseType *ConsoleBaseType::smListHead = NULL;
-S32              ConsoleBaseType::smConsoleTypeCount = 1; // This makes 0 an invalid console type.
+S32              ConsoleBaseType::smConsoleTypeCount = 8; // This makes 0 an invalid console type.
 
 // And, we also privately store the types lookup table.
 VectorPtr<ConsoleBaseType*> gConsoleTypeTable;
@@ -56,13 +59,145 @@ void ConsoleBaseType::initialize()
    // Alright, we're all done here; we can now achieve fast lookups by ID.
 }
 
+//-----------------------------------------------------------------------------
+
 ConsoleBaseType  *ConsoleBaseType::getType(const S32 typeID)
 {
    return gConsoleTypeTable[typeID];
 }
+
+//-----------------------------------------------------------------------------
+
+ConsoleBaseType* ConsoleBaseType::getTypeByName(const char *typeName)
+{
+    ConsoleBaseType* walk = getListHead();
+    while( walk != NULL )
+    {
+        if( dStrcmp( walk->getTypeName(), typeName ) == 0 )
+            return walk;
+        
+        walk = walk->getListNext();
+    }
+    
+    return NULL;
+}
+
+/*
+ 
+ IDEA
+ 
+ struct CallableNSMethod
+ {
+    Namespace *ns;
+    StringTableEntry key;
+ };
+ 
+ (internal type)
+ 
+ */
+
+void cbtDefaultOperatorFunc(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimObject *obj = NULL;
+    if (Sim::findObject(inParam->getStringValue(), obj))
+    {
+        Namespace *ns = obj->getNamespace();
+        Namespace::Entry *entry = ns->lookup(StringTable->insert(inSubParam->getStringValue()));
+        if (entry)
+        {
+            //inOutParam->setNSEValue(entry);
+        }
+        else
+        {
+            Con::errorf("Couldn't find entry %s!", inSubParam->getStringValue());
+        }
+        //= inParam->getStringValue();
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+    }
+}
+
+void cbtDefaultOperatorProperty(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimObject *obj = NULL;
+    if (Sim::findObject(inParam->getStringValue(), obj))
+    {
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+    }
+}
+
+void cbtDefaultOperatorPropertySet(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimObject *obj = NULL;
+    if (Sim::findObject(inOutParam->getStringValue(), obj))
+    {
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inOutParam->getStringValue());
+    }
+}
+
+void cbtDefaultOperatorSubObject(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimGroup *obj = NULL;
+    if (Sim::findObject(inParam->getStringValue(), obj))
+    {
+        //SimObject *obj = obj->findObject(inParam->getStringValue());
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+    }
+}
+
+void cbtDefaultOperatorIndex(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimGroup *obj = NULL;
+    if (Sim::findObject(inParam->getStringValue(), obj))
+    {
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inParam->getStringValue());
+    }
+}
+
+void cbtDefaultOperatorIndexSet(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam)
+{
+    // First find object
+    SimGroup *obj = NULL;
+    if (Sim::findObject(inOutParam->getStringValue(), obj))
+    {
+    }
+    else
+    {
+        Con::errorf("Couldn't find object %s", inOutParam->getStringValue());
+    }
+}
+
+typedef void (*ConsoleTypeOperatorFunc)(ConsoleValuePtr *inOutParam, ConsoleValuePtr *inParam, ConsoleValuePtr *inSubParam);
+
+
 //-------------------------------------------------------------------------
 
-ConsoleBaseType::ConsoleBaseType(const S32 size, S32 *idPtr, const char *aTypeName)
+ConsoleBaseType::ConsoleBaseType(const S32 size, S32 *idPtr, const char *aTypeName) :
+mMetaFunc(0),
+mMetaProperty(0),
+mMetaPropertySet(0),
+mMetaSubObject(0),
+mMetaIndex(0),
+mMetaIndexSet(0)
 {
    // General initialization.
    mInspectorFieldType = NULL;
@@ -87,4 +222,32 @@ ConsoleBaseType::ConsoleBaseType(const S32 size, S32 *idPtr, const char *aTypeNa
 ConsoleBaseType::~ConsoleBaseType()
 {
    // Nothing to do for now; we could unlink ourselves from the list, but why?
+}
+
+S32 ConsoleReferenceCountedType::getInternalType() { ConsoleBaseType* type = getType(); return type ? ConsoleValue::TypeCustomFieldStart + type->getTypeID() : ConsoleValue::TypeCustomFieldStart; }
+
+
+ConsoleStringValue* ConsoleStringValue::fromInt(U32 num)
+{
+    char buffer[255];
+    dSprintf(buffer, sizeof(buffer), "%u", num);
+    ConsoleStringValue* value = new ConsoleStringValue();
+    value->setString(buffer);
+    return value;
+}
+
+ConsoleStringValue* ConsoleStringValue::fromFloat(F32 num)
+{
+    char buffer[255];
+    dSprintf(buffer, sizeof(buffer), "%.5g", num);
+    ConsoleStringValue* value = new ConsoleStringValue();
+    value->setString(buffer);
+    return value;
+}
+
+ConsoleStringValue* ConsoleStringValue::fromString(const char *string)
+{
+    ConsoleStringValue* value = new ConsoleStringValue();
+    value->setString(string);
+    return value;
 }

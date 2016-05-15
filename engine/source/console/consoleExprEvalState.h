@@ -29,6 +29,39 @@
 
 //-----------------------------------------------------------------------------
 
+
+class CodeBlockEvalState
+{
+public:
+    
+    /// @name Global state
+    /// {
+    Dictionary* globalVars;
+    /// }
+    
+    /// @name Exception state
+    /// {
+    ConsoleValue* exception;
+    U32 exceptionIP;
+    /// }
+    
+    /// @name Execution state
+    /// {
+    const char* filename;
+    ConsoleValue* constants;
+    Vector<ConsoleValuePtr> stack;
+    U32 stackTop;
+    
+    /// Last returned or yielded value
+    ConsoleValuePtr yieldValue;
+    
+    U32 savedIP;
+    bool traceOn;
+    /// }
+    
+    CodeBlockEvalState() : globalVars(NULL), exception(0), stackTop(0), filename(NULL) {;}
+};
+
 class ExprEvalState
 {
 public:

@@ -124,7 +124,7 @@ TelnetDebugger::TelnetDebugger()
    // Add the version number in a global so that
    // scripts can detect the presence of the
    // "enhanced" debugger features.
-   Con::evaluatef( "$dbgVersion = %d;", Version );
+   //Con::evaluatef( "$dbgVersion = %d;", Version );
 }
 
 TelnetDebugger::Breakpoint **TelnetDebugger::findBreakpoint(StringTableEntry fileName, S32 lineNumber)

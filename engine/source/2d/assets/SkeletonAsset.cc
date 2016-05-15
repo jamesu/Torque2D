@@ -55,6 +55,9 @@ IMPLEMENT_CONOBJECT(SkeletonAsset);
 
 ConsoleType( skeletonAssetPtr, TypeSkeletonAssetPtr, sizeof(AssetPtr<SkeletonAsset>), ASSET_ID_FIELD_PREFIX )
 
+ConsoleUseDefaultReferenceType( TypeSkeletonAssetPtr, AssetPtr<SkeletonAsset> )
+
+
 //-----------------------------------------------------------------------------
 
 ConsoleGetType( TypeSkeletonAssetPtr )

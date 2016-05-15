@@ -52,5 +52,6 @@ DefineConsoleType( TypeFlag )
 DefineConsoleType( TypeSimObjectPtr )
 DefineConsoleType( TypeSimObjectName )
 DefineConsoleType( TypeSimObjectId )
+DefineConsoleType( TypeBufferString )
 
 #endif

@@ -33,10 +33,12 @@
 #include "string/findMatch.h"
 #include "io/fileStream.h"
 #include "console/compiler.h"
+#include "string/stringStack.h"
 
 static char scratchBuffer[1024];
 #define ST_INIT_SIZE 15
 
+extern StringStack STR;
 
 struct StringValue
 {
@@ -452,3 +454,98 @@ bool Dictionary::removeVariable(StringTableEntry name)
    }
    return false;
 }
+
+static char tempBuffer[256];
+
+const char* ConsoleValue::getTempStringValue()
+{
+    tempBuffer[0] = '\0';
+    getInternalStringValue(tempBuffer, 256);
+    return tempBuffer;
+}
+
+StringTableEntry ConsoleValue::getSTEStringValue()
+{
+    switch (type)
+    {
+        case TypeInternalNull:
+            return NULL;
+        case TypeInternalStringTableEntry:
+            return value.string;
+            break;
+        default:
+            return StringTable->insert(getTempStringValue());
+            break;
+    }
+}
+
+void ConsoleValue::getInternalStringValue(char* outBuffer, U32 bufferSize)
+{
+    switch (type)
+    {
+        case TypeInternalNull:
+            *outBuffer = '\0';
+        case TypeInternalInt:
+            dSprintf(outBuffer, bufferSize, "%u", value.ival);
+            break;
+        case TypeInternalFloat:
+            dSprintf(outBuffer, bufferSize, "%.5g", value.fval);
+            break;
+        case TypeInternalStringTableEntry:
+            dSprintf(outBuffer, bufferSize, "%s", value.string);
+            break;
+        case TypeInternalStringStackPtr:
+            dSprintf(outBuffer, bufferSize, "%s", STR.mBuffer + value.stringStackPtr);
+            break;
+		 case TypeInternalNamespaceEntry:
+			 dSprintf(outBuffer, bufferSize, "%s", static_cast<Namespace::Entry*>(value.ptrValue)->mFunctionName);
+			 break;
+        default:
+            dSprintf(outBuffer, bufferSize, "%s", value.refValue->getString());
+            break;
+    }
+}
+
+const char* ConsoleValuePtr::getStringValue()
+{
+    switch (type)
+    {
+        case TypeInternalNull:
+            return "";
+        case TypeInternalInt:
+            type = TypeBufferString;
+            value.stringValue = ConsoleStringValue::fromInt(value.ival);
+            AddRef();
+            return value.stringValue->getString();
+        case TypeInternalFloat:
+            type = TypeBufferString;
+            value.refValue = ConsoleStringValue::fromFloat(value.fval);
+            AddRef();
+            return value.stringValue->getString();
+        case TypeInternalStringTableEntry:
+            return value.string;
+        case TypeInternalStringStackPtr:
+            return STR.mBuffer + value.stringStackPtr;
+        default:
+            return value.refValue->getString();
+    }
+}
+
+
+S32 ConsoleStackSerializationState::getSavedObjectIdx(ConsoleReferenceCountedType* object)
+{
+	HashTable<void*, U32>::iterator itr = writtenValues.find(object);
+	if (itr != writtenValues.end())
+	{
+		return itr->value;
+	}
+	
+	return -1;
+}
+
+void ConsoleStackSerializationState::addSavedObject(ConsoleReferenceCountedType* object)
+{
+	writtenValues.insertUnique(object, savedObjectCount);
+	savedObjectCount++;
+}
+

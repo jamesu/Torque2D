@@ -51,7 +51,9 @@ static Mutex* sLogMutex;
 extern StringStack STR;
 
 ExprEvalState gEvalState;
-StmtNode *statementList;
+StmtNode *gStatementList;
+StmtNode *gCodeblockFunctionList;
+U32 gAnonFunctionID = 0;
 ConsoleConstructor *ConsoleConstructor::first = NULL;
 bool gWarnUndefinedScriptVariables;
 
@@ -1710,4 +1712,238 @@ bool stripRepeatSlashes( char* pDstPath, const char* pSrcPath, S32 dstSize )
 }
 
 } // end of Console namespace
+
+
+void ConsoleValuePtr::readStack(Stream &s, ConsoleStackSerializationState& serializationState, Vector<ConsoleValuePtr> &stack)
+{
+    S16 numTypes = 0;
+    s.read(&numTypes);
+    Vector<StringTableEntry> varTypes;
+    varTypes.setSize(numTypes);
+    for (U32 i=0; i<numTypes; i++)
+    {
+        varTypes[i] = s.readSTString();
+    }
+    
+    U32 numStackValues = 0;
+    s.read(&numStackValues);
+    stack.setSize(numStackValues);
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        U16 refType = 0;
+        ConsoleValuePtr &ptr = stack[i];
+        s.read(&refType);
+        
+        // TODO: ConsoleValue itelf should handle I/O i.e.
+        // ConsoleValue::read(Stream &s, S32 typeId)
+        
+        // Internal value, just copy
+        if (refType < TypeReferenceCounted)
+        {
+            ptr.type = refType;
+            
+            if (refType == TypeInternalStringTableEntry)
+            {
+                ptr.value.string = s.readSTString();
+            }
+			   else if (refType == TypeSavedReference)
+				{
+					S32 refIdx = 0;
+					s.read(&refIdx);
+					ptr.type = serializationState.loadedValues[refIdx]->type;
+					ptr.value = serializationState.loadedValues[refIdx]->value;
+					ptr.AddRef();
+				}
+            else
+            {
+                // Can just copy as-is
+                s.read(&ptr.value.ival);
+            }
+            continue;
+        }
+        
+        StringTableEntry varType = varTypes[refType-TypeReferenceCounted];
+        ConsoleBaseType * type = ConsoleBaseType::getTypeByName(varType);
+        
+        ptr.type = type->getTypeID();
+        ptr.value.refValue = type->createReferenceCountedValue();
+        if (ptr.value.refValue)
+        {
+            ptr.value.refValue->read(s);
+            ptr.AddRef();
+		  }
+		  serializationState.loadedValues.push_back(&ptr);
+    }
+}
+
+void ConsoleValuePtr::writeStack(Stream &s, ConsoleStackSerializationState& serializationState, Vector<ConsoleValuePtr> &stack)
+{
+    U32 numStackValues = stack.size();
+    
+    // Collate together type names
+    Vector<StringTableEntry> varTypes;
+    Vector<U16> varTypeIds;
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        ConsoleValuePtr &ptr = stack[i];
+        
+        if (isRefType(ptr.type))
+        {
+            ConsoleBaseType *type = ptr.value.refValue->getType();
+            StringTableEntry te = StringTable->insert(type->getTypeName());
+            U32 idx = varTypes.indexOf(te);
+            
+            if (idx == (U32)-1)
+            {
+                varTypes.push_back(te);
+                varTypeIds.push_back((varTypes.size()-1)+TypeReferenceCounted);
+            }
+            else
+            {
+                varTypeIds.push_back(idx+TypeReferenceCounted);
+            }
+        }
+        else
+        {
+            varTypeIds.push_back(ptr.type);
+        }
+    }
+    
+    S16 numTypes = varTypes.size();
+    s.write(numTypes);
+    
+    for (U32 i=0; i<numTypes; i++)
+    {
+        s.writeString(varTypes[i]);
+    }
+    
+    s.write(numStackValues);
+    
+    for (U32 i=0; i<numStackValues; i++)
+    {
+        ConsoleValuePtr &ptr = stack[i];
+		 
+        
+        if (isRefType(ptr.type))
+		  {
+			  Con::printf("Var[%i] is %s", i, ptr.value.refValue->getType()->getTypeName());
+            S32 idx = serializationState.getSavedObjectIdx(ptr.value.refValue);
+			   if (idx == -1)
+				{
+					s.write(varTypeIds[i]);
+					ptr.value.refValue->write(s);
+					serializationState.addSavedObject(ptr.value.refValue);
+				}
+			   else
+				{
+					s.write((U16)TypeSavedReference);
+					s.write(idx);
+				}
+        }
+		  else
+		  {
+			  s.write(varTypeIds[i]);
+			  if (ptr.type == TypeInternalStringTableEntry)
+			  {
+					s.writeString(ptr.value.string);
+			  }
+			  else
+			  {
+					// Raw write, easy!
+					s.write(ptr.value.ival);
+			  }
+		  }
+    }
+}
+
+#include "io/memStream.h"
+
+void testStackWrite()
+{
+    Vector<ConsoleValuePtr> stack;
+    
+    ConsoleValuePtr var1;
+    ConsoleValuePtr var2;
+    ConsoleValuePtr var3;
+    
+    ConsoleValuePtr var4;
+    ConsoleValuePtr var5;
+    ConsoleValuePtr var6;
+	ConsoleValuePtr var7;
+	ConsoleValuePtr var8;
+	
+    U8 buffer[16 * 1024];
+    MemStream m(sizeof(buffer), buffer, true, true);
+    
+    ConsoleBaseType *type = ConsoleBaseType::getTypeByName("TypeS32Vector");
+    var1.type = type->getTypeID();
+    var1.value.refValue = type->createReferenceCountedValue();
+    var1.AddRef();
+    m.setPosition(0);
+    m.writeLongString(4096, "1 2 3 4 5");
+    m.setPosition(0);
+    var1.value.refValue->read(m);
+    
+    type = ConsoleBaseType::getTypeByName("TypeString");
+    var2.type = type->getTypeID();
+    var2.value.refValue = type->createReferenceCountedValue();
+    var2.AddRef();
+    m.setPosition(0);
+    m.writeLongString(4096, "This is a string");
+    m.setPosition(0);
+    var2.value.refValue->read(m);
+    
+    type = ConsoleBaseType::getTypeByName("TypeBufferString");
+    var3.type = type->getTypeID();
+    var3.value.refValue = type->createReferenceCountedValue();
+    var3.AddRef();
+    m.setPosition(0);
+    const char *bufferStr = "Buffered string test";
+    U32 len = dStrlen(bufferStr)+1;
+    m.write(len);
+    m.write(len, bufferStr);
+    m.setPosition(0);
+    var3.value.refValue->read(m);
+    
+    var4.type = ConsoleValue::TypeInternalNull;
+    var5.type = ConsoleValue::TypeInternalInt;
+    var5.value.ival = 4096;
+    var6.type = ConsoleValue::TypeInternalFloat;
+    var6.value.fval = 4.096;
+    var7.type = ConsoleValue::TypeInternalStringTableEntry;
+    var7.value.string = StringTable->insert("STEString");
+	
+    var8 = var3;
+    
+    stack.push_back(var1);
+    stack.push_back(var2);
+    stack.push_back(var3);
+    stack.push_back(var4);
+    stack.push_back(var5);
+    stack.push_back(var6);
+	stack.push_back(var7);
+	stack.push_back(var8);
+	
+	ConsoleStackSerializationState serializationState;
+    
+    
+    m.setPosition(0);
+    ConsoleValuePtr::writeStack(m, serializationState, stack);
+    stack.clearAndReset();
+    serializationState.clear();
+    
+    m.setPosition(0);
+    ConsoleValuePtr::readStack(m, serializationState, stack);
+    
+    for (U32 i=0; i<stack.size(); i++)
+    {
+		 Con::printf("Stack[%u] type == %u value == %s refCount == %i", i, stack[i].type, stack[i].getStringValue(), ConsoleValue::isRefType(stack[i].type) ? stack[i].value.refValue->refCount : 0);
+    }
+    stack.clearAndReset();
+    
+    
+    
+}
 

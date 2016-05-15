@@ -59,6 +59,12 @@
 #include "platform/nativeDialogs/fileDialog.h"
 #include "memory/safeDelete.h"
 
+extern "C"
+{
+#include "luajit/lua.h"
+#include "luajit/lualib.h"
+#include "luajit/lauxlib.h"
+ }
 #include <stdio.h>
 
 #ifndef _NETWORK_PROCESS_LIST_H_
@@ -113,7 +119,33 @@ bool initializeLibraries()
     PlatformAssert::create();
     Con::init();
     Sim::init();
-
+	
+	lua_State *L;
+	
+	/*
+	 * All Lua contexts are held in this structure. We work with it almost
+	 * all the time.
+	 */
+	L = luaL_newstate();
+	
+	luaL_openlibs(L); /* Load Lua libraries */
+	
+	// Execution of a lua string
+	luaL_dostring(L, "print \"Yo dude\"");
+	
+	// Load a string and then execute it.
+	luaL_loadstring(L, "io.write(\"I'm here too\\n\")");
+	lua_pcall(L, 0, LUA_MULTRET, 0);
+	
+	FILE* fp = fopen("/Users/jamesu/Downloads/ts_benchmark.lua", "r");
+	char buffer[1024*16];
+	int nread = fread(buffer, 1, sizeof(buffer), fp);
+	buffer[nread] = '\0';
+	
+	luaL_loadstring(L, buffer);
+	lua_pcall(L, 0, LUA_MULTRET, 0);
+	
+	
     if(!Net::init())
     {
         printf("Network Error : Unable to initialize the network... aborting.");
@@ -211,6 +243,8 @@ void shutdownLibraries()
 #endif // _USE_STORE_KIT
 }
 
+extern void testStackWrite();
+
 //--------------------------------------------------------------------------
 
 bool initializeGame(int argc, const char **argv)
@@ -218,6 +252,9 @@ bool initializeGame(int argc, const char **argv)
     Con::addVariable("timeScale", TypeF32, &gTimeScale);
     Con::addVariable("timeAdvance", TypeS32, &gTimeAdvance);
     Con::addVariable("frameSkip", TypeS32, &gFrameSkip);
+	
+	
+	//testStackWrite();
 
     initMessageBoxVars();
 

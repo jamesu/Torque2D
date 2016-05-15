@@ -430,6 +430,7 @@ StringTableEntry ColorI::StockColor( void )
 //-----------------------------------------------------------------------------
 
 ConsoleType( ColorF, TypeColorF, sizeof(ColorF), "" )
+ConsoleUseDefaultReferenceType( TypeColorF, ColorF )
 
 //-----------------------------------------------------------------------------
 
@@ -505,6 +506,7 @@ ConsoleSetType( TypeColorF )
 //-----------------------------------------------------------------------------
 
 ConsoleType( ColorI, TypeColorI, sizeof(ColorI), "" )
+ConsoleUseDefaultReferenceType( TypeColorI, ColorI )
 
 //-----------------------------------------------------------------------------
 

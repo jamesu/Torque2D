@@ -35,6 +35,7 @@
 //-----------------------------------------------------------------------------
 
 ConsoleType( audioAssetPtr, TypeAudioAssetPtr, sizeof(AssetPtr<AudioAsset>), ASSET_ID_FIELD_PREFIX )
+ConsoleUseDefaultReferenceType( TypeAudioAssetPtr, AssetPtr<AudioAsset> )
 
 //-----------------------------------------------------------------------------
 

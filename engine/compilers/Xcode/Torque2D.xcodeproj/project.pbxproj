@@ -66,6 +66,7 @@
 		2AF1C54016B439BB00C1CF3A /* declaredAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53C16B439BB00C1CF3A /* declaredAssets.cc */; };
 		2AF1C54116B439BB00C1CF3A /* referencedAssets.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF1C53E16B439BB00C1CF3A /* referencedAssets.cc */; };
 		2AF3633916A9BBE0004ED7AA /* ParticleSystem.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */; };
+		3283E7CE1B87D59000B940A6 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3283E7CD1B87D59000B940A6 /* libluajit.a */; };
 		86063A251654180000362D83 /* platformOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 86063A241654180000362D83 /* platformOSX.mm */; };
 		8609FE2F16556DD2004662ED /* osxSemaphore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE2E16556DD2004662ED /* osxSemaphore.mm */; };
 		8609FE3116556E5A004662ED /* osxThread.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8609FE3016556E5A004662ED /* osxThread.mm */; };
@@ -647,6 +648,7 @@
 		2AF3633716A9BBE0004ED7AA /* ParticleSystem.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ParticleSystem.cc; sourceTree = "<group>"; };
 		2AF3633816A9BBE0004ED7AA /* ParticleSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleSystem.h; sourceTree = "<group>"; };
 		2AF80CFF16A80CB400CE13F1 /* ParticleAssetEmitter_ScriptBinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParticleAssetEmitter_ScriptBinding.h; sourceTree = "<group>"; };
+		3283E7CD1B87D59000B940A6 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = "<group>"; };
 		86063A231654180000362D83 /* platformOSX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platformOSX.h; sourceTree = "<group>"; };
 		86063A241654180000362D83 /* platformOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = platformOSX.mm; sourceTree = "<group>"; };
 		8609FE2E16556DD2004662ED /* osxSemaphore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = osxSemaphore.mm; sourceTree = "<group>"; };
@@ -1544,6 +1546,7 @@
 				865A20CE16515B1E00527C44 /* CoreFoundation.framework in Frameworks */,
 				865A20CF16515B1E00527C44 /* Foundation.framework in Frameworks */,
 				865A20D016515B1E00527C44 /* OpenAL.framework in Frameworks */,
+				3283E7CE1B87D59000B940A6 /* libluajit.a in Frameworks */,
 				865A20D116515B1E00527C44 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1739,6 +1742,15 @@
 			name = composites;
 			sourceTree = "<group>";
 		};
+		32C821CB1B869AB400C508F1 /* luajit */ = {
+			isa = PBXGroup;
+			children = (
+				3283E7CD1B87D59000B940A6 /* libluajit.a */,
+			);
+			name = luajit;
+			path = ../../lib/luajit;
+			sourceTree = "<group>";
+		};
 		8645C96D18872339004ED987 /* leapMotion */ = {
 			isa = PBXGroup;
 			children = (
@@ -1778,6 +1790,7 @@
 		865A21E71651875E00527C44 /* Support_Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				32C821CB1B869AB400C508F1 /* luajit */,
 				865A22D6165187D700527C44 /* lpng */,
 				865A22D5165187D100527C44 /* ljpeg */,
 				865A21E8165187B600527C44 /* Box2D */,
@@ -3748,7 +3761,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -3775,7 +3788,7 @@
 		865A20AF165152EA00527C44 /* Shipping */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
@@ -3802,11 +3815,18 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"../../lib/LeapSDK/lib/libc++",
+					"/Users/jamesu/Desktop/t2d-cs-lua/Torque2D/engine/lib/luajit",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				OTHER_LDFLAGS = /usr/lib/libz.dylib;
+				OTHER_LDFLAGS = (
+					/usr/lib/libz.dylib,
+					"-pagezero_size",
+					10000,
+					"-image_base",
+					100000000,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VALID_ARCHS = "i386 x86_64";
+				VALID_ARCHS = x86_64;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Shipping;
@@ -3815,7 +3835,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -3850,7 +3870,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -3860,6 +3880,7 @@
 				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "";
 				GCC_C_LANGUAGE_STANDARD = gnu89;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					TORQUE_RELEASE,
 					GTEST_OS_MAC,
@@ -3881,7 +3902,7 @@
 		869FF8D71651518C002FE082 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
@@ -3905,16 +3926,24 @@
 					"$(SYSTEM_LIBRARY_DIR)/Frameworks/ApplicationServices.framework/Versions/Current/Frameworks/QD.framework/Headers",
 					"$(SYSTEM_LIBRARY_DIR)/Frameworks/OpenGL.framework/Headers",
 					../../lib/LeapSDK/include,
+					../../lib/luajit,
 				);
 				INFOPLIST_FILE = "Torque2D/Torque2D-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"../../lib/LeapSDK/lib/libc++",
+					"/Users/jamesu/Desktop/t2d-cs-lua/Torque2D/engine/lib/luajit",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				OTHER_LDFLAGS = /usr/lib/libz.dylib;
+				OTHER_LDFLAGS = (
+					/usr/lib/libz.dylib,
+					"-pagezero_size",
+					10000,
+					"-image_base",
+					100000000,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)_DEBUG";
-				VALID_ARCHS = "i386 x86_64";
+				VALID_ARCHS = x86_64;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -3922,10 +3951,11 @@
 		869FF8D81651518C002FE082 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = ../../..;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Torque2D/Torque2D-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -3966,11 +3996,18 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"../../lib/LeapSDK/lib/libc++",
+					"/Users/jamesu/Desktop/t2d-cs-lua/Torque2D/engine/lib/luajit",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				OTHER_LDFLAGS = /usr/lib/libz.dylib;
+				OTHER_LDFLAGS = (
+					/usr/lib/libz.dylib,
+					"-pagezero_size",
+					10000,
+					"-image_base",
+					100000000,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VALID_ARCHS = "i386 x86_64";
+				VALID_ARCHS = x86_64;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
